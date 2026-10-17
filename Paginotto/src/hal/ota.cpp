@@ -106,7 +106,7 @@ OtaDownloadResult OTA::download(const String& channel, OtaProgressFn progressCb)
   OtaDownloadResult result;
 
   String url = String(kOtaBaseUrl) + channel + "/firmware-"
-               + kBoardToken + "-" + kLangToken + ".bin";
+               + kBoardToken + ".bin";
 
   // Resolve the idle OTA partition — fails if the partition table has no OTA
   // slots (e.g. device still on the old factory layout).
