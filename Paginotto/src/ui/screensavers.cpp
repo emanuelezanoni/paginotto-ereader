@@ -130,8 +130,8 @@ bool drawNext() {
       static uint8_t sleepBuf[SCREENSAVER_BYTES];
       sf.read(sleepBuf, SCREENSAVER_BYTES);
       sf.close();
-      gfx.fillScreen(1);
-      gfx.drawXBitmap(0, 0, sleepBuf, SCREEN_W, SCREEN_H, 0);
+      gfx.fillScreen(0);
+      gfx.drawXBitmap(0, 0, sleepBuf, SCREEN_W, SCREEN_H, 1);
       return true;
     }
     if (sf) sf.close();
@@ -171,8 +171,8 @@ bool drawNext() {
   s_lastShown = pick;
   prefs.putInt(kKeyLastShown, pick);
 
-  gfx.fillScreen(1);
-  gfx.drawXBitmap(0, 0, buf, SCREEN_W, SCREEN_H, 0);
+  gfx.fillScreen(0);
+  gfx.drawXBitmap(0, 0, buf, SCREEN_W, SCREEN_H, 1);
   return true;
 }
 

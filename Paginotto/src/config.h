@@ -34,12 +34,11 @@
 #define BUILD_GIT_HASH "unknown"
 #endif
 
-// DEBUG_BUILD = 1 shows the git hash in the on-device library screen header
-// (the front face of the device). About screen + web UI always show the
-// hash regardless — those are debug surfaces. Defaults on for local + main-
-// branch CI builds; the release workflow passes `-DDEBUG_BUILD=0` for tags.
+// DEBUG_BUILD = 1 shows the git hash in the on-device library screen header.
+// Keep it disabled for normal device builds: the firmware identity should be
+// the product name, not the state of the developer's working tree.
 #ifndef DEBUG_BUILD
-#define DEBUG_BUILD 1
+#define DEBUG_BUILD 0
 #endif
 
 #if DEBUG_BUILD

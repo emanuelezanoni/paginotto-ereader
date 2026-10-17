@@ -93,9 +93,9 @@ static void drawLockBadge() {
 }
 
 static void drawDefaultSleepScreen() {
-  gfx.fillScreen(1);
+  gfx.fillScreen(0);
   gfx.drawXBitmap(0, 0, PAGINOTTO_DEFAULT_SCREENSAVER,
-                  SCREEN_W, SCREEN_H, 0);
+                  SCREEN_W, SCREEN_H, 1);
 }
 
 // Render the screensaver onto the e-ink before powering down. If no user
