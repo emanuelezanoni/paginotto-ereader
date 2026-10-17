@@ -135,6 +135,12 @@ static void handleSettings() {
   out += "<span class='muted'>" D_WEB_BUTTONS_LOCK_HINT "</span>";
   out += "</div></form></div>";
 
+  out += "<div class='card'><h2>" D_WEB_RESET_HEADING "</h2>"
+         "<p class='muted'>" D_WEB_RESET_SUBTITLE "</p>"
+         "<form method='POST' action='/settings/reset' style='margin-top:14px'>"
+         "<button class='danger' type='submit' onclick=\"return confirm('" D_WEB_RESET_CONFIRM_MESSAGE "')\">" D_WEB_RESET_YES_BUTTON "</button>"
+         "</form></div>";
+
   out += webPageEnd();
   server.send(200, "text/html; charset=utf-8", out);
 }

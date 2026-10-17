@@ -529,8 +529,7 @@ static void handleSleepEditorPage() {
   String out = webPageStart(
     D_WEB_SS_TITLE,
     D_WEB_SS_SUBTITLE,
-    webNav("screensavers"),
-    true
+    webNav("screensavers")
   );
   out.reserve(out.length() + 8000);
 

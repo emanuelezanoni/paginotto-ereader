@@ -16,10 +16,10 @@
 // ============================================================================
 void registerWebRoutes() {
   registerChromeRoutes();      // /style.css
-  registerFilesRoutes();       // /, /books, /del, /mkdir, /rmdir, /move, /jumppage
+  registerFilesRoutes();       // /, /books, /del, /mkdir, /rmdir, /move, /rename, /jumppage
   registerSettingsRoutes();    // /settings, /del-sleep
   registerFindRoutes();        // /read, /readbook-text, /jumpoffset
   registerScreensaverRoutes(); // /screensavers and subroutes
   registerUploadRoutes();      // /upload, /upload-sleep (legacy)
-  registerResetRoutes();       // /reset
+  registerResetRoutes();       // /settings/reset
 }

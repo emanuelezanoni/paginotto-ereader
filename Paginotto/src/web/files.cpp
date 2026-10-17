@@ -82,14 +82,6 @@ static void handleRoot() {
     out += "<div class='banner-warn'>" D_WEB_HOME_STORAGE_WARN "</div>";
   }
 
-  out +=
-    "<div class='card'><h2>" D_WEB_UPLOAD_BOOK_HEADING "</h2>"
-    "<p class='muted'>" D_WEB_UPLOAD_BOOK_DESC "</p>"
-    "<form method='POST' action='/upload' enctype='multipart/form-data' accept-charset='UTF-8' style='margin-top:14px'>"
-    "<input type='file' name='file' accept='.txt,text/plain' required>"
-    "<div class='actions'><button type='submit'>" D_WEB_UPLOAD_BOOK_BUTTON "</button><a class='btn secondary' href='/books'>" D_WEB_MANAGE_BOOKS_BUTTON "</a></div>"
-    "</form></div>";
-
   out += "<div class='card'><h2>" D_WEB_NOTES_HEADING "</h2><p class='muted'>" D_WEB_NOTES_DESC "</p></div>";
 
   out += webPageEnd();
@@ -100,9 +92,16 @@ static void handleFiles() {
   String out = webPageStart(
     D_WEB_BOOKS_HEADING,
     D_WEB_BOOKS_SUBTITLE,
-    webNav("books"),
-    true
+    webNav("books")
   );
+
+  out +=
+    "<div class='card'><h2>" D_WEB_UPLOAD_BOOK_HEADING "</h2>"
+    "<p class='muted'>" D_WEB_UPLOAD_BOOK_DESC "</p>"
+    "<form method='POST' action='/upload' enctype='multipart/form-data' accept-charset='UTF-8' style='margin-top:14px'>"
+    "<input type='file' name='file' accept='.txt,text/plain' required>"
+    "<div class='actions'><button type='submit'>" D_WEB_UPLOAD_BOOK_BUTTON "</button></div>"
+    "</form></div>";
 
   out +=
     "<div class='card'><h2>" D_WEB_CREATE_FOLDER_HEADING "</h2>"
@@ -163,6 +162,10 @@ static void handleFiles() {
       out += "<input type='hidden' name='id' value='" + String(i) + "'>";
       out += "<input type='text' name='folder' value='" + htmlEscape(String(g_library.books[i].folder)) + "' placeholder='" D_WEB_MOVE_PLACEHOLDER "' maxlength='64'>";
       out += "<div class='actions'><button type='submit'>" D_WEB_MOVE_BUTTON "</button><span class='muted'>" D_WEB_MOVE_HINT "</span></div></form></div>";
+      out += "<form method='POST' action='/rename' class='stack small' accept-charset='UTF-8' style='margin-top:10px'>";
+      out += "<input type='hidden' name='id' value='" + String(i) + "'>";
+      out += "<input type='text' name='name' value='" + htmlEscape(stripTxtExt(lastPathComponent(filePath))) + "' placeholder='" D_WEB_RENAME_PLACEHOLDER "' maxlength='79' required>";
+      out += "<div class='actions'><button type='submit'>" D_WEB_RENAME_BUTTON "</button><span class='muted'>" D_WEB_RENAME_HINT "</span></div></form></div>";
       out += "<div style='display:flex;flex-direction:column;gap:6px;align-items:flex-end'>";
       out += "<a class='btn secondary' href='/download-book?id=" + String(i) + "' download>" D_WEB_DOWNLOAD_BUTTON "</a>";
       out += "<form method='POST' action='/del' style='margin:0'><input type='hidden' name='id' value='" + String(i) + "'>";
@@ -304,6 +307,55 @@ static void handleMoveBook() {
   server.send(302, "text/plain", "");
 }
 
+static void handleRenameBook() {
+  if (!server.hasArg("id")) {
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_MISSING_ID);
+    return;
+  }
+  if (!server.hasArg("name")) {
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_MISSING_NAME);
+    return;
+  }
+
+  int id = server.arg("id").toInt();
+  if (id < 0 || id >= g_library.bookCount) {
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_ID);
+    return;
+  }
+
+  String oldPath = String(g_library.books[id].path);
+  String leaf = sanitizeUploadedFilename(server.arg("name"));
+  if (leaf == ".txt") {
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_NAME);
+    return;
+  }
+  String folder = String(g_library.books[id].folder);
+  String newPath = (folder.length() == 0 ? String("/books/") : String("/books/") + folder + "/") + leaf;
+  if (newPath.length() >= sizeof(g_library.books[id].path)) {
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_NAME);
+    return;
+  }
+
+  if (newPath == oldPath) {
+    server.sendHeader("Location", "/books");
+    server.send(302, "text/plain", "");
+    return;
+  }
+  if (FS.exists(newPath)) {
+    server.send(409, "text/plain; charset=utf-8", D_WEB_ERR_DEST_EXISTS);
+    return;
+  }
+  if (!FS.rename(oldPath, newPath)) {
+    server.send(500, "text/plain; charset=utf-8", D_WEB_ERR_RENAME_FAILED);
+    return;
+  }
+
+  migrateBookMetadata(oldPath, newPath);
+  loadBooks();
+  server.sendHeader("Location", "/books");
+  server.send(302, "text/plain", "");
+}
+
 static void handleJumpPageWeb() {
   if (!server.hasArg("id") || !server.hasArg("page")) {
     server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_MISSING_ID_PAGE);
@@ -349,5 +401,6 @@ void registerFilesRoutes() {
   server.on("/mkdir",    HTTP_POST, handleCreateFolder);
   server.on("/rmdir",    HTTP_POST, handleDeleteFolder);    // POST: destructive
   server.on("/move",     HTTP_POST, handleMoveBook);
+  server.on("/rename",   HTTP_POST, handleRenameBook);
   server.on("/jumppage", HTTP_POST, handleJumpPageWeb);
 }

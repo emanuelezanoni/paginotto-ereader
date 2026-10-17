@@ -140,6 +140,9 @@
 #define D_WEB_MOVE_BUTTON           "Move"
 #define D_WEB_MOVE_HINT             "Use the exact folder path."
 #define D_WEB_MOVE_PLACEHOLDER      "leave blank for root"
+#define D_WEB_RENAME_BUTTON         "Rename"
+#define D_WEB_RENAME_HINT           "Keeps .txt and your reading progress."
+#define D_WEB_RENAME_PLACEHOLDER    "Book name"
 #define D_WEB_CONFIRM_DELETE_FILE   "Delete file?"
 #define D_WEB_DOWNLOAD_BUTTON       "Download"
 
@@ -160,6 +163,9 @@
 #define D_WEB_ERR_FOLDER_CREATE_FAILED  "folder create failed"
 #define D_WEB_ERR_DEST_EXISTS           "destination exists"
 #define D_WEB_ERR_MOVE_FAILED           "move failed"
+#define D_WEB_ERR_MISSING_NAME           "missing name"
+#define D_WEB_ERR_BAD_NAME               "bad name"
+#define D_WEB_ERR_RENAME_FAILED          "rename failed"
 #define D_WEB_ERR_MISSING_ID_PAGE       "missing id/page"
 
 // ----------------------------------------------------------------------------
@@ -171,6 +177,7 @@
 #define D_WEB_RESET_WARNING         "This will delete ALL books and reading progress."
 #define D_WEB_RESET_DETAIL          "The device filesystem will be formatted and settings will return to defaults."
 #define D_WEB_RESET_YES_BUTTON      "Yes, reset"
+#define D_WEB_RESET_CONFIRM_MESSAGE "Factory reset? This deletes all books, progress, settings, and custom assets."
 #define D_WEB_RESET_COMPLETE_HEADING "Factory reset complete"
 #define D_WEB_RESET_COMPLETE_DESC   "All books, progress and custom assets were removed. The device is now back to a clean state."
 #define D_WEB_GO_HOME_BUTTON        "Go to home"

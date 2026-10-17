@@ -113,15 +113,14 @@ String webPageEnd() {
 }
 
 String webNav(const char* active) {
-  const char* keys[] = {"home", "books", "screensavers", "settings", "reset"};
+  const char* keys[] = {"home", "books", "screensavers", "settings"};
   const char* labels[] = {
-    D_WEB_NAV_HOME, D_WEB_NAV_BOOKS, D_WEB_NAV_SCREENSAVER,
-    D_WEB_NAV_SETTINGS, D_WEB_NAV_FACTORY_RESET
+    D_WEB_NAV_HOME, D_WEB_NAV_BOOKS, D_WEB_NAV_SCREENSAVER, D_WEB_NAV_SETTINGS
   };
-  const char* urls[] = {"/", "/books", "/screensavers", "/settings", "/reset"};
+  const char* urls[] = {"/", "/books", "/screensavers", "/settings"};
 
   String out;
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < 4; i++) {
     out += "<a href='";
     out += urls[i];
     out += "'";
