@@ -11,7 +11,6 @@
 #include "src/ui/font.h"
 #include "src/ui/screens/library_screen.h"
 #include "src/ui/widgets.h"
-#include "src/web/apps_upload.h"  // resetAppUpload()
 #include "src/web/upload.h"       // resetBookUpload() / resetSleepUpload()
 
 // How long to wait for an STA association before falling back to AP. Long
@@ -116,7 +115,6 @@ void UploadScreen::onEnter() {
 void UploadScreen::beginSession() {
   resetBookUpload();
   resetSleepUpload();
-  resetAppUpload();
 
   // Tell WifiProvisioning to keep its hands off the radio for the duration
   // of the session — set BEFORE wifiStaBegin so a same-tick
@@ -155,7 +153,6 @@ void UploadScreen::stopSessionToLibrary() {
 
   resetBookUpload();
   resetSleepUpload();
-  resetAppUpload();
 
   loadBooks();
   // Discard the exit-click so it doesn't leak into the library screen as a

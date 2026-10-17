@@ -7,7 +7,7 @@
 //  Reader hold-gesture bindings
 //
 //  Maps the three remappable hold gestures (Long / VeryLong / ClickHold)
-//  to one of the reader's actions (none / bookmark / lock / menu) and
+//  to one of the reader's actions (none / lock / menu) and
 //  persists the choice. Lives here, not in `src/hal/input.h`, because the
 //  bindable actions are reader-screen concepts — the input layer just
 //  classifies button events; what an event *means* belongs to the screen
@@ -15,14 +15,13 @@
 //  table it can do so without touching the HAL.
 //
 //  Defaults (chosen to be useful out of the box):
-//    Long      = Bookmark — the most common action while reading
+//    Long      = None
 //    VeryLong  = Lock     — a deliberate "I'm putting it down" gesture
 //    ClickHold = Menu     — easy chord, doesn't fight short-click paging
 // ============================================================================
 
 enum ButtonAction {
   ACTION_NONE     = 0,
-  ACTION_BOOKMARK = 1,
   ACTION_LOCK     = 2,
   ACTION_MENU     = 3,
 };

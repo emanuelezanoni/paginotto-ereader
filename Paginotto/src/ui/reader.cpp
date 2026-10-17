@@ -6,7 +6,6 @@
 #include "src/storage/library.h"   // g_library — openBookByIndex reads it
 #include "src/storage/page_cache.h"
 #include "src/storage/preferences_store.h"
-#include "src/storage/statistics.h"         // Statistics::onReaderPageTurn
 
 #include "src/ui/font.h"                    // layoutForCache for cache stamping
 #include "src/ui/screens/library_screen.h"  // navigateToLibraryRoot — fallback on error
@@ -348,10 +347,8 @@ bool tryRestoreReadingSession() {
 }
 
 // ============================================================================
-//  Cursor navigation — shared between ReaderScreen and BookmarkPreviewScreen.
-//  Both move the cursor and bump `pageTurnsSinceFull` on a real change; the
-//  caller-side post-move work (save progress, render) varies between the
-//  screens and stays at the call site.
+//  Cursor navigation. Both move the cursor and bump `pageTurnsSinceFull` on a
+//  real change; the caller decides what to save and render.
 // ============================================================================
 bool advancePage() {
   int targetPage = g_bookview.cursor.pageIndex + 1;
@@ -360,7 +357,6 @@ bool advancePage() {
   if (targetPage >= g_bookview.pages.count) return false;
   g_bookview.cursor.pageIndex = targetPage;
   g_bookview.cursor.pageTurnsSinceFull++;
-  Statistics::onReaderPageTurn();
   return true;
 }
 
@@ -368,7 +364,6 @@ bool retreatPage() {
   if (g_bookview.cursor.pageIndex <= 0) return false;
   g_bookview.cursor.pageIndex--;
   g_bookview.cursor.pageTurnsSinceFull++;
-  Statistics::onReaderPageTurn();
   return true;
 }
 
@@ -427,7 +422,7 @@ void resetBookView() {
 }
 
 // ============================================================================
-//  Progress + bookmark glue. Reads/writes g_bookview, delegates the actual
+//  Progress glue. Reads/writes g_bookview, delegates the actual
 //  persistence to the pure storage API. Lives here (not in storage/) because
 //  the throttle decision and the "is a book open" guard are view-state
 //  concerns.
@@ -454,22 +449,6 @@ void saveProgressThrottled() {
   uint32_t now = millis();
   if (s_save.lastSaveMs != 0 && (now - s_save.lastSaveMs) < SAVE_EVERY_MS) return;
   saveProgress();
-}
-
-const char* addBookmarkForCurrentBook() {
-  if (!g_bookview.book.isOpen()) return nullptr;
-
-  PreferencesStore kv(prefs);
-  Bookmarks bm = loadBookmarks(kv, g_bookview.book.key());
-
-  uint32_t pageOff = g_bookview.pages.offsets[g_bookview.cursor.pageIndex];
-  BookmarkAddResult r = addBookmark(bm, (uint16_t)g_bookview.cursor.pageIndex, pageOff);
-  if (r.added) saveBookmarks(kv, g_bookview.book.key(), bm);
-  // Page table is NOT saved here — every realistic flow that adds a bookmark
-  // is followed by a sleep or explicit exit, both of which call
-  // persistReaderState(). The bookmark's offset is byte-exact and survives
-  // a re-paginate on next open if the disk cache is stale.
-  return r.message;
 }
 
 // Commit everything the active reader has accumulated to durable storage.

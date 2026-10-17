@@ -72,30 +72,20 @@
 #include "src/hal/input.h"
 #include "src/hal/wifi_provisioning.h"
 #include "src/pure/hashing.h"
-#include "src/storage/app_catalog.h"
 #include "src/storage/fs_util.h"
 #include "src/storage/library.h"
 #include "src/storage/list_items.h"
 #include "src/storage/page_cache.h"
-#include "src/storage/statistics.h"
 #include "src/ui/font.h"
-#include "src/ui/pala_api_impl.h"
 #include "src/ui/reader.h"
 #include "src/ui/reader_actions.h"  // Gestures::loadSettings
 #include "src/ui/screen.h"
 #include "src/ui/widgets.h"  // drawCenter
-#include "src/ui/screens/about_screen.h"
-#include "src/ui/screens/apps_screen.h"
-#include "src/ui/screens/bookmarks/book_select_screen.h"
-#include "src/ui/screens/bookmarks/bookmark_list_screen.h"
-#include "src/ui/screens/bookmarks/preview_screen.h"
 #include "src/ui/screens/library_screen.h"
 #include "src/ui/screens/list_screen.h"
 #include "src/ui/screens/reader_screen.h"
-#include "src/ui/screens/statistics_screen.h"
 #include "src/ui/screens/update_screen.h"
 #include "src/ui/screens/upload_screen.h"
-#include "src/ui/header_title.h"
 #include "src/ui/lock.h"
 #include "src/ui/screensavers.h"
 #include "src/ui/sleep.h"
@@ -110,14 +100,8 @@
 LibraryScreen              g_libraryScreen;
 ReaderScreen               g_readerScreen;
 UploadScreen               g_uploadScreen;
-AboutScreen                g_aboutScreen;
 UpdateScreen               g_updateScreen;
-AppsScreen                 g_appsScreen;
 ListScreen                 g_listScreen;
-StatisticsScreen           g_statsScreen;
-BookmarkBookSelectScreen   g_bmBookSelectScreen;
-BookmarkListScreen         g_bmListScreen;
-BookmarkPreviewScreen      g_bmPreviewScreen;
 
 Screen* g_currentScreen = &g_libraryScreen;
 
@@ -197,20 +181,13 @@ void setup() {
   Screensavers::loadSettings();
   Statusbar::loadSettings();
   Gestures::loadSettings();
-  HeaderTitle::loadSettings();
   // Sleep::loadSettings() and Lock::loadSettings() already ran earlier in
   // setup() so both flags were available for the boot-clear gate above —
   // don't reload them here.
   loadBooks();
   loadListItems();
-  loadApps();
-  initPalaAPI();
   registerWebRoutes();
   markUserActivity();
-
-  // Reload lifetime counters from NVS into RTC RAM (no-op on warm wake).
-  // Streak state bootstraps lazily on the first page turn.
-  Statistics::loadOnBoot();
 
   // When locked at boot, we skip the screen draw and leave the sleep image
   // (with its lock indicator) on the e-ink. Otherwise a short-press wake
@@ -259,21 +236,6 @@ void loop() {
   maybeRecoverFromIsrOverflow();
 
   ButtonEvent ev = ButtonEvent::fromButtonState(g_btns);
-
-  // Lifetime button-press counter. peekPressCount is monotonic-up except
-  // when the apps API consumes-and-resets — guard by clamping lastSeen to
-  // the current value if it ran backwards. Runs before the lock check so
-  // physical presses count toward lifetime stats even when the UI is
-  // swallowing them.
-  {
-    static uint32_t lastSeenPressCount = 0;
-    uint32_t pc = g_btns.peekPressCount();
-    if (pc < lastSeenPressCount) lastSeenPressCount = pc;
-    if (pc != lastSeenPressCount) {
-      Statistics::bumpButtons(pc - lastSeenPressCount);
-      lastSeenPressCount = pc;
-    }
-  }
 
   // Locked: swallow all input except unlock gestures (Long/VeryLong/ClickHold).
   // Does NOT call markUserActivity for non-unlock events so the idle deadline

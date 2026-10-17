@@ -246,7 +246,7 @@ static void handleReadView() {
   String out = webPageStart(
     D_WEB_READ_TITLE,
     D_WEB_READ_SUBTITLE,
-    "<a href='/'>" D_WEB_NAV_HOME "</a><a href='/files'>" D_WEB_NAV_FILES "</a><a href='/bookmarks'>" D_WEB_NAV_BOOKMARKS "</a>",
+    "<a href='/'>" D_WEB_NAV_HOME "</a><a href='/files'>" D_WEB_NAV_FILES "</a>",
     true
   );
   out.reserve(out.length() + 6000);

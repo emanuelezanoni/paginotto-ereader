@@ -10,7 +10,6 @@
 #include "src/state.h"
 #include "src/hal/display.h"
 #include "src/hal/input.h"          // injectButtonEdgeNow, markUserActivity
-#include "src/storage/statistics.h" // Statistics::flushToNvs
 #include "src/ui/default_screensaver.h"
 #include "src/ui/lock.h"            // Lock::isLocked — gates the lock badge
 #include "src/ui/screen.h"
@@ -114,7 +113,7 @@ static void drawSleepScreen() {
 void enter() {
   if (!ENABLE_DEEP_SLEEP) return;
 
-  // Each screen owns its own sleep cleanup: ReaderScreen + BookmarkPreview
+  // Each screen owns its own sleep cleanup: ReaderScreen
   // close the open book; everything else (library, list, etc.) holds no
   // book under the strong invariant and just clears wake state.
   if (g_currentScreen) g_currentScreen->onSleep();
@@ -167,9 +166,6 @@ void enter() {
   rtc_gpio_pulldown_dis((gpio_num_t)BTN);
   rtc_gpio_pullup_en((gpio_num_t)BTN);
   esp_sleep_enable_ext0_wakeup((gpio_num_t)BTN, 0);
-
-  // Drain any RTC-RAM lifetime-counter deltas to NVS before power-down.
-  Statistics::flushToNvs();
 
   delay(50);
   Serial.printf("[sleep] BTN=%d entering deep sleep\n", digitalRead(BTN));

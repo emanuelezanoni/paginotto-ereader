@@ -1,7 +1,5 @@
 #include "src/web/web.h"
 
-#include "src/web/apps_upload.h"
-#include "src/web/bookmarks.h"
 #include "src/web/chrome.h"
 #include "src/web/files.h"
 #include "src/web/find.h"
@@ -20,12 +18,10 @@
 void registerWebRoutes() {
   registerChromeRoutes();      // /style.css
   registerFilesRoutes();       // /, /files, /del, /mkdir, /rmdir, /move, /jumppage
-  registerBookmarksRoutes();   // /bookmarks, /viewbm, /delbm, /exportbm
   registerListRoutes();        // /list, /list-clear-done
   registerSettingsRoutes();    // /settings, /del-sleep
   registerFindRoutes();        // /read, /readbook-text, /jumpoffset
   registerScreensaverRoutes(); // /screensavers and subroutes
   registerUploadRoutes();      // /upload, /upload-sleep (legacy)
-  registerAppUploadRoutes();   // /upload-app
   registerResetRoutes();       // /reset
 }

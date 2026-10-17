@@ -6,11 +6,8 @@
 #include "src/pure/page_offset_table.h"
 
 // ============================================================================
-//  The currently open book and where the user is looking at it. Shared
-//  between `ReaderScreen` (active reading session) and
-//  `BookmarkPreviewScreen` (transient view before commit). Both screens
-//  legitimately operate on a `BookView`; only the reader does anything
-//  beyond view (auto-save throttle, idle prefetch, wake arming) — those
+//  The currently open book and where the user is looking at it. The reader
+//  owns the active view; auto-save throttle, idle prefetch, wake arming — those
 //  live private inside `reader.cpp`.
 //
 //  Strong invariant: a book is "open" iff `book.isOpen()` returns true,
@@ -76,8 +73,7 @@ bool retreatPage();
 // Find which page of the active book contains `targetOffset` — the largest
 // N where `g_bookview.pages.offsets[N] <= targetOffset`. Paginates the
 // active book forward as needed (so the page table grows up to the answer).
-// Used to resume from a saved byte offset and to navigate to a bookmark
-// whose offset is invariant under font/layout changes.
+// Used to resume from a saved byte offset.
 int findPageForOffset(uint32_t targetOffset);
 
 // Boot-time wake-resume. Checks if wake state asks us to resume reading and
@@ -125,7 +121,7 @@ void markPagesDirtyForLayoutChange();
 void resetBookView();
 
 // ============================================================================
-//  Progress + bookmark glue — manipulates `g_bookview`, persists via storage.
+//  Progress glue — manipulates `g_bookview`, persists via storage.
 //  Lives on the ui side of the boundary because the bulk of the logic is
 //  view-state reasoning ("is a book even open right now"); the underlying
 //  save is delegated to the pure storage API. Auto-save throttle bookkeeping
@@ -146,9 +142,5 @@ void saveProgressThrottled();
 // finds both the latest cursor and a fresh on-disk page cache. No-op if
 // no book is open.
 void persistReaderState();
-
-// Add a bookmark at the currently-open view's page. Returns a UI message
-// (e.g. "Bookmark saved" / "Bookmark exists") or nullptr if no book is open.
-const char* addBookmarkForCurrentBook();
 
 #endif  // PALA_UI_READER_H

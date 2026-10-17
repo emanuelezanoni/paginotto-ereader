@@ -20,8 +20,8 @@
 //  module never has to know what specifically affects layout.
 //
 //  The active reader bulk-loads the whole table into `g_bookview.pages` via
-//  `loadPageOffsetCacheForBook`. Cross-book lookups (web bookmark resolve,
-//  page-text export) use the lighter `loadOffsetForPageFromDisk` to read
+//  `loadPageOffsetCacheForBook`. Cross-book lookups for page-text export use
+//  the lighter `loadOffsetForPageFromDisk` to read
 //  one entry without allocating a 40 KB scratch table.
 // ============================================================================
 

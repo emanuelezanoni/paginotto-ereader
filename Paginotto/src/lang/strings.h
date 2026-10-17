@@ -12,39 +12,14 @@
 #define D_BOOT_TRY_FACTORY_RESET    "Try factory reset"
 
 // ----------------------------------------------------------------------------
-//  About screen (src/ui/screens/about_screen.cpp)
-// ----------------------------------------------------------------------------
-#define D_ABOUT_HEADER              "Device"
-#define D_ABOUT_FIRMWARE_PREFIX     "Firmware "
-#define D_ABOUT_GESTURE_NEXT        "1x next / down"
-#define D_ABOUT_GESTURE_OPEN        "2x open / select"
-#define D_ABOUT_GESTURE_HOME        "3x home"
-#define D_ABOUT_GESTURE_BOOKMARK    "Hold bookmark"
-
-// ----------------------------------------------------------------------------
 //  Library screen — section title + system menu entries
 //  (src/ui/screens/library_screen.cpp). The "+ " / "- " expansion indicators
 //  in entryLabel() are visual symbols and intentionally NOT translated.
 // ----------------------------------------------------------------------------
-#define D_MENU_BOOKMARKS            "Bookmarks"
 #define D_MENU_LIST                 "List"
-#define D_MENU_APPS                 "Apps"
-#define D_MENU_STATISTICS           "Statistics"
-#define D_MENU_DEVICE               "Device"
 #define D_MENU_UPLOAD               "Upload"
 #define D_LIBRARY_OPEN_FAILED       "Open failed"
 #define D_LIBRARY_TRY_UPLOAD        "Try upload again"
-
-// ----------------------------------------------------------------------------
-//  Statistics screen (src/ui/screens/statistics_screen.cpp). The *_FMT
-//  strings are snprintf templates with %u / %llu placeholders — keep the
-//  positional order across translations.
-// ----------------------------------------------------------------------------
-#define D_STATS_HEADING                "Statistics"
-#define D_STATS_STREAK_CURRENT_FMT     "Current streak: %u days"
-#define D_STATS_STREAK_LONGEST_FMT     "Longest: %u  Sessions: %u"
-#define D_STATS_LIFETIME_PAGES_FMT     "Pages turned: %llu"
-#define D_STATS_LIFETIME_PRESSES_FMT   "Button presses: %llu"
 
 // ----------------------------------------------------------------------------
 //  List screen (src/ui/screens/list_screen.cpp)
@@ -63,12 +38,6 @@
 #define D_UPLOAD_CONNECTED          "Connected"
 #define D_UPLOAD_HOTSPOT_HINT_L1    "Press button to"
 #define D_UPLOAD_HOTSPOT_HINT_L2    "use hotspot instead"
-
-// ----------------------------------------------------------------------------
-//  Apps screen (src/ui/screens/apps_screen.cpp)
-// ----------------------------------------------------------------------------
-#define D_APPS_HEADER               "Apps"
-#define D_APPS_NONE                 "No apps installed"
 
 // ----------------------------------------------------------------------------
 //  Update screen (src/ui/screens/update_screen.cpp)
@@ -95,48 +64,10 @@
 #define D_UPDATE_REBOOT_HINT        "2x to reboot"
 
 // ----------------------------------------------------------------------------
-//  Bookmarks screens
-//  (src/ui/screens/bookmarks/{book_select_screen,bookmark_list_screen}.cpp)
-// ----------------------------------------------------------------------------
-#define D_BOOKMARKS_HEADER          "Bookmarks"
-#define D_BOOKMARKS_NO_BOOKS        "No books"
-#define D_BOOKMARKS_NONE            "No bookmarks"
-#define D_BOOKMARKS_OPEN_FAILED     "Open failed"
-
-// ----------------------------------------------------------------------------
 //  Reader (src/ui/reader.cpp)
 // ----------------------------------------------------------------------------
 #define D_READER_BOOK_EMPTY         "Book empty"
 #define D_READER_BACK_LIBRARY       "Back to library"
-
-// ----------------------------------------------------------------------------
-//  App loader error overlay (src/ui/pala_api_impl.cpp paintLoadError)
-// ----------------------------------------------------------------------------
-#define D_APP_ERR_TITLE             "App error"
-#define D_APP_ERR_NULL_PATH         "null path"
-#define D_APP_ERR_NOT_FOUND         "App not found"
-#define D_APP_ERR_TOO_SMALL         "App too small"
-#define D_APP_ERR_INVALID_FILE      "Invalid file"
-#define D_APP_ERR_TOO_LARGE         "App too large"
-#define D_APP_ERR_SIZE_LIMIT        "> 48 KB"
-#define D_APP_ERR_READ              "Read error"
-#define D_APP_ERR_PARTIAL_READ      "Partial read"
-#define D_APP_ERR_NO_EXEC_MEM       "No exec memory"
-#define D_APP_ERR_BAD_FILE          "Bad app file"
-#define D_APP_ERR_WRONG_MAGIC       "Wrong magic"
-#define D_APP_ERR_API_MISMATCH      "API mismatch"
-#define D_APP_ERR_API_FMT           "API v%u, need v%u"
-#define D_APP_ERR_BAD_ENTRY         "Bad entry offset"
-#define D_APP_ERR_BAD_RELOC         "Bad reloc table"
-#define D_APP_ERR_RELOC_RANGE       "Reloc out of range"
-
-// ----------------------------------------------------------------------------
-//  Bookmark add toasts (src/pure/bookmarks_codec.cpp)
-//  These are pointers returned from a pure module and rendered via Toast::show
-//  in reader_screen.cpp.
-// ----------------------------------------------------------------------------
-#define D_TOAST_BOOKMARK_EXISTS     "Bookmark exists"
-#define D_TOAST_BOOKMARK_SAVED      "Bookmark saved"
 
 // ----------------------------------------------------------------------------
 //  Lock / screensaver (src/ui/sleep.cpp, Paginotto.ino)
@@ -165,7 +96,6 @@
 // ----------------------------------------------------------------------------
 #define D_WEB_NAV_HOME              "Home"
 #define D_WEB_NAV_FILES             "Files"
-#define D_WEB_NAV_BOOKMARKS         "Bookmarks"
 #define D_WEB_NAV_LIST              "List"
 #define D_WEB_NAV_SCREENSAVER       "Screensaver"
 #define D_WEB_NAV_SETTINGS          "Settings"
@@ -185,9 +115,6 @@
 #define D_WEB_UPLOAD_BOOK_DESC      "Send UTF-8 plain text files to <b>/books</b> on the device, then sort them into folders from the Files page."
 #define D_WEB_UPLOAD_BOOK_BUTTON    "Upload"
 #define D_WEB_MANAGE_FILES_BUTTON   "Manage files"
-#define D_WEB_INSTALL_APP_HEADING   "Install app"
-#define D_WEB_INSTALL_APP_DESC      "Upload a Paginotto app binary (<b>.bin</b>) to <b>/apps</b>. The header is validated before commit; only files with the correct magic and API version are accepted. Open <b>Apps</b> from the library to launch."
-#define D_WEB_INSTALL_APP_BUTTON    "Install app"
 #define D_WEB_NOTES_HEADING         "Notes"
 #define D_WEB_NOTES_DESC            "Uploaded books are normalized and compacted before saving, so a source TXT can be larger than the final stored file. The reader is optimized for UTF-8 plain text."
 
@@ -221,13 +148,10 @@
 #define D_WEB_MOVE_PLACEHOLDER      "leave blank for root"
 #define D_WEB_CONFIRM_DELETE_FILE   "Delete file?"
 #define D_WEB_DOWNLOAD_BUTTON       "Download"
-#define D_WEB_APPS_PAGE_HEADING     "Apps"
-#define D_WEB_NO_APPS_INSTALLED     "No apps installed."
-#define D_WEB_CONFIRM_DELETE_APP    "Delete app?"
 
 // ----------------------------------------------------------------------------
-//  Plain-text 4xx/5xx error bodies (src/web/files.cpp, bookmarks.cpp,
-//  apps_upload.cpp). These reach the browser on misformed requests; they
+//  Plain-text 4xx/5xx error bodies (src/web/files.cpp and related routes).
+//  These reach the browser on malformed requests; they
 //  surface as page content if the user navigates a bad URL.
 // ----------------------------------------------------------------------------
 #define D_WEB_ERR_MISSING_ID            "missing id"
@@ -243,12 +167,6 @@
 #define D_WEB_ERR_DEST_EXISTS           "destination exists"
 #define D_WEB_ERR_MOVE_FAILED           "move failed"
 #define D_WEB_ERR_MISSING_ID_PAGE       "missing id/page"
-#define D_WEB_ERR_MISSING_BOOK_IDX      "missing book/idx"
-#define D_WEB_ERR_BAD_BOOK              "bad book"
-#define D_WEB_ERR_BAD_IDX               "bad idx"
-#define D_WEB_ERR_MISSING_BOOK          "missing book"
-#define D_WEB_ERR_MISSING_NAME          "missing name"
-#define D_WEB_ERR_INVALID_NAME          "invalid name"
 
 // ----------------------------------------------------------------------------
 //  List page (src/web/list.cpp)
@@ -266,13 +184,13 @@
 //  Reset page (src/web/reset.cpp)
 // ----------------------------------------------------------------------------
 #define D_WEB_RESET_HEADING         "Factory Reset"
-#define D_WEB_RESET_SUBTITLE        "Erase all books, bookmarks, progress, and custom assets."
+#define D_WEB_RESET_SUBTITLE        "Erase all books, progress, and custom assets."
 #define D_WEB_RESET_CONFIRM_HEADING "Confirm reset"
-#define D_WEB_RESET_WARNING         "This will delete ALL books, bookmarks and reading progress."
+#define D_WEB_RESET_WARNING         "This will delete ALL books and reading progress."
 #define D_WEB_RESET_DETAIL          "The device filesystem will be formatted and settings will return to defaults."
 #define D_WEB_RESET_YES_BUTTON      "Yes, reset"
 #define D_WEB_RESET_COMPLETE_HEADING "Factory reset complete"
-#define D_WEB_RESET_COMPLETE_DESC   "All books, bookmarks, progress and custom assets were removed. The device is now back to a clean state."
+#define D_WEB_RESET_COMPLETE_DESC   "All books, progress and custom assets were removed. The device is now back to a clean state."
 #define D_WEB_GO_HOME_BUTTON        "Go to home"
 #define D_WEB_OPEN_FILES_BUTTON     "Open files"
 #define D_WEB_RESET_SUCCESS_TITLE   "Reset complete"
@@ -331,16 +249,8 @@
 #define D_WEB_BUTTONS_SAVE          "Save buttons"
 #define D_WEB_BUTTONS_LOCK_HINT     "If locked, repeat any hold gesture to unlock."
 #define D_WEB_BUTTONS_ACTION_NONE     "None"
-#define D_WEB_BUTTONS_ACTION_BOOKMARK "Bookmark page"
 #define D_WEB_BUTTONS_ACTION_LOCK     "Lock device"
 #define D_WEB_BUTTONS_ACTION_MENU     "Open menu"
-
-// Device personalization card (src/web/settings.cpp).
-#define D_WEB_DEVICE_HEADING        "Device"
-#define D_WEB_DEVICE_INTRO          "Personalize the device name shown on the library screen header."
-#define D_WEB_HEADER_TITLE_LABEL    "Header title"
-#define D_WEB_HEADER_TITLE_HINT     "Shown at the top of the library screen. Leave empty for no title."
-#define D_WEB_HEADER_TITLE_RESET    "Reset to default"
 
 // ----------------------------------------------------------------------------
 //  Upload (book + sleep image) routes (src/web/upload.cpp)
@@ -372,56 +282,6 @@
 #define D_WEB_SLEEP_ERR_SIZE        "Sleep image must be exactly 3904 bytes"
 #define D_WEB_SLEEP_ERR_SAVE        "Failed to save sleep image"
 #define D_WEB_SLEEP_ERR_ABORTED     "Sleep image upload aborted"
-
-// ----------------------------------------------------------------------------
-//  App upload route (src/web/apps_upload.cpp)
-// ----------------------------------------------------------------------------
-#define D_WEB_APP_UPLOAD_ERR_FALLBACK "App upload failed"
-#define D_WEB_APP_INSTALLED_HEADING "App installed"
-#define D_WEB_APP_INSTALLED_DESC    "Open the device, scroll the library to <b>Apps</b>, and double-click to launch."
-#define D_WEB_APP_LABEL             "App"
-#define D_WEB_APPS_NOW              "Apps now"
-#define D_WEB_APP_INSTALLED_SUBTITLE "App saved to /apps/."
-#define D_WEB_APP_INSTALLED_BANNER  "&#10003; App ready to run."
-#define D_WEB_APP_VALID_OK          "OK"
-#define D_WEB_APP_VALID_TOO_SMALL   "Invalid app (file too small)"
-#define D_WEB_APP_VALID_BAD_MAGIC   "Invalid app (bad magic)"
-#define D_WEB_APP_VALID_BAD_ENTRY   "Invalid app (bad entry offset)"
-#define D_WEB_APP_VALID_BAD_RELOC   "Invalid app (bad reloc table)"
-#define D_WEB_APP_VALID_API_FMT     "Invalid app (API v%u, need v%u)"
-#define D_WEB_APP_VALID_INVALID     "Invalid app"
-#define D_WEB_APPS_DIR_FULL         "Apps directory full"
-#define D_WEB_ERR_CANT_CREATE_TEMP_APP "Cannot create temp app file"
-#define D_WEB_APP_TOO_LARGE         "App too large (> 48 KB)"
-#define D_WEB_APP_BINARY_TOO_SMALL  "App binary too small"
-#define D_WEB_APP_CANT_READ_HEADER  "Could not read app header"
-#define D_WEB_APP_FINALIZE_FAILED   "Failed to finalize app upload"
-#define D_WEB_APP_UPLOAD_ABORTED    "App upload aborted"
-
-// ----------------------------------------------------------------------------
-//  Bookmarks web page (src/web/bookmarks.cpp)
-// ----------------------------------------------------------------------------
-#define D_WEB_BOOKMARKS_HEADING     "Bookmarks"
-#define D_WEB_BOOKMARKS_SUBTITLE    "Saved reading positions for Paginotto, grouped by book."
-#define D_WEB_NO_BOOKS_YET          "No books available yet."
-#define D_WEB_NO_BOOKMARKS_CARD     "No bookmarks"
-#define D_WEB_BOOKMARKS_OPEN_FAILED_CARD "Open failed"
-#define D_WEB_BOOKMARK_PILL_PREFIX  "Bookmark "
-#define D_WEB_BOOKMARK_VIEW         "View"
-#define D_WEB_CONFIRM_DELETE_BOOKMARK "Delete bookmark?"
-#define D_WEB_BOOKMARK_DOWNLOAD_ALL "Download all bookmarks"
-#define D_WEB_BOOKMARK_VIEW_HEADING "Bookmark View"
-#define D_WEB_BOOKMARK_VIEW_SUBTITLE "Preview the saved page text for this bookmark."
-#define D_WEB_BOOKMARK_VIEW_BACK_NAV "&#8592; Back"
-#define D_WEB_BOOKMARK_PAGE_EMPTY   "(empty)"
-#define D_WEB_BOOKMARK_OPEN_FAILED_DOT "Open failed."
-
-// Bookmark export plaintext labels (the .txt file downloads).
-// Separators (==== / ----) stay verbatim and are NOT translated.
-#define D_WEB_BMEXPORT_BOOK         "Book: "
-#define D_WEB_BMEXPORT_BOOKMARKS    "Bookmarks: "
-#define D_WEB_BMEXPORT_BOOKMARK_LBL "Bookmark "
-#define D_WEB_NO_BOOKMARKS_THIS_BOOK "No bookmarks for this book"
 
 // ----------------------------------------------------------------------------
 //  In-browser reader + find/jump (src/web/find.cpp).

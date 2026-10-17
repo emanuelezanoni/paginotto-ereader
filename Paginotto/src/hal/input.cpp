@@ -321,7 +321,6 @@ void ButtonState::poll() {
           // apps-API raw counter *before* the multi-click accumulator so
           // apps see every short release even when the classifier later
           // groups them into a double/triple.
-          rawPressCount_++;
           clickCount_++;
           lastRelease_ = edgeTime;
           if (clickCount_ == 1) firstClickRelease_ = edgeTime;

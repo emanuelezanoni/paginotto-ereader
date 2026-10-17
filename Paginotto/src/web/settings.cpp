@@ -7,33 +7,12 @@
 #include "src/storage/page_cache.h"       // deletePageCacheForBook
 #include "src/storage/preferences_store.h"
 #include "src/ui/font.h"
-#include "src/ui/header_title.h"
 #include "src/ui/reader.h"                // g_bookview, findPageForOffset, renderCurrentPage
 #include "src/ui/reader_actions.h"        // ButtonAction + Gestures
 #include "src/ui/screens/reader_screen.h" // g_readerScreen — active-reader check
 #include "src/ui/lock.h"
 #include "src/ui/sleep.h"
 #include "src/web/chrome.h"
-
-// ----------------------------------------------------------------------------
-//  HTML escaping for user-supplied text rendered in attributes
-// ----------------------------------------------------------------------------
-static String htmlAttrEscape(const char* raw) {
-  String out;
-  out.reserve(strlen(raw) + 8);
-  while (*raw) {
-    switch (*raw) {
-      case '&':  out += "&amp;";  break;
-      case '"':  out += "&quot;"; break;
-      case '\'': out += "&#39;";  break;
-      case '<':  out += "&lt;";   break;
-      case '>':  out += "&gt;";   break;
-      default:   out += *raw;     break;
-    }
-    raw++;
-  }
-  return out;
-}
 
 // ----------------------------------------------------------------------------
 //  Helpers for the remappable-button section
@@ -59,7 +38,6 @@ static void appendActionSelect(String& out, const char* nameId, const char* labe
   out += nameId;
   out += "'>";
   appendActionOption(out, ACTION_NONE,     D_WEB_BUTTONS_ACTION_NONE,     current);
-  appendActionOption(out, ACTION_BOOKMARK, D_WEB_BUTTONS_ACTION_BOOKMARK, current);
   appendActionOption(out, ACTION_LOCK,     D_WEB_BUTTONS_ACTION_LOCK,     current);
   appendActionOption(out, ACTION_MENU,     D_WEB_BUTTONS_ACTION_MENU,     current);
   out += "</select></div>";
@@ -100,21 +78,6 @@ static void handleSettings() {
     "<a href='/'>" D_WEB_NAV_HOME "</a><a href='/screensavers'>" D_WEB_NAV_SCREENSAVER "</a>"
   );
   out.reserve(out.length() + 4500);
-
-  // Device personalization card — separate form, no layout-remap interaction.
-  out += "<div class='card'><h2>" D_WEB_DEVICE_HEADING "</h2>";
-  out += "<p class='muted'>" D_WEB_DEVICE_INTRO "</p>";
-  out += "<form method='POST' action='/settings' accept-charset='UTF-8' style='margin-top:12px'>";
-  out += "<div><label for='hdr'>" D_WEB_HEADER_TITLE_LABEL "</label>";
-  out += "<input type='text' id='hdr' name='hdr' maxlength='31' value='";
-  out += htmlAttrEscape(HeaderTitle::current());
-  out += "' placeholder='" LIB_HEADER_TITLE "'>";
-  out += "<div class='hint'>" D_WEB_HEADER_TITLE_HINT "</div></div>";
-  out += "<label style='display:flex;gap:8px;align-items:center;margin-top:10px;cursor:pointer'>";
-  out += "<input type='checkbox' name='hdr_rst' value='1' style='width:auto'>";
-  out += "<span>" D_WEB_HEADER_TITLE_RESET "</span></label>";
-  out += "<div class='actions' style='margin-top:14px'><button type='submit'>" D_WEB_SAVE_SETTINGS_BUTTON "</button></div>";
-  out += "</form></div>";
 
   out +=
     "<div class='card'><h2>" D_WEB_READING_HEADING "</h2>"
@@ -265,17 +228,6 @@ static void handleSettingsPost() {
     if (ns != Sleep::noScreensaver()) Sleep::setNoScreensaver(ns);
     bool ls = server.hasArg("lckslp");
     if (ls != Sleep::lockOnSleep()) Sleep::setLockOnSleep(ls);
-  }
-
-  // Header title — its own form card.
-  if (server.hasArg("hdr")) {
-    if (server.hasArg("hdr_rst")) {
-      HeaderTitle::resetToDefault();
-    } else {
-      String hdr = server.arg("hdr");
-      hdr.trim();
-      HeaderTitle::set(hdr.c_str());
-    }
   }
 
   // Gesture bindings — `setAction*` clamp internally, but we still check

@@ -13,7 +13,7 @@
 
 // Open a page: <html><head> + title/viewport + linked stylesheet, then a
 // <body> wrapper with header (title + subtitle + nav). `wide` widens the
-// content max-width for tabular pages (files, bookmarks, list).
+// content max-width for tabular pages (files, list).
 String webPageStart(const String& title, const String& subtitle,
                     const String& navHtml, bool wide = false);
 

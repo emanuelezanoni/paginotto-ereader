@@ -39,11 +39,4 @@ String sanitizeFolderInput(const String& raw);
 // "book.txt" if empty.
 String sanitizeUploadedFilename(String fname);
 
-// Sibling of `sanitizeUploadedFilename` for app .bin uploads. Removes path
-// components, restricts to a safe byte set, kills repeated "..", strips
-// every extension (so `my.app.bin` becomes `my_app.bin` after byte
-// filtering — single extension), and ensures `.bin` suffix. Falls back to
-// `"app.bin"` if empty.
-String sanitizeUploadedAppFilename(String fname);
-
 #endif  // PALA_PURE_PATHS_H

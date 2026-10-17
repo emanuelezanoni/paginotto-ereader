@@ -9,10 +9,10 @@ static constexpr const char* kKeyExtraLong = "cfg_btnXL";
 static constexpr const char* kKeyClickHold = "cfg_btnCH";
 
 // Defaults chosen to make the device useful out of the box:
-//   long      = bookmark — the most common action while reading
+//   long      = none
 //   extralong = lock     — a deliberate "I'm putting it down" gesture
 //   clickhold = menu     — easy chord, doesn't fight short-click paging
-static ButtonAction s_long      = ACTION_BOOKMARK;
+static ButtonAction s_long      = ACTION_NONE;
 static ButtonAction s_extraLong = ACTION_LOCK;
 static ButtonAction s_clickHold = ACTION_MENU;
 
@@ -22,7 +22,7 @@ static ButtonAction clamp(int v) {
 }
 
 void loadSettings() {
-  s_long      = clamp(prefs.getInt(kKeyLong,      ACTION_BOOKMARK));
+  s_long      = clamp(prefs.getInt(kKeyLong,      ACTION_NONE));
   s_extraLong = clamp(prefs.getInt(kKeyExtraLong, ACTION_LOCK));
   s_clickHold = clamp(prefs.getInt(kKeyClickHold, ACTION_MENU));
 }

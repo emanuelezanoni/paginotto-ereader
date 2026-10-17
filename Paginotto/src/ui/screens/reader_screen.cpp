@@ -9,20 +9,12 @@
 #include "src/ui/screens/library_screen.h"
 #include "src/ui/sleep.h"                    // Sleep::enter on ACTION_LOCK
 #include "src/ui/text.h"
-#include "src/ui/toast.h"                    // Toast::show for bookmark-saved feedback
 
 // Carry out one of the bindable reader actions. No-op for ACTION_NONE.
 // Lives at the screen layer because the actions are reader-context things
-// (bookmark, lock, menu) — not generic input-layer concepts.
+// (lock, menu) — not generic input-layer concepts.
 static void performReaderAction(ButtonAction action) {
   switch (action) {
-    case ACTION_BOOKMARK: {
-      const char* msg = addBookmarkForCurrentBook();
-      if (msg) Toast::show(msg);
-      g_bookview.cursor.pageTurnsSinceFull++;
-      renderCurrentPage();
-      break;
-    }
     case ACTION_LOCK:
       // Persist lock state, then sleep immediately. On wake, the main loop
       // sees Lock::isLocked() and swallows input until an unlock gesture.
@@ -68,8 +60,7 @@ void ReaderScreen::onButton(const ButtonEvent& e) {
   }
 
   // Remappable hold gestures dispatch through the user's binding. NB:
-  // ACTION_BOOKMARK on Long restores the original (pre-PR-#15) behavior;
-  // an unbound gesture (ACTION_NONE) is a no-op.
+  // An unbound gesture (ACTION_NONE) is a no-op.
   if (e.kind == ButtonEvent::Long
    || e.kind == ButtonEvent::VeryLong
    || e.kind == ButtonEvent::ClickHold) {

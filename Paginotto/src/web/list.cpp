@@ -12,7 +12,7 @@ static void handleListWeb() {
   String out = webPageStart(
     D_WEB_LIST_HEADING,
     D_WEB_LIST_SUBTITLE,
-    "<a href='/'>" D_WEB_NAV_HOME "</a><a href='/files'>" D_WEB_NAV_FILES "</a><a href='/bookmarks'>" D_WEB_NAV_BOOKMARKS "</a><a href='/settings'>" D_WEB_NAV_SETTINGS "</a>",
+    "<a href='/'>" D_WEB_NAV_HOME "</a><a href='/files'>" D_WEB_NAV_FILES "</a><a href='/settings'>" D_WEB_NAV_SETTINGS "</a>",
     true
   );
 

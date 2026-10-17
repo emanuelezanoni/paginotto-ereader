@@ -16,7 +16,7 @@ The easiest way to flash a board is via the web installer. Plug your Heltec Wire
 - **Stable** — latest tagged release (`vX.Y.Z`).
 - **Development** — latest build from `dev`; new features, may break.
 
-Each channel page lists both display revisions (V1.1 / V1.2). Pick the one that matches your board and click **Install**. The installer keeps existing reading progress, bookmarks, and uploaded books across re-flashes.
+Each channel page lists both display revisions (V1.1 / V1.2). Pick the one that matches your board and click **Install**. The installer keeps existing reading progress and uploaded books across re-flashes.
 
 ## Board Versions
 
@@ -78,44 +78,13 @@ The build-time default only affects the *first* visit from a given browser — o
 
 The device can be locked to stop accidental input (page turns, menu, navigation) while it rests in a bag or pocket. The locked state is persisted to NVS (`cfg_locked`), so a device that fully powers down comes back locked.
 
-Locking is a remappable button action. In the web UI under **Settings → Buttons** you can bind each of the three hold gestures — long press, very-long press, click-hold — to *None*, *Bookmark*, *Lock device*, or *Menu*. Out-of-box defaults:
+Locking is a remappable button action. In the web UI under **Settings → Buttons** you can bind each of the three hold gestures — long press, very-long press, click-hold — to *None*, *Lock device*, or *Menu*. Out-of-box defaults:
 
-- **Long press** → Bookmark
+- **Long press** → None
 - **Very-long press** (≥ 2 s) → Lock device
 - **Click-hold** → Menu
 
 So by default you lock with a very-long press. Unlocking is intentionally **permissive**: *any* long, very-long, or click-hold press unlocks the device and shows an "Unlocked" toast — after a deep-sleep wake the firmware can't reconstruct a specific chord, so it accepts any hold gesture rather than risk locking you out. While locked, the sleep screen shows a small padlock badge in the top-right corner.
-
-## Apps
-
-Paginotto supports user-installable apps — self-contained position-independent C binaries that run on top of the firmware and have access to the display, button, RTC, and a per-app key-value store. Apps are uploaded over Wi-Fi through the same web UI used for books, and they appear under the **Apps** entry of the library menu. No firmware rebuild is needed to install one.
-
-See [examples/GETTING_STARTED.md](examples/GETTING_STARTED.md) for the full app-author guide — binary format, the `PalaAPI` (v3), required compiler flags, and upload steps.
-
-### Building an app
-
-You need:
-- The `xtensa-esp32s3-elf-gcc` cross-compiler, which ships with the Arduino ESP32 board package. On Linux it is found under `~/.arduino15/packages/esp32/tools/esp-x32/<version>/bin/`; the `Makefile` locates it automatically.
-- `python3` (for the post-build step that patches the entry point offset into the binary).
-
-An app is a single C file that includes `pala_app.h` and `pala_api.h` from the firmware source and exports a `void app_main(const PalaAPI* api)` entry point. The header struct at the start of the binary carries the display name and API version check.
-
-See `examples/click_counter/` for a complete working example with a `Makefile`.
-
-```bash
-cd examples/click_counter
-make
-# produces click_counter.bin
-```
-
-### Uploading an app
-
-1. Select **Upload** from the library menu on the device.
-2. Connect to the `PAGINOTTO-XXXXXX` WiFi network (password: `paginotto`).
-3. Open `http://192.168.4.1` in a browser.
-4. Use the **Upload app (.bin)** card to upload your `.bin` file.
-5. Triple-click to exit upload mode — the app will appear in the Apps menu immediately.
-
 
 ---
 
@@ -209,8 +178,6 @@ Optional flags: `--version <string>` to label the manifest, `--out <dir>` to wri
 ```
 Paginotto/
 ├── Paginotto.ino     # Sketch entry: board selection + setup()/loop()
-├── pala_api.h           # Public app API (firmware ↔ app ABI)
-├── pala_app.h           # PalaAppHeader + version constants
 ├── partitions.csv       # ESP32 partition table
 └── src/                 # Firmware modules
     ├── config.h         # Compile-time constants
@@ -224,7 +191,6 @@ Paginotto/
 docs/                    # Architecture notes + refactor journal
 scripts/                 # PlatformIO pre-build helpers
 test/                    # Host-side CMake unit tests for pure/ + storage/
-examples/                # Sample apps (click_counter, palagotchi)
 install/                 # ESP Web Tools installer page (deployed to GitHub Pages by CI)
 archive/                 # Past firmware revisions, kept for reference
 ```
@@ -244,58 +210,6 @@ Pure modules and KV-backed storage have host-side unit tests under [`test/`](tes
 See [test/README.md](test/README.md) for prerequisites (CMake + a C++17 compiler) and per-platform setup / run instructions for Windows, Linux, and macOS.
 
 
-## App API
-
-Apps communicate with the firmware through the `PalaAPI` function pointer table passed to `app_main`. The current API version is **v3** (`PALA_API_VERSION 3` in `pala_app.h`).
-
-#### Display
-
-| Function | Description |
-|---|---|
-| `clearScreen()` | Clear the display buffer and prepare a new frame |
-| `drawHeader(title)` | Draw the standard section header bar |
-| `drawTextAt(x, y, text, bold)` | Draw text at a pixel position |
-| `drawCenteredLarge(text)` | Draw text centred on screen in a large font |
-| `refreshDisplay()` | Push the frame buffer to the e-ink panel |
-
-#### Input
-
-| Function | Description |
-|---|---|
-| `waitForEvent()` | Block until a button gesture; returns `PALA_CLICK` / `PALA_DOUBLE` / `PALA_TRIPLE` / `PALA_LONG` |
-| `pollEvent()` | Non-blocking variant; returns 0 if no event is ready |
-| `buttonPressed()` | Returns 1 if the button is currently held, 0 otherwise |
-| `pendingPresses()` | Count of individual short press-release events since last call; bypasses multi-click grouping |
-
-#### Timing
-
-| Function | Description |
-|---|---|
-| `millisNow()` | Current uptime in milliseconds |
-| `delayMs(ms)` | Yield for `ms` milliseconds |
-| `rtcSeconds()` | Monotonic seconds counter that survives deep sleep; use for cross-session timing |
-
-#### Storage
-
-| Function | Description |
-|---|---|
-| `storageRead(key, buf, maxlen)` | Read from `/apps/{key}.dat`; returns bytes read, -1 on error |
-| `storageWrite(key, buf, len)` | Write to `/apps/{key}.dat`; returns bytes written, -1 on error |
-
-#### Utilities
-
-| Function | Description |
-|---|---|
-| `snprintf_wrap(buf, len, fmt, ...)` | Standard `snprintf` |
-
-Return from `app_main` to exit back to the Apps menu. Apps decide their own exit gesture — the firmware does not impose one.
-
-**Constraints:**
-- Apps must be compiled `-fPIC -mlongcalls` (position-independent).
-- Apps must not use static mutable variables — the loader does not patch `.data` relocations.
-- Maximum binary size: 48 KB.
-- The `api_version` field in `PalaAppHeader` must match `PALA_API_VERSION` exactly — the firmware rejects mismatched binaries.
-
 ## Features
 
 - TXT book support
@@ -303,7 +217,6 @@ Return from `app_main` to exit back to the Apps menu. Apps decide their own exit
 - Font family choice (Helvetica / OpenDyslexic)
 - Bionic reading mode
 - Reading progress saving
-- Bookmarks (on-device and over the web UI)
 - In-book text search (web UI)
 - Todo list
 - Device lock (see [Device lock](#device-lock))
@@ -312,7 +225,6 @@ Return from `app_main` to exit back to the Apps menu. Apps decide their own exit
 - Adjustable idle sleep timeout
 - Wi-Fi provisioning (Improv) + captive-portal web UI
 - OTA firmware updates over Wi-Fi (see [OTA firmware updates](#ota-firmware-updates))
-- User-installable apps (see [Apps](#apps))
 - Deep sleep mode
 - USB-C charging
 - Lightweight portable design

@@ -1,7 +1,6 @@
 #include "src/ui/text.h"
 
 #include "src/hal/display.h"            // u8g2
-#include "src/pure/bookmarks_codec.h"   // kOffsetUnset
 #include "src/storage/page_cache.h"     // on-disk page-offset cache
 #include "src/ui/font.h"                // Font::useBody / bodyLayout / measureBionicLine / layoutForCache
 
@@ -68,7 +67,7 @@ uint32_t pageOffsetForPage(File& f, const String& path, int page) {
 
   // On-disk fast path: O(1) seek to the highest cached page <= target.
   // The active reader keeps this file fresh for books it visits; cross-book
-  // lookups (web bookmark resolve, page-text export) ride along.
+  // lookups (page-text export) ride along.
   uint32_t off = 0;
   int startPage = loadOffsetForPageFromDisk(path, f.size(),
                                             Font::layoutForCache(),
@@ -80,20 +79,5 @@ uint32_t pageOffsetForPage(File& f, const String& path, int page) {
     if (next == off) break;
     off = next;
   }
-  return off;
-}
-
-uint32_t resolveBookmarkOffset(const String& path, uint16_t page, uint32_t storedOffset) {
-  File f = FS.open(path, "r");
-  if (!f) return 0;
-
-  size_t size = f.size();
-  if (storedOffset != kOffsetUnset && storedOffset < size) {
-    f.close();
-    return storedOffset;
-  }
-
-  uint32_t off = pageOffsetForPage(f, path, page);
-  f.close();
   return off;
 }

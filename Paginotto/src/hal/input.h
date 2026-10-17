@@ -42,13 +42,6 @@ struct ButtonState {
   bool veryLongClick_ = false;   // hold >= VERY_LONG_MS with no preceding click
   bool clickHoldClick_ = false;  // chord: short click immediately followed by a long hold
 
-  // Count of accepted short press-release pairs since the last
-  // `consumePressCount()` call. Bypasses multi-click grouping — every
-  // release that the classifier accepted (long-press releases excluded)
-  // bumps this counter. Surfaced for the Paginotto apps API; firmware code
-  // uses the click flags above instead.
-  uint32_t rawPressCount_ = 0;
-
   void resetClicks() {
     shortClick_ = false;
     doubleClick_ = false;
@@ -67,26 +60,11 @@ struct ButtonState {
     lastRelease_ = 0;
     firstClickRelease_ = 0;
     clickCount_ = 0;
-    rawPressCount_ = 0;
     resetClicks();
   }
 
-  // Apps-API accessors. Hidden from firmware-side callers (the click
-  // flags + `ButtonEvent::fromButtonState` are richer); these exist so
-  // the PalaAPI shim has a stable, non-poking surface to wrap.
-
-  // Is the button physically held down right now? Reads the debounced
-  // state; matches the old `api_buttonPressed`.
+  // Is the button physically held down right now?
   bool isPressed() const { return stablePressed_; }
-
-  // Returns the accumulated raw short-press count and resets it to zero
-  // atomically (from the caller's view — `poll()` doesn't run during
-  // this call). Matches the old `api_pendingPresses`.
-  uint32_t consumePressCount() {
-    uint32_t n = rawPressCount_;
-    rawPressCount_ = 0;
-    return n;
-  }
 
   // Seed press-down state as if the press started at `startMs`. Called
   // from setup() when we wake from deep sleep with the button already
@@ -101,13 +79,6 @@ struct ButtonState {
     pressStart_        = startMs;
     lastStableChange_  = 0;  // first queued edge stays debounce-eligible
   }
-
-  // Read the accumulated raw short-press count without resetting it. Used
-  // by the lifetime-stats counter in `loop()`, which diffs against its
-  // last-seen value each tick. Independent of `consumePressCount` — the
-  // apps API can still consume + reset; stats clamps `lastSeen` to the
-  // current value on the next tick to recover.
-  uint32_t peekPressCount() const { return rawPressCount_; }
 
   bool anyClick() const {
     return shortClick_ || doubleClick_ || tripleClick_ || quadClick_

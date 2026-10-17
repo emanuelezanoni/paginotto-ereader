@@ -8,7 +8,6 @@
 // working unchanged.
 #include "src/pure/text_util.h"
 #include "src/pure/paginator.h"
-#include "src/pure/bookmark_label.h"
 #include "src/hal/file_stream.h"
 
 // ============================================================================
@@ -28,7 +27,7 @@
 //  Above those, two cross-book helpers:
 //
 //    pageOffsetForPage     — locate page N in an arbitrary file (uses disk cache)
-//    resolveBookmarkOffset — return a stored bookmark offset, or look it up
+//    pageOffsetForPage     — locate a page in an arbitrary file
 // ============================================================================
 uint32_t drawPageAt(File& f, uint32_t startPos);
 uint32_t extractPageText(File& f, uint32_t startPos, String& out);
@@ -38,9 +37,5 @@ uint32_t nextPageOffset(File& f, uint32_t startPos);
 // the on-disk page cache for an O(1) start, walks forward via
 // `nextPageOffset` if the requested page is past the cached portion.
 uint32_t pageOffsetForPage(File& f, const String& path, int page);
-
-// Returns `storedOffset` if it's a usable cached value for this book; falls
-// back to `pageOffsetForPage` otherwise. Owns the file handle internally.
-uint32_t resolveBookmarkOffset(const String& path, uint16_t page, uint32_t storedOffset);
 
 #endif  // PALA_UI_TEXT_H

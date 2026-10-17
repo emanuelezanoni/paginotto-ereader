@@ -1,21 +1,16 @@
 #include "src/ui/screens/library_screen.h"
 
 #include "src/hal/display.h"
-#include "src/ui/header_title.h"
+#include "src/config.h"
 #include "src/pure/library_nav.h"         // buildLibraryEntries
 #include "src/pure/paths.h"               // folderLeafLabel, bookLeafLabel
 #include "src/storage/library.h"
 #include "src/storage/list_items.h"       // listHasVisibleItems
 #include "src/ui/font.h"
 #include "src/ui/reader.h"
-#include "src/ui/screens/about_screen.h"
-#include "src/ui/screens/apps_screen.h"
 #include "src/ui/screens/update_screen.h"
-#include "src/ui/screens/bookmarks/book_select_screen.h"
-#include "src/ui/screens/bookmarks/session.h"
 #include "src/ui/screens/list_screen.h"
 #include "src/ui/screens/reader_screen.h"
-#include "src/ui/screens/statistics_screen.h"
 #include "src/ui/screens/upload_screen.h"
 #include "src/ui/widgets.h"
 
@@ -29,8 +24,7 @@
 
 // LibraryScreen-specific row indenting. Other menu screens pass nothing
 // extra to drawMenuRow; the library is the only one with folder nesting
-// and a distinguishing nudge for "system" entries (Bookmarks/List/Device/
-// Upload).
+// and a distinguishing nudge for system entries (List/Update/Upload).
 static const int LIBRARY_DEPTH_INDENT = 10;
 static const int LIBRARY_SYSTEM_NUDGE = 2;
 
@@ -105,10 +99,7 @@ static void toggleExpanded(const char* name) {
 //  Per-entry helpers
 // ----------------------------------------------------------------------------
 static bool isSystemEntryType(LibraryEntryType t) {
-  return t == LIB_ENTRY_BOOKMARKS || t == LIB_ENTRY_LIST
-      || t == LIB_ENTRY_APPS || t == LIB_ENTRY_STATISTICS
-      || t == LIB_ENTRY_ABOUT || t == LIB_ENTRY_UPDATE
-      || t == LIB_ENTRY_UPLOAD;
+  return t == LIB_ENTRY_LIST || t == LIB_ENTRY_UPDATE || t == LIB_ENTRY_UPLOAD;
 }
 
 static int rowIndent(const LibEntry& e) {
@@ -124,11 +115,7 @@ static String entryLabel(const LibEntry& e) {
       return prefix + folderLeafLabel(String(g_library.folders[e.ref]));
     }
     case LIB_ENTRY_BOOK:      return bookLeafLabel(String(g_library.books[e.ref].path));
-    case LIB_ENTRY_BOOKMARKS: return D_MENU_BOOKMARKS;
     case LIB_ENTRY_LIST:      return D_MENU_LIST;
-    case LIB_ENTRY_APPS:       return D_MENU_APPS;
-    case LIB_ENTRY_STATISTICS: return D_MENU_STATISTICS;
-    case LIB_ENTRY_ABOUT:      return D_MENU_DEVICE;
     case LIB_ENTRY_UPDATE:     return D_MENU_UPDATE;
     case LIB_ENTRY_UPLOAD:     return D_MENU_UPLOAD;
   }
@@ -139,12 +126,11 @@ static String entryLabel(const LibEntry& e) {
 //  Screen lifecycle
 // ----------------------------------------------------------------------------
 void LibraryScreen::onEnter() {
-  // Full reset of reader/bookmark scratch state on every library entry —
-  // downstream code never has to reason about stale reader state. Wake
+  // Full reset of reader scratch state on every library entry — downstream
+  // code never has to reason about stale reader state. Wake
   // state doesn't need clearing — it's consumed at boot, so it's already
   // empty during runtime unless the reader has explicitly armed it.
   resetBookView();
-  resetBookmarkSession();
 
   // Reset the cursor but preserve folder expansion across visits — user
   // returning from a sub-screen expects their open folders still open.
@@ -159,13 +145,9 @@ void LibraryScreen::draw() {
 
   // Decide which system entries to show. "List" only appears when the
   // todo list has visible items; the rest are always present.
-  LibraryEntryType systemEntries[7];
+  LibraryEntryType systemEntries[3];
   int systemCount = 0;
-  systemEntries[systemCount++] = LIB_ENTRY_BOOKMARKS;
   if (listHasVisibleItems()) systemEntries[systemCount++] = LIB_ENTRY_LIST;
-  systemEntries[systemCount++] = LIB_ENTRY_APPS;
-  systemEntries[systemCount++] = LIB_ENTRY_STATISTICS;
-  systemEntries[systemCount++] = LIB_ENTRY_ABOUT;
   systemEntries[systemCount++] = LIB_ENTRY_UPLOAD;
   systemEntries[systemCount++] = LIB_ENTRY_UPDATE;
 
@@ -183,7 +165,7 @@ void LibraryScreen::draw() {
   if (s_cursor < 0) s_cursor = 0;
   if (s_cursor >= s_entryCount) s_cursor = max(0, s_entryCount - 1);
 
-  int y = drawSectionHeader(HeaderTitle::current());
+  int y = drawSectionHeader(LIB_HEADER_TITLE);
 
   drawScrollableList(y, s_entryCount, s_cursor,
     [&](int idx, int rowY, bool selected, int /*budget*/) {
@@ -230,29 +212,9 @@ void LibraryScreen::onButton(const ButtonEvent& e) {
     return;
   }
 
-  if (sel.type == LIB_ENTRY_BOOKMARKS) {
-    nextScreen = &g_bmBookSelectScreen;
-    return;
-  }
-
   if (sel.type == LIB_ENTRY_LIST) {
     g_list.selectedIndex = 0;
     nextScreen = &g_listScreen;
-    return;
-  }
-
-  if (sel.type == LIB_ENTRY_APPS) {
-    nextScreen = &g_appsScreen;
-    return;
-  }
-
-  if (sel.type == LIB_ENTRY_STATISTICS) {
-    nextScreen = &g_statsScreen;
-    return;
-  }
-
-  if (sel.type == LIB_ENTRY_ABOUT) {
-    nextScreen = &g_aboutScreen;
     return;
   }
 

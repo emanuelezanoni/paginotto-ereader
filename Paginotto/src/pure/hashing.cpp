@@ -21,7 +21,3 @@ String prefKeyForBook(const String& path) {
   std::snprintf(buf, sizeof(buf), "b_%08lx", (unsigned long)h);
   return String(buf);
 }
-
-String bmKeyFor(const String& bookKey) {
-  return bookKey + "_bm";
-}

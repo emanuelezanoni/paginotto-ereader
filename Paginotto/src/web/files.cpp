@@ -8,7 +8,6 @@
 #include "src/pure/paths.h"
 #include "src/storage/book_metadata.h"
 #include "src/storage/fs_util.h"
-#include "src/storage/app_catalog.h"
 #include "src/storage/library.h"
 #include "src/storage/preferences_store.h"
 #include "src/ui/text.h"            // pageOffsetForPage
@@ -73,7 +72,7 @@ static void handleRoot() {
   String out = webPageStart(
     D_WEB_HOME_TITLE,
     subtitle,
-    "<a href='/files'>" D_WEB_NAV_FILES "</a><a href='/bookmarks'>" D_WEB_NAV_BOOKMARKS "</a><a href='/list'>" D_WEB_NAV_LIST "</a><a href='/screensavers'>" D_WEB_NAV_SCREENSAVER "</a><a href='/settings'>" D_WEB_NAV_SETTINGS "</a><a href='/reset'>" D_WEB_NAV_FACTORY_RESET "</a>"
+    "<a href='/files'>" D_WEB_NAV_FILES "</a><a href='/list'>" D_WEB_NAV_LIST "</a><a href='/screensavers'>" D_WEB_NAV_SCREENSAVER "</a><a href='/settings'>" D_WEB_NAV_SETTINGS "</a><a href='/reset'>" D_WEB_NAV_FACTORY_RESET "</a>"
   );
 
   out += storageCardHtml();
@@ -90,14 +89,6 @@ static void handleRoot() {
     "<div class='actions'><button type='submit'>" D_WEB_UPLOAD_BOOK_BUTTON "</button><a class='btn secondary' href='/files'>" D_WEB_MANAGE_FILES_BUTTON "</a></div>"
     "</form></div>";
 
-  out +=
-    "<div class='card'><h2>" D_WEB_INSTALL_APP_HEADING "</h2>"
-    "<p class='muted'>" D_WEB_INSTALL_APP_DESC "</p>"
-    "<form method='POST' action='/upload-app' enctype='multipart/form-data' style='margin-top:14px'>"
-    "<input type='file' name='file' accept='.bin' required>"
-    "<div class='actions'><button type='submit'>" D_WEB_INSTALL_APP_BUTTON "</button></div>"
-    "</form></div>";
-
   out += "<div class='card'><h2>" D_WEB_NOTES_HEADING "</h2><p class='muted'>" D_WEB_NOTES_DESC "</p></div>";
 
   out += webPageEnd();
@@ -108,7 +99,7 @@ static void handleFiles() {
   String out = webPageStart(
     D_WEB_FILES_HEADING,
     D_WEB_FILES_SUBTITLE,
-    "<a href='/'>" D_WEB_NAV_HOME "</a><a href='/bookmarks'>" D_WEB_NAV_BOOKMARKS "</a><a href='/screensavers'>" D_WEB_NAV_SCREENSAVER "</a><a href='/settings'>" D_WEB_NAV_SETTINGS "</a>",
+    "<a href='/'>" D_WEB_NAV_HOME "</a><a href='/screensavers'>" D_WEB_NAV_SCREENSAVER "</a><a href='/settings'>" D_WEB_NAV_SETTINGS "</a>",
     true
   );
 
@@ -180,36 +171,6 @@ static void handleFiles() {
     out += "</ul>";
   }
 
-  out += "</div>";
-
-  out += "<div class='card'><h2>" D_WEB_APPS_PAGE_HEADING "</h2>";
-  if (g_apps.count == 0) {
-    out += "<p class='muted'>" D_WEB_NO_APPS_INSTALLED "</p>";
-  } else {
-    out += "<ul class='list'>";
-    for (int i = 0; i < g_apps.count; i++) {
-      const char* absPath = g_apps.entries[i].path;
-      String fileName = lastPathComponent(String(absPath));
-      size_t sz = 0;
-      File af = FS.open(absPath, "r");
-      if (af) { sz = af.size(); af.close(); }
-
-      out += "<li><div class='row'><div><h3>";
-      out += htmlEscape(String(g_apps.entries[i].name));
-      out += "</h3><div class='meta'>";
-      out += String((int)sz);
-      out += D_WEB_BOOK_BYTES_LABEL " &middot; ";
-      out += htmlEscape(fileName);
-      out += "</div></div><div style='display:flex;flex-direction:column;gap:6px;align-items:flex-end'>";
-      out += "<a class='btn secondary' href='/download-app?name=" + htmlEscape(fileName) + "' download>" D_WEB_DOWNLOAD_BUTTON "</a>";
-      out += "<form method='POST' action='/del-app' style='margin:0'>";
-      out += "<input type='hidden' name='name' value='";
-      out += htmlEscape(fileName);
-      out += "'><button type='submit' class='btn secondary' onclick=\"return confirm('" D_WEB_CONFIRM_DELETE_APP "')\">" D_WEB_DELETE_BUTTON "</button></form>";
-      out += "</div></div></li>";
-    }
-    out += "</ul>";
-  }
   out += "</div>";
 
   out += webPageEnd();
@@ -362,7 +323,7 @@ static void handleJumpPageWeb() {
   // (display hint) and the byte offset (canonical position used by the
   // reader on next open). Computing the offset requires paginating the
   // book at the current font — file open + page walk. Same cost as the
-  // bookmark resolve path.
+  // page-offset lookup path.
   String path = String(g_library.books[id].path);
   String key = prefKeyForBook(path);
   PreferencesStore kv(prefs);
