@@ -1,5 +1,5 @@
 {
-  "name": "Paginotto (V1.1 display, Español)",
+  "name": "Paginotto (V1.2 display)",
   "version": "dev",
   "new_install_skip_erase": true,
   "builds": [
@@ -9,7 +9,7 @@
         { "path": "bootloader.bin",       "offset": 0 },
         { "path": "partitions.bin",       "offset": 32768 },
         { "path": "boot_app0.bin",        "offset": 57344 },
-        { "path": "firmware-v1_1-es.bin", "offset": 65536 }
+        { "path": "firmware-v1_2.bin", "offset": 65536 }
       ]
     }
   ]

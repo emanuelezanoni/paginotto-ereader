@@ -16,7 +16,7 @@ The easiest way to flash a board is via the web installer. Plug your Heltec Wire
 - **Stable** — latest tagged release (`vX.Y.Z`).
 - **Development** — latest build from `dev`; new features, may break.
 
-Each channel page lists both display revisions (V1.1 / V1.2) and both languages (English / Spanish-LA) — four install buttons total. Pick the one that matches your board + language and click **Install**. The installer keeps existing reading progress, bookmarks, and uploaded books across re-flashes.
+Each channel page lists both display revisions (V1.1 / V1.2). Pick the one that matches your board and click **Install**. The installer keeps existing reading progress, bookmarks, and uploaded books across re-flashes.
 
 ## Board Versions
 
@@ -57,16 +57,9 @@ Once the device has Wi-Fi credentials stored (see [Wi-Fi provisioning](#wi-fi-pr
 - The device must be able to reach the configured update server over HTTPS. A local network without internet access will be reported as *"Cannot reach update server"*.
 
 
-## Language
+## Strings
 
-The firmware ships with two built-in languages, selected at build time:
-
-- `LANG_EN` — English (default)
-- `LANG_ES_LA` — Spanish (Latin America)
-
-One language per binary. PlatformIO users pick a leaf env that already encodes both the board and the language (`wireless-paper-v1_2-en`, `wireless-paper-v1_2-es`, `wireless-paper-v1_1-en`, `wireless-paper-v1_1-es`). Arduino IDE users uncomment one of `LANG_EN` / `LANG_ES_LA` near the top of `Paginotto/Paginotto.ino`, alongside the board `#define`. If nothing is set, the firmware compiles with `LANG_EN` and a `#pragma message` warning.
-
-Strings live in `Paginotto/src/lang/` — `en.h` is the canonical key set; `es_la.h` mirrors it. Adding a new language is additive: clone one of the headers, add the include arm in `src/lang/lang.h`, and add two leaf envs in `platformio.ini` (one per board). See `src/lang/lang.h` for the authoring rules (key set, placeholders, JS-confirm quoting constraint).
+The firmware ships with one built-in string table in `Paginotto/src/lang/strings.h`.
 
 Glyph coverage: Latin Extended (`á é í ó ú ñ Ñ ¿ ¡ ü Ü`) is provided by `u8g2_font_helv*_te` for body, bold, app-large and toast roles. The small bitmap fonts used for the battery percentage and page-number indicator stay on ASCII-only `_tf` tables — they only render digits / `%`, and any translation routed through them would render missing-glyph boxes. Web responses declare `charset=utf-8`.
 
@@ -74,9 +67,9 @@ Glyph coverage: Latin Extended (`á é í ó ú ñ Ñ ¿ ¡ ü Ü`) is provided 
 
 The browser-side configuration UI ships with a light palette and a dark palette and a per-page toggle button in the header. The toggle's choice is stored in the browser's `localStorage` (`palaTheme`), so each device that connects to the captive portal remembers its own preference — there is no server-side persistence.
 
-Out of the box, a first visit defaults to **light**. To change the firmware default (e.g. so a freshly connected device lands in dark mode), pick one of `WEB_THEME_LIGHT` / `WEB_THEME_DARK` at build time, mirroring the language flow:
+Out of the box, a first visit defaults to **light**. To change the firmware default (e.g. so a freshly connected device lands in dark mode), pick one of `WEB_THEME_LIGHT` / `WEB_THEME_DARK` at build time:
 
-- **Arduino IDE** — uncomment one of `WEB_THEME_LIGHT` / `WEB_THEME_DARK` near the top of `Paginotto/Paginotto.ino` (beneath the language block).
+- **Arduino IDE** — uncomment one of `WEB_THEME_LIGHT` / `WEB_THEME_DARK` near the top of `Paginotto/Paginotto.ino`.
 - **PlatformIO** — add `-D WEB_THEME_DARK` to your env's `build_flags` if you want dark as the default; otherwise leave it alone.
 
 The build-time default only affects the *first* visit from a given browser — once the toggle is used, the localStorage choice wins from then on.
@@ -144,10 +137,8 @@ The same sources build under either toolchain.
 1. Install [PlatformIO Core](https://platformio.org/install/cli) (CLI) or the PlatformIO IDE extension for VS Code.
 2. From the repo root:
    ```
-   pio run -e wireless-paper-v1_2-en -t upload    # V1.2 panel, English
-   pio run -e wireless-paper-v1_2-es -t upload    # V1.2 panel, Spanish-LA
-   pio run -e wireless-paper-v1_1-en -t upload    # V1.1 panel, English
-   pio run -e wireless-paper-v1_1-es -t upload    # V1.1 panel, Spanish-LA
+   pio run -e wireless-paper-v1_2 -t upload    # V1.2 panel
+   pio run -e wireless-paper-v1_1 -t upload    # V1.1 panel
    ```
 3. Serial monitor:
    ```
@@ -195,12 +186,10 @@ Source HTML/manifests live in `install/` on the normal branches. The `gh-pages` 
 
 To iterate on the installer page (HTML, Improv Serial provisioning flow, manifest tweaks) without CI:
 
-1. Build all four leaf envs at least once so the firmware bins exist:
+1. Build both board environments at least once so the firmware binaries exist:
    ```
-   pio run -e wireless-paper-v1_1-en
-   pio run -e wireless-paper-v1_1-es
-   pio run -e wireless-paper-v1_2-en
-   pio run -e wireless-paper-v1_2-es
+   pio run -e wireless-paper-v1_1
+   pio run -e wireless-paper-v1_2
    ```
 2. Assemble the bundle. Two layouts are supported:
    ```

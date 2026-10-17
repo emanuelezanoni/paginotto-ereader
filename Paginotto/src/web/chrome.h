@@ -31,7 +31,7 @@ String htmlEscape(const String& in);
 String humanBytes(size_t bytes);
 
 // Used + free + total + percent-used storage card. Title is the card heading
-// (defaults to the language-appropriate "Storage" string).
+// (defaults to the localized "Storage" string).
 String storageCardHtml(const char* title = D_WEB_STORAGE_HEADING);
 
 // For external callers that want just the percent (e.g. banners).

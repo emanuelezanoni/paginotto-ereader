@@ -25,8 +25,8 @@ public:
   static bool isUpdateServerReachable();
 
   // Fetches the manifest for the given channel and compares its version
-  // against the running FW_VERSION. Board and language tokens are resolved
-  // from build-time defines. Blocks for up to 5 s.
+  // against the running FW_VERSION. The board token is resolved from the
+  // build-time display define. Blocks for up to 5 s.
   static OtaCheckResult checkAvailable(const String& channel);
 
   // Downloads the firmware binary for the given channel into the idle OTA

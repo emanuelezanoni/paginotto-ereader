@@ -1,9 +1,8 @@
-#ifndef PALA_LANG_EN_H
-#define PALA_LANG_EN_H
+#ifndef PAGINOTTO_STRINGS_H
+#define PAGINOTTO_STRINGS_H
 
 // ============================================================================
-//  English (en) string table — canonical key set.
-//  See src/lang/lang.h for the authoring rule + selection mechanism.
+//  Paginotto string table.
 // ============================================================================
 
 // ----------------------------------------------------------------------------
@@ -190,7 +189,7 @@
 #define D_WEB_INSTALL_APP_DESC      "Upload a Paginotto app binary (<b>.bin</b>) to <b>/apps</b>. The header is validated before commit; only files with the correct magic and API version are accepted. Open <b>Apps</b> from the library to launch."
 #define D_WEB_INSTALL_APP_BUTTON    "Install app"
 #define D_WEB_NOTES_HEADING         "Notes"
-#define D_WEB_NOTES_DESC            "Uploaded books are normalized and compacted before saving, so a source TXT can be larger than the final stored file. The reader is optimized for UTF-8 plain text and Latin-based languages."
+#define D_WEB_NOTES_DESC            "Uploaded books are normalized and compacted before saving, so a source TXT can be larger than the final stored file. The reader is optimized for UTF-8 plain text."
 
 // ----------------------------------------------------------------------------
 //  Files page (src/web/files.cpp handleFiles + folder/move/jump forms)
@@ -198,7 +197,7 @@
 #define D_WEB_FILES_HEADING         "Files"
 #define D_WEB_FILES_SUBTITLE        "Manage books, folders and library structure for Paginotto."
 #define D_WEB_CREATE_FOLDER_HEADING "Create folder"
-#define D_WEB_CREATE_FOLDER_PLACEHOLDER "books or classics/english"
+#define D_WEB_CREATE_FOLDER_PLACEHOLDER "books or classics"
 #define D_WEB_CREATE_FOLDER_BUTTON  "Create folder"
 #define D_WEB_CREATE_FOLDER_HINT    "Folders live inside /books."
 #define D_WEB_FOLDERS_HEADING       "Folders"
@@ -507,4 +506,4 @@
 #define D_WEB_SS_DST_OVERWRITE      " (overwrite)"
 #define D_WEB_SS_UPLOAD_EDITED      "Upload edited image"
 
-#endif  // PALA_LANG_EN_H
+#endif  // PAGINOTTO_STRINGS_H

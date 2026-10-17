@@ -48,9 +48,9 @@
   #define LIB_HEADER_TITLE "Paginotto"
 #endif
 
-// Language selection (LANG_EN / LANG_ES_LA) and the LANG_EN fallback live in
-// src/lang/lang.h itself — included at the end of this header so every TU
-// that pulls in config.h transitively sees the D_* macros.
+// The firmware string table lives in src/lang/lang.h and is included at the
+// end of this header so every TU that pulls in config.h transitively sees the
+// D_* macros.
 
 static const int SCREEN_W = 250;
 static const int SCREEN_H = 122;
@@ -131,7 +131,7 @@ static const bool ENABLE_DEEP_SLEEP = true;
 // useUiSmall/useUiTiny). No code outside font.cpp references u8g2 font
 // tables directly.
 
-// Language strings (D_* macros) live in src/lang/. Included here so every
+// UI strings (D_* macros) live in src/lang/. Included here so every
 // TU that pulls in config.h transitively sees the macros without per-file
 // includes. lang.h is pure preprocessor — no Arduino dependencies, host-test
 // safe.

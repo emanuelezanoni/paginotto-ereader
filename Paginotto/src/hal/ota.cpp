@@ -25,12 +25,6 @@ static constexpr uint32_t kDownloadStallMs = 30000;
   static constexpr const char* kBoardToken = "v1_1";
 #endif
 
-#if defined(LANG_ES_LA)
-  static constexpr const char* kLangToken = "es";
-#else
-  static constexpr const char* kLangToken = "en";
-#endif
-
 // ----------------------------------------------------------------------------
 
 static void configureClient(WiFiClientSecure& client) {
@@ -67,7 +61,7 @@ OtaCheckResult OTA::checkAvailable(const String& channel) {
   OtaCheckResult result;
 
   String url = String(kOtaBaseUrl) + channel + "/manifest-"
-               + kBoardToken + "-" + kLangToken + ".json";
+               + kBoardToken + ".json";
 
   WiFiClientSecure* client = new WiFiClientSecure();
   if (!client) return result;
