@@ -65,10 +65,6 @@ static void handleSettings() {
   String lg3 = (curGap == 3) ? " selected" : "";
 
 
-  Font::Family curFam = Font::currentFamily();
-  String famH = (curFam == Font::Family::Helvetica)    ? " selected" : "";
-  String famD = (curFam == Font::Family::OpenDyslexic) ? " selected" : "";
-
   bool curBionic   = Font::bionicEnabled();
   String bChecked  = curBionic ? " checked" : "";
 
@@ -90,10 +86,6 @@ static void handleSettings() {
     "<option value='12'"; out += sel12; out += ">" D_WEB_FONT_SIZE_12 "</option>"
     "<option value='14'"; out += sel14; out += ">" D_WEB_FONT_SIZE_14 "</option>"
     "</select><div class='hint'>" D_WEB_FONT_SIZE_HINT "</div></div>"
-    "<div><label for='family'>" D_WEB_FONT_FAMILY_LABEL "</label><select id='family' name='family'>"
-    "<option value='helv'"; out += famH; out += ">" D_WEB_FONT_FAMILY_HELVETICA "</option>"
-    "<option value='dys'";  out += famD; out += ">" D_WEB_FONT_FAMILY_DYSLEXIC  "</option>"
-    "</select><div class='hint'>" D_WEB_FONT_FAMILY_HINT "</div></div>"
     "<div><label for='sleep'>" D_WEB_SLEEP_AFTER_LABEL "</label><select id='sleep' name='sleep'>"
     "<option value='30'";   out += ss30;   out += ">" D_WEB_SLEEP_30S "</option>"
     "<option value='60'";   out += ss60;   out += ">" D_WEB_SLEEP_1M  "</option>"
@@ -148,21 +140,16 @@ static void handleSettings() {
 }
 
 // Apply pending form changes. Returns true if any layout-affecting setting
-// (font size, family, line gap, bionic) was modified — caller uses this to
+// (font size, line gap, bionic) was modified — caller uses this to
 // decide whether to remap the reader's byte-offset cursor afterwards.
 static bool applySettingsForm() {
   bool layoutChanged = false;
 
-  // Font::setBodySize / setLineGap / setFamily / Sleep::setIdleTimeout all
+  // Font::setBodySize / setLineGap / Sleep::setIdleTimeout all
   // clamp + validate internally — no inline guards needed here.
   if (server.hasArg("font")) {
     int fs = server.arg("font").toInt();
     if (fs != Font::currentBodySize()) { Font::setBodySize(fs); layoutChanged = true; }
-  }
-  if (server.hasArg("family")) {
-    String f = server.arg("family");
-    Font::Family want = (f == "dys") ? Font::Family::OpenDyslexic : Font::Family::Helvetica;
-    if (want != Font::currentFamily()) { Font::setFamily(want); layoutChanged = true; }
   }
   if (server.hasArg("sleep")) {
     int ss = server.arg("sleep").toInt();

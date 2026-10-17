@@ -15,7 +15,7 @@
 //  layout change — layout-correctness is a property of the file format itself.
 //
 //  Layout values come from `Font::layoutForCache()` (see font.h). Anything
-//  that changes how the body paginates (body size, line gap, font family,
+//  that changes how the body paginates (body size, line gap,
 //  bionic, statusbar reserve height) flows into that one struct, so this
 //  module never has to know what specifically affects layout.
 //
@@ -26,8 +26,7 @@
 // ============================================================================
 
 // Anything that affects page layout — and therefore must invalidate the
-// cache when changed. Body face is identified by the same (size, family,
-// bionic) tuple the Font module exposes; line gap is the user's spacing
+// cache when changed. Body face is fixed; line gap is the user's spacing
 // preference; statusbar reserve is how many pixels the bottom statusbar
 // steals from the text area (which changes the page's `maxLines`).
 // Packed into the on-disk header at save time; the load path rejects files
@@ -38,7 +37,6 @@
 struct PageCacheLayout {
   int     bodySize;          // 8/10/12/14
   int     lineGap;           // [0, 4]
-  uint8_t family;            // matches Font::Family numeric value (0 = Helv, 1 = Dys)
   uint8_t bionic;            // 0 / 1
   uint8_t statusbarReserve;  // pixels reserved at the bottom; from Statusbar::reserveH()
 };

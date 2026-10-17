@@ -11,7 +11,7 @@
 //
 //  Roles:
 //    Body / Bold   Regular/bold body face at the user-chosen body size
-//                  (8/10/12/14) AND family (Helvetica or OpenDyslexic).
+//                  (8/10/12/14).
 //                  Reader text, menu rows, section headers.
 //    Toast         Helvetica regular 8 — Latin Extended (accent-capable);
 //                  used for toast text where translated strings may carry
@@ -28,11 +28,6 @@
 //  anything that could contain a translation.
 // ============================================================================
 namespace Font {
-
-// Body face family. OpenDyslexic is the alternative face for users with
-// dyslexia; tables come from opendyslexic_u8g2_fonts.h (already vendored
-// at the sketch root).
-enum class Family : uint8_t { Helvetica = 0, OpenDyslexic = 1 };
 
 // Switch the active u8g2 font to the named role. After one of these, raw
 // u8g2 calls (setCursor/print/getUTF8Width) all use the role's table.
@@ -70,7 +65,6 @@ void loadSettings();
 // clamped to [0, 4]. All invalidate the layout cache as needed.
 void setBodySize(int sz);
 void setLineGap(int gap);
-void setFamily(Family fam);
 void setBionic(bool on);
 
 // Current applied values. Page-cache stamping passes everything through
@@ -78,7 +72,6 @@ void setBionic(bool on);
 // the individual values (web settings form, debug output).
 int    currentBodySize();
 int    currentLineGap();
-Family currentFamily();
 bool   bionicEnabled();
 
 // One-shot snapshot of every layout-affecting setting, packed for stamping

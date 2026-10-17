@@ -8,10 +8,6 @@
 #include "src/state.h"        // prefs
 #include "src/ui/statusbar.h" // Statusbar::reserveH
 
-// OpenDyslexic u8g2 font tables. Vendored alongside the sketch (see
-// Paginotto/opendyslexic_u8g2_fonts.h). Only referenced from this file.
-#include "opendyslexic_u8g2_fonts.h"
-
 namespace Font {
 
 // File-private font tables. The rest of the codebase only ever sees the
@@ -27,13 +23,11 @@ static const uint8_t* s_toast   = u8g2_font_helvR08_te;
 // Owned settings.
 //   s_size    — body font size (8/10/12/14). Out-of-set values fall back to 10.
 //   s_lineGap — extra px between body lines, [0, 4].
-//   s_family  — body face family. Drives which table set applyBodySize picks.
 //   s_bionic  — render body text in "bionic reading" mode (bold prefix of
 //               each word). Hooked into text.cpp's draw path; the paginator
 //               picks it up via measureBionicWord.
 static int    s_size    = 10;
 static int    s_lineGap = 0;
-static Family s_family  = Family::Helvetica;
 static bool   s_bionic  = false;
 
 // Layout-metrics cache. Invalid after the mutators below; recomputed on the
@@ -44,23 +38,13 @@ static bool          s_layoutValid = false;
 // NVS keys — file-private; nothing outside font.cpp should reference them.
 static constexpr const char* kKeyBodySize   = "cfg_font";
 static constexpr const char* kKeyLineGap    = "cfg_lgap";
-static constexpr const char* kKeyFamily     = "cfg_font_fam";
 static constexpr const char* kKeyBionic     = "cfg_bionic";
 
 // Pick the (regular, bold) pair for a given size + family. Centralized so
 // applyBodySize and applyFamily share one switch. Returns true if `sz` was
 // in the supported set; out params are always set (10pt fallback otherwise).
-static bool pickFaces(int sz, Family fam,
+static bool pickFaces(int sz,
                       const uint8_t*& outBody, const uint8_t*& outBold) {
-  if (fam == Family::OpenDyslexic) {
-    switch (sz) {
-      case 8:  outBody = u8g2_font_open_dys_r08_te; outBold = u8g2_font_open_dys_b08_te; return true;
-      case 10: outBody = u8g2_font_open_dys_r10_te; outBold = u8g2_font_open_dys_b10_te; return true;
-      case 12: outBody = u8g2_font_open_dys_r12_te; outBold = u8g2_font_open_dys_b12_te; return true;
-      case 14: outBody = u8g2_font_open_dys_r14_te; outBold = u8g2_font_open_dys_b14_te; return true;
-      default: outBody = u8g2_font_open_dys_r10_te; outBold = u8g2_font_open_dys_b10_te; return false;
-    }
-  }
   switch (sz) {
     case 8:  outBody = u8g2_font_helvR08_te; outBold = u8g2_font_helvB08_te; return true;
     case 10: outBody = u8g2_font_helvR10_te; outBold = u8g2_font_helvB10_te; return true;
@@ -74,18 +58,8 @@ static bool pickFaces(int sz, Family fam,
 // cache. Any out-of-set size falls back to 10. Does NOT persist — public
 // callers go through setBodySize() / loadSettings().
 static void applyBodySize(int sz) {
-  if (!pickFaces(sz, s_family, s_body, s_bold)) sz = 10;
+  if (!pickFaces(sz, s_body, s_bold)) sz = 10;
   s_size = sz;
-  s_layoutValid = false;
-}
-
-// In-memory family apply: refresh the (body, bold) pair for the current
-// size under the new family. Does NOT persist.
-static void applyFamily(Family fam) {
-  s_family = fam;
-  // pickFaces always writes the out params; current s_size determines the
-  // size half of the (size, family) lookup.
-  (void)pickFaces(s_size, s_family, s_body, s_bold);
   s_layoutValid = false;
 }
 
@@ -125,8 +99,6 @@ const LayoutMetrics& bodyLayout() {
 }
 
 void loadSettings() {
-  int famVal = prefs.getInt(kKeyFamily, 0);
-  applyFamily(famVal == 1 ? Family::OpenDyslexic : Family::Helvetica);
   applyBodySize(prefs.getInt(kKeyBodySize, 10));
   applyLineGap(prefs.getInt(kKeyLineGap, 0));
   s_bionic = (prefs.getInt(kKeyBionic, 0) != 0);
@@ -142,11 +114,6 @@ void setLineGap(int gap) {
   prefs.putInt(kKeyLineGap, s_lineGap);  // s_lineGap reflects clamp
 }
 
-void setFamily(Family fam) {
-  applyFamily(fam);
-  prefs.putInt(kKeyFamily, fam == Family::OpenDyslexic ? 1 : 0);
-}
-
 void setBionic(bool on) {
   if (s_bionic == on) return;
   s_bionic = on;
@@ -158,7 +125,6 @@ void setBionic(bool on) {
 
 int    currentBodySize() { return s_size; }
 int    currentLineGap()  { return s_lineGap; }
-Family currentFamily()   { return s_family; }
 bool   bionicEnabled()   { return s_bionic; }
 
 PageCacheLayout layoutForCache() {
@@ -169,7 +135,6 @@ PageCacheLayout layoutForCache() {
   return PageCacheLayout{
     /*bodySize        =*/s_size,
     /*lineGap         =*/s_lineGap,
-    /*family          =*/(uint8_t)s_family,
     /*bionic          =*/(uint8_t)(s_bionic ? 1 : 0),
     /*statusbarReserve=*/(uint8_t)Statusbar::reserveH(),
   };

@@ -214,7 +214,6 @@ See [test/README.md](test/README.md) for prerequisites (CMake + a C++17 compiler
 
 - TXT book support
 - Adjustable font size and line spacing
-- Font family choice (Helvetica / OpenDyslexic)
 - Bionic reading mode
 - Reading progress saving
 - In-book text search (web UI)
