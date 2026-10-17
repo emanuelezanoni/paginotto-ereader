@@ -42,7 +42,7 @@ void useToast();
 void useUiSmall();
 void useUiTiny();
 
-// Big-display bold (Helvetica B14). Exposed for the Pala apps API's
+// Big-display bold (Helvetica B14). Exposed for the Paginotto apps API's
 // `drawCenteredLarge` — firmware screens use Body/Bold under the
 // user-chosen size and don't reach for this directly.
 void useAppLarge();

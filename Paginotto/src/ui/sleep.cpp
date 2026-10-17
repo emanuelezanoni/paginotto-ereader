@@ -92,14 +92,25 @@ static void drawLockBadge() {
   gfx.drawPixel(iconX + 4, iconY, 0);
 }
 
+static void drawDefaultSleepScreen() {
+  gfx.fillScreen(1);
+  Font::useAppLarge();
+  const char* label = "PAGINOTTO";
+  const int width = u8g2.getUTF8Width(label);
+  const int ascent = u8g2.getFontAscent();
+  u8g2.setCursor((SCREEN_W - width) / 2, (SCREEN_H + 20 + ascent) / 2);
+  u8g2.print(label);
+  Font::useBody();
+}
+
 // Render the screensaver onto the e-ink before powering down. If no user
-// screensaver is configured, leave a clean blank panel.
+// screensaver is configured, show the built-in Paginotto wordmark.
 static void drawSleepScreen() {
   display.fastmodeOff();
   beginPageCanvas();
 
   if (!Screensavers::drawNext()) {
-    gfx.fillScreen(1);
+    drawDefaultSleepScreen();
   }
   if (Lock::isLocked()) drawLockBadge();
   display.update();

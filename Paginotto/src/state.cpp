@@ -12,5 +12,5 @@ EInkDisplay display;
 WebServer server(80);
 Preferences prefs;
 
-char AP_SSID[24] = "PALA-";
-const char* AP_PASS = "palaread";
+char AP_SSID[24] = "PAGINOTTO-";
+const char* AP_PASS = "paginotto";

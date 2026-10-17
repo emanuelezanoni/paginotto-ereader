@@ -2,7 +2,7 @@
 #define PALA_WEB_APPS_UPLOAD_H
 
 // Mounts app routes:
-//   POST /upload-app   — multipart streaming receiver for Pala app .bin
+//   POST /upload-app   — multipart streaming receiver for Paginotto app .bin
 //                        binaries. Files land in /apps/. Validates the
 //                        PalaAppHeader magic before committing so a bad
 //                        upload is rejected at install time, not launch.

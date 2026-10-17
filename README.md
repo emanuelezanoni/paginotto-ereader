@@ -118,7 +118,7 @@ make
 ### Uploading an app
 
 1. Select **Upload** from the library menu on the device.
-2. Connect to the `PALA-XXXXXX` WiFi network (password: `palaread`).
+2. Connect to the `PAGINOTTO-XXXXXX` WiFi network (password: `paginotto`).
 3. Open `http://192.168.4.1` in a browser.
 4. Use the **Upload app (.bin)** card to upload your `.bin` file.
 5. Triple-click to exit upload mode — the app will appear in the Apps menu immediately.

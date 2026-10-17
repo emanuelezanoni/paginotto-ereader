@@ -45,7 +45,7 @@ struct ButtonState {
   // Count of accepted short press-release pairs since the last
   // `consumePressCount()` call. Bypasses multi-click grouping — every
   // release that the classifier accepted (long-press releases excluded)
-  // bumps this counter. Surfaced for the Pala apps API; firmware code
+  // bumps this counter. Surfaced for the Paginotto apps API; firmware code
   // uses the click flags above instead.
   uint32_t rawPressCount_ = 0;
 

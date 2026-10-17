@@ -186,11 +186,21 @@ void setup() {
     drawCenter(D_BOOT_STORAGE_ERROR, D_BOOT_TRY_FACTORY_RESET);
     return;
   }
+  // A previous firmware stored its built-in screensaver as /sleep.bin. Move
+  // it out of the active path once so it cannot survive the rebrand and keep
+  // displaying the old wordmark. User-uploaded screensavers work normally
+  // again after this one-time migration.
+  if (!prefs.getBool("paginotto_ss_migrated", false)) {
+    if (FS.exists("/sleep.bin") && !FS.exists("/legacy_sleep.bin")) {
+      FS.rename("/sleep.bin", "/legacy_sleep.bin");
+    }
+    prefs.putBool("paginotto_ss_migrated", true);
+  }
   ensureBooksDir();
 
   {
     uint64_t chipId = ESP.getEfuseMac();
-    snprintf(AP_SSID, sizeof(AP_SSID), "PALA-%06llX", chipId & 0xFFFFFFULL);
+    snprintf(AP_SSID, sizeof(AP_SSID), "PAGINOTTO-%06llX", chipId & 0xFFFFFFULL);
   }
 
   Font::loadSettings();

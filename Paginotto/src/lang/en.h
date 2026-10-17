@@ -187,7 +187,7 @@
 #define D_WEB_UPLOAD_BOOK_BUTTON    "Upload"
 #define D_WEB_MANAGE_FILES_BUTTON   "Manage files"
 #define D_WEB_INSTALL_APP_HEADING   "Install app"
-#define D_WEB_INSTALL_APP_DESC      "Upload a Pala app binary (<b>.bin</b>) to <b>/apps</b>. The header is validated before commit; only files with the correct magic and API version are accepted. Open <b>Apps</b> from the library to launch."
+#define D_WEB_INSTALL_APP_DESC      "Upload a Paginotto app binary (<b>.bin</b>) to <b>/apps</b>. The header is validated before commit; only files with the correct magic and API version are accepted. Open <b>Apps</b> from the library to launch."
 #define D_WEB_INSTALL_APP_BUTTON    "Install app"
 #define D_WEB_NOTES_HEADING         "Notes"
 #define D_WEB_NOTES_DESC            "Uploaded books are normalized and compacted before saving, so a source TXT can be larger than the final stored file. The reader is optimized for UTF-8 plain text and Latin-based languages."

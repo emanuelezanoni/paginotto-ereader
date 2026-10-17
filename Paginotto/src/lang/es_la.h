@@ -183,7 +183,7 @@
 #define D_WEB_UPLOAD_BOOK_BUTTON    "Subir"
 #define D_WEB_MANAGE_FILES_BUTTON   "Administrar archivos"
 #define D_WEB_INSTALL_APP_HEADING   "Instalar app"
-#define D_WEB_INSTALL_APP_DESC      "Suba un binario de app Pala (<b>.bin</b>) a <b>/apps</b>. El encabezado se valida antes de confirmar; solo se aceptan archivos con la firma y versión de API correctas. Abra <b>Apps</b> desde la biblioteca para ejecutarla."
+#define D_WEB_INSTALL_APP_DESC      "Suba un binario de app Paginotto (<b>.bin</b>) a <b>/apps</b>. El encabezado se valida antes de confirmar; solo se aceptan archivos con la firma y versión de API correctas. Abra <b>Apps</b> desde la biblioteca para ejecutarla."
 #define D_WEB_INSTALL_APP_BUTTON    "Instalar app"
 #define D_WEB_NOTES_HEADING         "Notas"
 #define D_WEB_NOTES_DESC            "Los libros subidos se normalizan y compactan antes de guardarse, por lo que un TXT de origen puede ser más grande que el archivo final almacenado. El lector está optimizado para texto plano UTF-8 e idiomas con alfabeto latino."
