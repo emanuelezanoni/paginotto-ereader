@@ -5,11 +5,9 @@
 #include "src/pure/library_nav.h"         // buildLibraryEntries
 #include "src/pure/paths.h"               // folderLeafLabel, bookLeafLabel
 #include "src/storage/library.h"
-#include "src/storage/list_items.h"       // listHasVisibleItems
 #include "src/ui/font.h"
 #include "src/ui/reader.h"
 #include "src/ui/screens/update_screen.h"
-#include "src/ui/screens/list_screen.h"
 #include "src/ui/screens/reader_screen.h"
 #include "src/ui/screens/upload_screen.h"
 #include "src/ui/widgets.h"
@@ -24,7 +22,7 @@
 
 // LibraryScreen-specific row indenting. Other menu screens pass nothing
 // extra to drawMenuRow; the library is the only one with folder nesting
-// and a distinguishing nudge for system entries (List/Update/Upload).
+// and a distinguishing nudge for system entries (Update/Upload).
 static const int LIBRARY_DEPTH_INDENT = 10;
 static const int LIBRARY_SYSTEM_NUDGE = 2;
 
@@ -99,7 +97,7 @@ static void toggleExpanded(const char* name) {
 //  Per-entry helpers
 // ----------------------------------------------------------------------------
 static bool isSystemEntryType(LibraryEntryType t) {
-  return t == LIB_ENTRY_LIST || t == LIB_ENTRY_UPDATE || t == LIB_ENTRY_UPLOAD;
+  return t == LIB_ENTRY_UPDATE || t == LIB_ENTRY_UPLOAD;
 }
 
 static int rowIndent(const LibEntry& e) {
@@ -115,7 +113,6 @@ static String entryLabel(const LibEntry& e) {
       return prefix + folderLeafLabel(String(g_library.folders[e.ref]));
     }
     case LIB_ENTRY_BOOK:      return bookLeafLabel(String(g_library.books[e.ref].path));
-    case LIB_ENTRY_LIST:      return D_MENU_LIST;
     case LIB_ENTRY_UPDATE:     return D_MENU_UPDATE;
     case LIB_ENTRY_UPLOAD:     return D_MENU_UPLOAD;
   }
@@ -143,11 +140,9 @@ void LibraryScreen::draw() {
   prepareMenuFrame();
   Font::useBody();
 
-  // Decide which system entries to show. "List" only appears when the
-  // todo list has visible items; the rest are always present.
-  LibraryEntryType systemEntries[3];
+  // The system actions are always available after the book catalog.
+  LibraryEntryType systemEntries[2];
   int systemCount = 0;
-  if (listHasVisibleItems()) systemEntries[systemCount++] = LIB_ENTRY_LIST;
   systemEntries[systemCount++] = LIB_ENTRY_UPLOAD;
   systemEntries[systemCount++] = LIB_ENTRY_UPDATE;
 
@@ -209,12 +204,6 @@ void LibraryScreen::onButton(const ButtonEvent& e) {
       drawCenter(D_LIBRARY_OPEN_FAILED, D_LIBRARY_TRY_UPLOAD);
       draw();
     }
-    return;
-  }
-
-  if (sel.type == LIB_ENTRY_LIST) {
-    g_list.selectedIndex = 0;
-    nextScreen = &g_listScreen;
     return;
   }
 

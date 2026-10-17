@@ -3,7 +3,6 @@
 #include "src/web/chrome.h"
 #include "src/web/files.h"
 #include "src/web/find.h"
-#include "src/web/list.h"
 #include "src/web/reset.h"
 #include "src/web/screensavers.h"
 #include "src/web/settings.h"
@@ -17,8 +16,7 @@
 // ============================================================================
 void registerWebRoutes() {
   registerChromeRoutes();      // /style.css
-  registerFilesRoutes();       // /, /files, /del, /mkdir, /rmdir, /move, /jumppage
-  registerListRoutes();        // /list, /list-clear-done
+  registerFilesRoutes();       // /, /books, /del, /mkdir, /rmdir, /move, /jumppage
   registerSettingsRoutes();    // /settings, /del-sleep
   registerFindRoutes();        // /read, /readbook-text, /jumpoffset
   registerScreensaverRoutes(); // /screensavers and subroutes

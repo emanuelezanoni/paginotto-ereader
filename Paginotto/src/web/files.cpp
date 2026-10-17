@@ -14,8 +14,8 @@
 #include "src/web/chrome.h"
 
 // ============================================================================
-//  /               — landing page (storage card + upload form)
-//  /files          — file/folder browser
+//  /               — home page (welcome + storage card + upload form)
+//  /books          — book/folder browser
 //  /download-book  — GET: stream book .txt as attachment (?id=N)
 //  /del            — POST: delete book
 //  /mkdir          — POST: create folder
@@ -60,10 +60,10 @@ static void handleDownloadBook() {
 static void handleRoot() {
   String subtitle = D_WEB_HOME_FW_PREFIX;
   subtitle += FW_VERSION;
-  subtitle += D_WEB_HOME_MIDDOT_SEP;
+  subtitle += D_WEB_HOME_SEPARATOR;
   subtitle += String(g_library.bookCount);
   subtitle += D_WEB_HOME_BOOKS_SUFFIX;
-  subtitle += D_WEB_HOME_MIDDOT_SEP;
+  subtitle += D_WEB_HOME_SEPARATOR;
   subtitle += D_WEB_HOME_FREE_LABEL;
   subtitle += humanBytes(fsFreeBytesSafe());
   subtitle += " / ";
@@ -72,9 +72,10 @@ static void handleRoot() {
   String out = webPageStart(
     D_WEB_HOME_TITLE,
     subtitle,
-    "<a href='/files'>" D_WEB_NAV_FILES "</a><a href='/list'>" D_WEB_NAV_LIST "</a><a href='/screensavers'>" D_WEB_NAV_SCREENSAVER "</a><a href='/settings'>" D_WEB_NAV_SETTINGS "</a><a href='/reset'>" D_WEB_NAV_FACTORY_RESET "</a>"
+    webNav("home")
   );
 
+  out += "<div class='card'><h2>" D_WEB_HOME_WELCOME_HEADING "</h2><p class='muted'>" D_WEB_HOME_WELCOME_DESC "</p></div>";
   out += storageCardHtml();
 
   if (fsTotalBytesSafe() == 0 || fsFreeBytesSafe() < 8192) {
@@ -86,7 +87,7 @@ static void handleRoot() {
     "<p class='muted'>" D_WEB_UPLOAD_BOOK_DESC "</p>"
     "<form method='POST' action='/upload' enctype='multipart/form-data' accept-charset='UTF-8' style='margin-top:14px'>"
     "<input type='file' name='file' accept='.txt,text/plain' required>"
-    "<div class='actions'><button type='submit'>" D_WEB_UPLOAD_BOOK_BUTTON "</button><a class='btn secondary' href='/files'>" D_WEB_MANAGE_FILES_BUTTON "</a></div>"
+    "<div class='actions'><button type='submit'>" D_WEB_UPLOAD_BOOK_BUTTON "</button><a class='btn secondary' href='/books'>" D_WEB_MANAGE_BOOKS_BUTTON "</a></div>"
     "</form></div>";
 
   out += "<div class='card'><h2>" D_WEB_NOTES_HEADING "</h2><p class='muted'>" D_WEB_NOTES_DESC "</p></div>";
@@ -97,9 +98,9 @@ static void handleRoot() {
 
 static void handleFiles() {
   String out = webPageStart(
-    D_WEB_FILES_HEADING,
-    D_WEB_FILES_SUBTITLE,
-    "<a href='/'>" D_WEB_NAV_HOME "</a><a href='/screensavers'>" D_WEB_NAV_SCREENSAVER "</a><a href='/settings'>" D_WEB_NAV_SETTINGS "</a>",
+    D_WEB_BOOKS_HEADING,
+    D_WEB_BOOKS_SUBTITLE,
+    webNav("books"),
     true
   );
 
@@ -127,7 +128,7 @@ static void handleFiles() {
   }
   out += "</div>";
 
-  out += "<div class='card'><h2>" D_WEB_LIBRARY_FILES_HEADING "</h2>";
+  out += "<div class='card'><h2>" D_WEB_LIBRARY_BOOKS_HEADING "</h2>";
   if (g_library.bookCount   >= MAX_BOOKS)   out += "<p style='color:#b91c1c;font-weight:600'>" D_WEB_LIBRARY_FULL_WARN "</p>";
   if (g_library.folderCount >= MAX_FOLDERS) out += "<p style='color:#b91c1c;font-weight:600'>" D_WEB_FOLDER_LIMIT_WARN "</p>";
 
@@ -195,7 +196,7 @@ static void handleDelete() {
   deleteBookMetadata(path);
   loadBooks();   // refresh catalog so the next read sees the deletion
 
-  server.sendHeader("Location", "/files");
+  server.sendHeader("Location", "/books");
   server.send(302, "text/plain", "");
 }
 
@@ -223,7 +224,7 @@ static void handleCreateFolder() {
   }
   loadBooks();   // refresh catalog so the new folder appears
 
-  server.sendHeader("Location", "/files");
+  server.sendHeader("Location", "/books");
   server.send(302, "text/plain", "");
 }
 
@@ -254,7 +255,7 @@ static void handleDeleteFolder() {
   }
   loadBooks();   // refresh catalog so the folder disappears
 
-  server.sendHeader("Location", "/files");
+  server.sendHeader("Location", "/books");
   server.send(302, "text/plain", "");
 }
 
@@ -281,7 +282,7 @@ static void handleMoveBook() {
 
   String newPath = destDir + "/" + lastPathComponent(oldPath);
   if (newPath == oldPath) {
-    server.sendHeader("Location", "/files");
+    server.sendHeader("Location", "/books");
     server.send(302, "text/plain", "");
     return;
   }
@@ -299,7 +300,7 @@ static void handleMoveBook() {
   migrateBookMetadata(oldPath, newPath);   // NVS keys + page-cache file
   loadBooks();   // refresh catalog so the moved book shows in its new folder
 
-  server.sendHeader("Location", "/files");
+  server.sendHeader("Location", "/books");
   server.send(302, "text/plain", "");
 }
 
@@ -336,13 +337,13 @@ static void handleJumpPageWeb() {
     saveSavedOffset(kv, key, offset);
   }
 
-  server.sendHeader("Location", "/files");
+  server.sendHeader("Location", "/books");
   server.send(302, "text/plain", "");
 }
 
 void registerFilesRoutes() {
   server.on("/",             HTTP_GET,  handleRoot);
-  server.on("/files",        HTTP_GET,  handleFiles);
+  server.on("/books",        HTTP_GET,  handleFiles);
   server.on("/download-book", HTTP_GET, handleDownloadBook);
   server.on("/del",      HTTP_POST, handleDelete);          // POST: prevents accidental deletion via browser prefetch
   server.on("/mkdir",    HTTP_POST, handleCreateFolder);

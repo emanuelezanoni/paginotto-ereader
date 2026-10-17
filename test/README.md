@@ -2,7 +2,7 @@
 
 These tests run on your laptop (not on the device) against the pure modules
 in [`src/pure/`](../src/pure/) and the KV-store-backed modules in
-[`src/storage/`](../src/storage/) (`list_items.cpp`).
+[`src/storage/`](../src/storage/).
 
 They're a separate build from the firmware. The firmware build (`pio run`)
 ignores this directory; CMake here ignores everything that depends on the
@@ -78,8 +78,6 @@ test/build/host_tests                 # Linux / macOS / MinGW
 | [`test_text_util.cpp`](test_text_util.cpp) | UTF-8 helpers + typography normalization |
 | [`test_hashing.cpp`](test_hashing.cpp) | FNV-1a + per-book preference keys |
 | [`test_paginator.cpp`](test_paginator.cpp) | line wrapping at words / punctuation / UTF-8 |
-| [`test_list_codec.cpp`](test_list_codec.cpp) | todo-list byte-blob encode/decode |
-| [`test_list_store.cpp`](test_list_store.cpp) | `loadList` / `saveList` against `MapKvStore` |
 
 ## Adding a new test
 

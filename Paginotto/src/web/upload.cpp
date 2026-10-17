@@ -86,7 +86,7 @@ static void handleUploadDone() {
   inner += "<div class='stat'><span class='muted'>" D_WEB_UPLOAD_STORED_SIZE "</span><b>" + humanBytes(storedSize)         + "</b></div>";
   inner += "<div class='stat'><span class='muted'>" D_WEB_UPLOAD_BOOKS_NOW   "</span><b>" + String(g_library.bookCount)    + "</b></div>";
   inner += "<div class='stat'><span class='muted'>" D_WEB_UPLOAD_FREE_SPACE  "</span><b>" + humanBytes(fsFreeBytesSafe())  + "</b></div>";
-  inner += "</div><div class='actions'><a class='btn' href='/'>" D_WEB_UPLOAD_ANOTHER "</a><a class='btn secondary' href='/files'>" D_WEB_OPEN_FILES_BUTTON "</a></div></div>";
+  inner += "</div><div class='actions'><a class='btn' href='/'>" D_WEB_UPLOAD_ANOTHER "</a><a class='btn secondary' href='/books'>" D_WEB_OPEN_BOOKS_BUTTON "</a></div></div>";
   inner += storageCardHtml();
 
   String page = successPage(
@@ -249,7 +249,8 @@ static void handleUploadSleepDone() {
     D_WEB_UPLOAD_COMPLETE_HEADING,
     D_WEB_SLEEP_UPLOAD_SUBTITLE,
     D_WEB_SLEEP_UPLOAD_BANNER,
-    inner
+    inner,
+    "screensavers"
   );
   server.send(200, "text/html; charset=utf-8", page);
 }

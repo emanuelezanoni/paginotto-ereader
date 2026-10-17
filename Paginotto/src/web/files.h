@@ -1,7 +1,7 @@
 #ifndef PALA_WEB_FILES_H
 #define PALA_WEB_FILES_H
 
-// Mounts the home page (`/`) and the file/folder browser (`/files`) plus the
+// Mounts the home page (`/`) and the book/folder browser (`/books`) plus the
 // mutating endpoints they use: /del, /mkdir, /rmdir, /move, /jumppage.
 void registerFilesRoutes();
 

@@ -5,7 +5,7 @@
 //  Project-wide compile-time configuration.
 //
 //  IMPORTANT: This header is included transitively by the pure/ modules
-//  (paginator, list_codec, etc.), which are also compiled
+//  (paginator, etc.), which are also compiled
 //  into the host-test build. It MUST therefore remain host-compatible:
 //
 //    - No <Arduino.h>, <WiFi.h>, or any library header.
@@ -59,8 +59,6 @@ static const int MAX_FOLDERS = 32;
 static const int MAX_FOLDER_PATH = 63;  // chars, excluding null
 static const int MAX_PAGES = 10000;
 static const int MAX_LIBRARY_ENTRIES = (MAX_BOOKS * 2) + (MAX_FOLDERS * 2) + 8;
-static const int MAX_LIST_ITEMS = 16;
-static const int MAX_LIST_TEXT = 64;
 
 // Max silence after the most recent release before we commit a click sequence.
 // The press-in-progress gate in input.cpp's trailing-silence check means this

@@ -13,16 +13,20 @@
 
 // Open a page: <html><head> + title/viewport + linked stylesheet, then a
 // <body> wrapper with header (title + subtitle + nav). `wide` widens the
-// content max-width for tabular pages (files, list).
+// content max-width for the books page.
 String webPageStart(const String& title, const String& subtitle,
                     const String& navHtml, bool wide = false);
 
 // Close out the body + html the matching way.
 String webPageEnd();
 
+// Shared navigation with the current page marked as active.
+String webNav(const char* active);
+
 // Standard "we did the thing" page — banner + inner card content + nav.
 String successPage(const String& title, const String& subtitle,
-                   const String& banner, const String& innerHtml);
+                   const String& banner, const String& innerHtml,
+                   const char* active = "books");
 
 // HTML-escape user-supplied text so we don't break the page or open XSS.
 String htmlEscape(const String& in);

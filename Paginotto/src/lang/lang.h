@@ -8,7 +8,7 @@
 //
 //  All D_* values are plain string-literal #defines. Adjacent string-literal
 //  concatenation is exploited at call sites, e.g.
-//    out += "<h2>" D_WEB_FILES_HEADING "</h2>";
+//    out += "<h2>" D_WEB_BOOKS_HEADING "</h2>";
 //  The compiler folds these into a single literal — zero runtime cost.
 //
 //  Authoring rules:

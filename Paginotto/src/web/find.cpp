@@ -134,8 +134,6 @@ static const char kReadStyle[] PROGMEM =
   ".bv-text{margin-top:14px;max-height:60vh;overflow:auto;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--pre-bg);white-space:pre-wrap;line-height:1.5;font:14px/1.5 system-ui,sans-serif}"
   ".find-hit{background:#fff4a3;color:#1f2328;padding:0 1px;border-radius:3px}"
   ".find-cur{background:#ff9c2b;color:#1f2328}"
-  "html[data-theme=dark] .find-hit{background:#3a3220;color:#e8eaef}"
-  "html[data-theme=dark] .find-cur{background:#b46a0a;color:#fff}"
   "</style>";
 
 // Embedded JS — loads the book text, builds a match list, scrolls between
@@ -246,7 +244,7 @@ static void handleReadView() {
   String out = webPageStart(
     D_WEB_READ_TITLE,
     D_WEB_READ_SUBTITLE,
-    "<a href='/'>" D_WEB_NAV_HOME "</a><a href='/files'>" D_WEB_NAV_FILES "</a>",
+    webNav("books"),
     true
   );
   out.reserve(out.length() + 6000);
@@ -256,7 +254,7 @@ static void handleReadView() {
   out += htmlEscape(String(g_library.books[id].name));
   out += "</h2><div class='meta'>";
   out += String((int)g_library.books[id].size);
-  out += " " D_WEB_READ_BYTES_LABEL " &middot; " D_WEB_READ_CURRENT_PAGE_LABEL " ";
+  out += " " D_WEB_READ_BYTES_LABEL " | " D_WEB_READ_CURRENT_PAGE_LABEL " ";
   out += String(savedPage);
   out += "</div>";
 

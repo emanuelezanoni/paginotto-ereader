@@ -29,7 +29,7 @@ static void handleResetConfirm() {
   String out = webPageStart(
     D_WEB_RESET_HEADING,
     D_WEB_RESET_SUBTITLE,
-    "<a href='/'>" D_WEB_NAV_BACK "</a>"
+    webNav("reset")
   );
   out +=
     "<div class='card'><h2>" D_WEB_RESET_CONFIRM_HEADING "</h2>"
@@ -46,14 +46,15 @@ static void handleResetDo() {
 
   String inner;
   inner.reserve(600);
-  inner += "<div class='card'><h2>" D_WEB_RESET_COMPLETE_HEADING "</h2><p class='muted'>" D_WEB_RESET_COMPLETE_DESC "</p><div class='actions'><a class='btn' href='/'>" D_WEB_GO_HOME_BUTTON "</a><a class='btn secondary' href='/files'>" D_WEB_OPEN_FILES_BUTTON "</a></div></div>";
+  inner += "<div class='card'><h2>" D_WEB_RESET_COMPLETE_HEADING "</h2><p class='muted'>" D_WEB_RESET_COMPLETE_DESC "</p><div class='actions'><a class='btn' href='/'>" D_WEB_GO_HOME_BUTTON "</a><a class='btn secondary' href='/books'>" D_WEB_OPEN_BOOKS_BUTTON "</a></div></div>";
   inner += storageCardHtml();
 
   String page = successPage(
     D_WEB_RESET_SUCCESS_TITLE,
     D_WEB_RESET_SUCCESS_SUBTITLE,
     D_WEB_RESET_BANNER,
-    inner
+    inner,
+    "reset"
   );
   server.send(200, "text/html; charset=utf-8", page);
 }

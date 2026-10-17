@@ -16,16 +16,9 @@
 //  (src/ui/screens/library_screen.cpp). The "+ " / "- " expansion indicators
 //  in entryLabel() are visual symbols and intentionally NOT translated.
 // ----------------------------------------------------------------------------
-#define D_MENU_LIST                 "List"
 #define D_MENU_UPLOAD               "Upload"
 #define D_LIBRARY_OPEN_FAILED       "Open failed"
 #define D_LIBRARY_TRY_UPLOAD        "Try upload again"
-
-// ----------------------------------------------------------------------------
-//  List screen (src/ui/screens/list_screen.cpp)
-// ----------------------------------------------------------------------------
-#define D_LIST_HEADER               "List"
-#define D_LIST_NONE                 "No items"
 
 // ----------------------------------------------------------------------------
 //  Upload screen (src/ui/screens/upload_screen.cpp)
@@ -95,8 +88,7 @@
 //  Navigation links (used across multiple route handlers)
 // ----------------------------------------------------------------------------
 #define D_WEB_NAV_HOME              "Home"
-#define D_WEB_NAV_FILES             "Files"
-#define D_WEB_NAV_LIST              "List"
+#define D_WEB_NAV_BOOKS             "Books"
 #define D_WEB_NAV_SCREENSAVER       "Screensaver"
 #define D_WEB_NAV_SETTINGS          "Settings"
 #define D_WEB_NAV_FACTORY_RESET     "Factory reset"
@@ -106,23 +98,25 @@
 //  Home page (src/web/files.cpp handleRoot)
 // ----------------------------------------------------------------------------
 #define D_WEB_HOME_TITLE            "Paginotto"
+#define D_WEB_HOME_WELCOME_HEADING  "Welcome"
+#define D_WEB_HOME_WELCOME_DESC     "Manage your books, screensaver and reader settings from this control panel."
 #define D_WEB_HOME_FW_PREFIX        "Firmware "
-#define D_WEB_HOME_MIDDOT_SEP       " &middot; "
+#define D_WEB_HOME_SEPARATOR        " | "
 #define D_WEB_HOME_BOOKS_SUFFIX     " books"
 #define D_WEB_HOME_FREE_LABEL       "Free: "
 #define D_WEB_HOME_STORAGE_WARN     "&#9888; Storage is not available or almost full. If uploads fail, delete books or use Factory reset from this web UI."
 #define D_WEB_UPLOAD_BOOK_HEADING   "Upload book"
-#define D_WEB_UPLOAD_BOOK_DESC      "Send UTF-8 plain text files to <b>/books</b> on the device, then sort them into folders from the Files page."
+#define D_WEB_UPLOAD_BOOK_DESC      "Send UTF-8 plain text books to <b>/books</b> on the device, then sort them into folders from the Books page."
 #define D_WEB_UPLOAD_BOOK_BUTTON    "Upload"
-#define D_WEB_MANAGE_FILES_BUTTON   "Manage files"
+#define D_WEB_MANAGE_BOOKS_BUTTON   "Manage books"
 #define D_WEB_NOTES_HEADING         "Notes"
 #define D_WEB_NOTES_DESC            "Uploaded books are normalized and compacted before saving, so a source TXT can be larger than the final stored file. The reader is optimized for UTF-8 plain text."
 
 // ----------------------------------------------------------------------------
-//  Files page (src/web/files.cpp handleFiles + folder/move/jump forms)
+//  Books page (src/web/files.cpp handleFiles + folder/move/jump forms)
 // ----------------------------------------------------------------------------
-#define D_WEB_FILES_HEADING         "Files"
-#define D_WEB_FILES_SUBTITLE        "Manage books, folders and library structure for Paginotto."
+#define D_WEB_BOOKS_HEADING         "Books"
+#define D_WEB_BOOKS_SUBTITLE        "Manage books, folders and library structure for Paginotto."
 #define D_WEB_CREATE_FOLDER_HEADING "Create folder"
 #define D_WEB_CREATE_FOLDER_PLACEHOLDER "books or classics"
 #define D_WEB_CREATE_FOLDER_BUTTON  "Create folder"
@@ -131,14 +125,14 @@
 #define D_WEB_NO_FOLDERS            "No folders yet. Books currently live in the root of /books."
 #define D_WEB_CONFIRM_DELETE_FOLDER "Delete folder? Only empty folders can be deleted."
 #define D_WEB_DELETE_BUTTON         "Delete"
-#define D_WEB_LIBRARY_FILES_HEADING "Library files"
+#define D_WEB_LIBRARY_BOOKS_HEADING "Library books"
 #define D_WEB_LIBRARY_FULL_WARN     "&#9888; Library full (80 books max). Delete books to make room."
 #define D_WEB_FOLDER_LIMIT_WARN     "&#9888; Folder limit reached (32 max)."
 #define D_WEB_NO_BOOKS_UPLOADED     "No books uploaded yet."
 #define D_WEB_BOOK_ROOT             "Root"
 #define D_WEB_BOOK_BYTES_LABEL      " bytes"
-#define D_WEB_BOOK_FOLDER_LABEL     " &middot; folder: "
-#define D_WEB_BOOK_CURRENT_PAGE     " &middot; current page: "
+#define D_WEB_BOOK_FOLDER_LABEL     " | folder: "
+#define D_WEB_BOOK_CURRENT_PAGE     " | current page: "
 #define D_WEB_JUMP_BUTTON           "Jump"
 #define D_WEB_JUMP_HINT             "Set the page that should open next on the device."
 #define D_WEB_JUMP_HINT2            "The first open may take a moment."
@@ -169,18 +163,6 @@
 #define D_WEB_ERR_MISSING_ID_PAGE       "missing id/page"
 
 // ----------------------------------------------------------------------------
-//  List page (src/web/list.cpp)
-// ----------------------------------------------------------------------------
-#define D_WEB_LIST_HEADING          "List"
-#define D_WEB_LIST_SUBTITLE         "Create a simple shopping or to-do list for Paginotto."
-#define D_WEB_LIST_EDIT_HEADING     "Edit list"
-#define D_WEB_LIST_EDIT_DESC        "Items appear on the device only when at least one line contains text. Hold the button on the device to mark an item as done."
-#define D_WEB_LIST_ITEM_PLACEHOLDER "List item"
-#define D_WEB_LIST_SAVE_BUTTON      "Save list"
-#define D_WEB_LIST_DELETE_DONE      "Delete checked items"
-#define D_WEB_LIST_HINT             "Blank rows are ignored. Checked rows can be removed directly."
-
-// ----------------------------------------------------------------------------
 //  Reset page (src/web/reset.cpp)
 // ----------------------------------------------------------------------------
 #define D_WEB_RESET_HEADING         "Factory Reset"
@@ -192,7 +174,7 @@
 #define D_WEB_RESET_COMPLETE_HEADING "Factory reset complete"
 #define D_WEB_RESET_COMPLETE_DESC   "All books, progress and custom assets were removed. The device is now back to a clean state."
 #define D_WEB_GO_HOME_BUTTON        "Go to home"
-#define D_WEB_OPEN_FILES_BUTTON     "Open files"
+#define D_WEB_OPEN_BOOKS_BUTTON     "Open books"
 #define D_WEB_RESET_SUCCESS_TITLE   "Reset complete"
 #define D_WEB_RESET_SUCCESS_SUBTITLE "Paginotto was reset successfully."
 #define D_WEB_RESET_BANNER          "&#10003; Factory reset complete."

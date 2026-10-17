@@ -34,7 +34,6 @@ struct Catalog {
 enum LibraryEntryType {
   LIB_ENTRY_FOLDER,
   LIB_ENTRY_BOOK,
-  LIB_ENTRY_LIST,
   LIB_ENTRY_UPDATE,
   LIB_ENTRY_UPLOAD
 };
@@ -56,7 +55,7 @@ struct LibEntry {
 // `folderExpanded` must be at least `cat.folderCount` long; entry `i`
 // indicates whether `cat.folders[i]` is currently expanded.
 //
-// `systemEntries` is the list of system entries (List/Update/Upload, in any
+// `systemEntries` is the list of system entries (Update/Upload, in any
 // order the caller wants — the screen decides which apply).
 int buildLibraryEntries(
     const Catalog& cat,

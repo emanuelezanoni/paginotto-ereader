@@ -28,16 +28,6 @@
 // #define BOARD_V1_2
 // ────────────────────────────────────────────────────────────────────────────
 
-// ── Web UI default theme: uncomment exactly one ─────────────────────────────
-//   The web UI has a light and a dark palette and a per-page toggle button.
-//   Once a visitor picks one the choice is remembered in their browser's
-//   localStorage and overrides whatever's set here — this define only picks
-//   the *first-visit* default. Default if nothing is set: light.
-//   PlatformIO users can also pass -D WEB_THEME_DARK in build_flags.
-#define WEB_THEME_LIGHT
-// #define WEB_THEME_DARK
-// ────────────────────────────────────────────────────────────────────────────
-
 // When built with PlatformIO, WIRELESS_PAPER + DISPLAY_V1_x come from
 // build_flags and the BOARD_V1_x macros above stay commented out. When
 // built with Arduino IDE, the macros above drive the same defines so the
@@ -74,7 +64,6 @@
 #include "src/pure/hashing.h"
 #include "src/storage/fs_util.h"
 #include "src/storage/library.h"
-#include "src/storage/list_items.h"
 #include "src/storage/page_cache.h"
 #include "src/ui/font.h"
 #include "src/ui/reader.h"
@@ -82,7 +71,6 @@
 #include "src/ui/screen.h"
 #include "src/ui/widgets.h"  // drawCenter
 #include "src/ui/screens/library_screen.h"
-#include "src/ui/screens/list_screen.h"
 #include "src/ui/screens/reader_screen.h"
 #include "src/ui/screens/update_screen.h"
 #include "src/ui/screens/upload_screen.h"
@@ -101,7 +89,6 @@ LibraryScreen              g_libraryScreen;
 ReaderScreen               g_readerScreen;
 UploadScreen               g_uploadScreen;
 UpdateScreen               g_updateScreen;
-ListScreen                 g_listScreen;
 
 Screen* g_currentScreen = &g_libraryScreen;
 
@@ -185,7 +172,6 @@ void setup() {
   // setup() so both flags were available for the boot-clear gate above —
   // don't reload them here.
   loadBooks();
-  loadListItems();
   registerWebRoutes();
   markUserActivity();
 

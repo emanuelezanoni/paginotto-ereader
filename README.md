@@ -63,17 +63,6 @@ The firmware ships with one built-in string table in `Paginotto/src/lang/strings
 
 Glyph coverage: Latin Extended (`á é í ó ú ñ Ñ ¿ ¡ ü Ü`) is provided by `u8g2_font_helv*_te` for body, bold, app-large and toast roles. The small bitmap fonts used for the battery percentage and page-number indicator stay on ASCII-only `_tf` tables — they only render digits / `%`, and any translation routed through them would render missing-glyph boxes. Web responses declare `charset=utf-8`.
 
-## Web UI theme
-
-The browser-side configuration UI ships with a light palette and a dark palette and a per-page toggle button in the header. The toggle's choice is stored in the browser's `localStorage` (`palaTheme`), so each device that connects to the captive portal remembers its own preference — there is no server-side persistence.
-
-Out of the box, a first visit defaults to **light**. To change the firmware default (e.g. so a freshly connected device lands in dark mode), pick one of `WEB_THEME_LIGHT` / `WEB_THEME_DARK` at build time:
-
-- **Arduino IDE** — uncomment one of `WEB_THEME_LIGHT` / `WEB_THEME_DARK` near the top of `Paginotto/Paginotto.ino`.
-- **PlatformIO** — add `-D WEB_THEME_DARK` to your env's `build_flags` if you want dark as the default; otherwise leave it alone.
-
-The build-time default only affects the *first* visit from a given browser — once the toggle is used, the localStorage choice wins from then on.
-
 ## Device lock
 
 The device can be locked to stop accidental input (page turns, menu, navigation) while it rests in a bag or pocket. The locked state is persisted to NVS (`cfg_locked`), so a device that fully powers down comes back locked.
@@ -217,7 +206,6 @@ See [test/README.md](test/README.md) for prerequisites (CMake + a C++17 compiler
 - Bionic reading mode
 - Reading progress saving
 - In-book text search (web UI)
-- Todo list
 - Device lock (see [Device lock](#device-lock))
 - Remappable button gestures
 - Custom screensaver image
