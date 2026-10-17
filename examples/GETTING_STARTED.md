@@ -1,6 +1,6 @@
-# Building a Pala One App
+# Building a Paginotto App
 
-Apps for the Pala One are self-contained position-independent C binaries uploaded to the device over WiFi. This guide covers everything from prerequisites to uploading your first app.
+Apps for the Paginotto are self-contained position-independent C binaries uploaded to the device over WiFi. This guide covers everything from prerequisites to uploading your first app.
 
 ## Prerequisites
 
@@ -26,8 +26,8 @@ typedef struct {
 Always declare it in the `.header` section and initialise `entry_offset`, `reloc_offset`, and `reloc_count` to 0 — the Makefile patches the real values after linking:
 
 ```c
-#include "../../Pala_One_2_1/pala_app.h"
-#include "../../Pala_One_2_1/pala_api.h"
+#include "../../Paginotto/pala_app.h"
+#include "../../Paginotto/pala_api.h"
 
 __attribute__((section(".header")))
 const PalaAppHeader pala_header = {

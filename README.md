@@ -1,32 +1,20 @@
-<img width="1892" height="1053" alt="palaOne" src="https://github.com/user-attachments/assets/0fdef5ba-eabd-4b71-9a0c-4c1dc78a4bee" />
+# Paginotto firmware
 
-# pala-one-firmware
-Pala One — A tiny E-Ink reader project by Paul Lagier
+Firmware for the Paginotto pocket e-book reader.
 
 The goal of the project was to create a simple, distraction-free reading device that feels minimal, portable and easy to build while still looking and behaving more like a real product than a typical DIY electronics project.
 
 This repository contains the firmware source code for the project.
 
-Additional files such as:
-- STL files
-- STEP files
-- assembly guides
-- printable files
-- project downloads
-
-are available separately via Ko-fi:
-
-https://ko-fi.com/s/e14ed892ea
-
-
 ## Install (no toolchain needed)
 
-[Web Installer](https://paullagier.github.io/pala-one-firmware/)
+The web installer will be published here when the Paginotto deployment pipeline
+is ready.
 
 The easiest way to flash a board is via the web installer. Plug your Heltec Wireless Paper into a desktop computer running Chrome, Edge, or Opera, then open the installer page and pick a channel:
 
-- **Stable** ([`/stable/`](https://paullagier.github.io/pala-one-firmware/stable/)) — latest tagged release (`vX.Y.Z`). Use this unless you have a reason not to.
-- **Development** ([`/dev/`](https://paullagier.github.io/pala-one-firmware/dev/)) — latest build from `dev`; new features, may break.
+- **Stable** — latest tagged release (`vX.Y.Z`).
+- **Development** — latest build from `dev`; new features, may break.
 
 Each channel page lists both display revisions (V1.1 / V1.2) and both languages (English / Spanish-LA) — four install buttons total. Pick the one that matches your board + language and click **Install**. The installer keeps existing reading progress, bookmarks, and uploaded books across re-flashes.
 
@@ -38,11 +26,11 @@ There are currently two supported Heltec Wireless Paper versions:
 
 The board version is usually printed on the back of the PCB.
 
-Pick your board's revision in the build step below — either by uncommenting the matching `#define` at the top of `Pala_One_2_1/Pala_One_2_1.ino` (Arduino IDE), or by selecting the matching env (PlatformIO).
+Pick your board's revision in the build step below — either by uncommenting the matching `#define` at the top of `Paginotto/Paginotto.ino` (Arduino IDE), or by selecting the matching env (PlatformIO).
 
 ## Wi-Fi provisioning (Improv)
 
-Besides the SoftAP captive portal, the firmware supports **Improv Serial** Wi-Fi provisioning ([improv-wifi.com](https://www.improv-wifi.com)) over the USB-CDC port, using the [`jnthas/Improv-WiFi-Library`](https://github.com/jnthas/Improv-WiFi-Library). When the board is plugged into a computer, a browser can hand it Wi-Fi credentials directly — the [web installer](https://paullagier.github.io/pala-one-firmware/) does this right after flashing and then redirects to `connected.html`.
+Besides the SoftAP captive portal, the firmware supports **Improv Serial** Wi-Fi provisioning ([improv-wifi.com](https://www.improv-wifi.com)) over the USB-CDC port, using the [`jnthas/Improv-WiFi-Library`](https://github.com/jnthas/Improv-WiFi-Library). When the board is plugged into a computer, a browser can hand it Wi-Fi credentials directly; the Paginotto installer will handle the post-flash redirect once deployed.
 
 Saved credentials let the device join your network in **Station mode** the next time it enters the web UI / upload mode; if none are saved (or the join fails) it falls back to the open SoftAP at `192.168.4.1`.
 
@@ -66,7 +54,7 @@ Once the device has Wi-Fi credentials stored (see [Wi-Fi provisioning](#wi-fi-pr
 ### Requirements
 
 - Wi-Fi credentials must be provisioned first (see below). If none are stored the screen shows *"No Wi-Fi credentials — setup via web installer"*.
-- The device must be able to reach `paullagier.github.io` over HTTPS. A local network without internet access will be reported as *"Cannot reach update server"*.
+- The device must be able to reach the configured update server over HTTPS. A local network without internet access will be reported as *"Cannot reach update server"*.
 
 
 ## Language
@@ -76,9 +64,9 @@ The firmware ships with two built-in languages, selected at build time:
 - `LANG_EN` — English (default)
 - `LANG_ES_LA` — Spanish (Latin America)
 
-One language per binary. PlatformIO users pick a leaf env that already encodes both the board and the language (`wireless-paper-v1_2-en`, `wireless-paper-v1_2-es`, `wireless-paper-v1_1-en`, `wireless-paper-v1_1-es`). Arduino IDE users uncomment one of `LANG_EN` / `LANG_ES_LA` near the top of `Pala_One_2_1/Pala_One_2_1.ino`, alongside the board `#define`. If nothing is set, the firmware compiles with `LANG_EN` and a `#pragma message` warning.
+One language per binary. PlatformIO users pick a leaf env that already encodes both the board and the language (`wireless-paper-v1_2-en`, `wireless-paper-v1_2-es`, `wireless-paper-v1_1-en`, `wireless-paper-v1_1-es`). Arduino IDE users uncomment one of `LANG_EN` / `LANG_ES_LA` near the top of `Paginotto/Paginotto.ino`, alongside the board `#define`. If nothing is set, the firmware compiles with `LANG_EN` and a `#pragma message` warning.
 
-Strings live in `Pala_One_2_1/src/lang/` — `en.h` is the canonical key set; `es_la.h` mirrors it. Adding a new language is additive: clone one of the headers, add the include arm in `src/lang/lang.h`, and add two leaf envs in `platformio.ini` (one per board). See `src/lang/lang.h` for the authoring rules (key set, placeholders, JS-confirm quoting constraint).
+Strings live in `Paginotto/src/lang/` — `en.h` is the canonical key set; `es_la.h` mirrors it. Adding a new language is additive: clone one of the headers, add the include arm in `src/lang/lang.h`, and add two leaf envs in `platformio.ini` (one per board). See `src/lang/lang.h` for the authoring rules (key set, placeholders, JS-confirm quoting constraint).
 
 Glyph coverage: Latin Extended (`á é í ó ú ñ Ñ ¿ ¡ ü Ü`) is provided by `u8g2_font_helv*_te` for body, bold, app-large and toast roles. The small bitmap fonts used for the battery percentage and page-number indicator stay on ASCII-only `_tf` tables — they only render digits / `%`, and any translation routed through them would render missing-glyph boxes. Web responses declare `charset=utf-8`.
 
@@ -88,7 +76,7 @@ The browser-side configuration UI ships with a light palette and a dark palette 
 
 Out of the box, a first visit defaults to **light**. To change the firmware default (e.g. so a freshly connected device lands in dark mode), pick one of `WEB_THEME_LIGHT` / `WEB_THEME_DARK` at build time, mirroring the language flow:
 
-- **Arduino IDE** — uncomment one of `WEB_THEME_LIGHT` / `WEB_THEME_DARK` near the top of `Pala_One_2_1/Pala_One_2_1.ino` (beneath the language block).
+- **Arduino IDE** — uncomment one of `WEB_THEME_LIGHT` / `WEB_THEME_DARK` near the top of `Paginotto/Paginotto.ino` (beneath the language block).
 - **PlatformIO** — add `-D WEB_THEME_DARK` to your env's `build_flags` if you want dark as the default; otherwise leave it alone.
 
 The build-time default only affects the *first* visit from a given browser — once the toggle is used, the localStorage choice wins from then on.
@@ -107,7 +95,7 @@ So by default you lock with a very-long press. Unlocking is intentionally **perm
 
 ## Apps
 
-Pala One supports user-installable apps — self-contained position-independent C binaries that run on top of the firmware and have access to the display, button, RTC, and a per-app key-value store. Apps are uploaded over Wi-Fi through the same web UI used for books, and they appear under the **Apps** entry of the library menu. No firmware rebuild is needed to install one.
+Paginotto supports user-installable apps — self-contained position-independent C binaries that run on top of the firmware and have access to the display, button, RTC, and a per-app key-value store. Apps are uploaded over Wi-Fi through the same web UI used for books, and they appear under the **Apps** entry of the library menu. No firmware rebuild is needed to install one.
 
 See [examples/GETTING_STARTED.md](examples/GETTING_STARTED.md) for the full app-author guide — binary format, the `PalaAPI` (v3), required compiler flags, and upload steps.
 
@@ -179,7 +167,7 @@ Both envs share libraries and partition table via `platformio.ini`. The PIO buil
    - **Adafruit GFX Library** (Adafruit)
    - **U8g2_for_Adafruit_GFX** (olikraus)
    - [`Improv-WiFi-Library`](https://github.com/jnthas/Improv-WiFi-Library) (jnthas) — serial Wi-Fi provisioning; PlatformIO installs it automatically, Arduino IDE users add it by URL
-3. Open `Pala_One_2_1/Pala_One_2_1.ino`. Uncomment exactly one of `BOARD_V1_1` / `BOARD_V1_2` at the top.
+3. Open `Paginotto/Paginotto.ino`. Uncomment exactly one of `BOARD_V1_1` / `BOARD_V1_2` at the top.
 4. Tools → Partition Scheme → **Custom** (the sketch ships its own `partitions.csv`).
 5. Verify / Upload.
 
@@ -188,7 +176,7 @@ Arduino IDE / host-test builds skip the script and fall back to `"dev"` and `"un
 
 ### Web Installer site (channels & CI)
 
-The [web installer](https://paullagier.github.io/pala-one-firmware/) is published to the `gh-pages` branch by [`.github/workflows/deploy-installer.yml`](.github/workflows/deploy-installer.yml). Two channels live side-by-side and never overwrite each other:
+The web installer will be published to the `gh-pages` branch by [`.github/workflows/deploy-installer.yml`](.github/workflows/deploy-installer.yml) once its deployment target is configured. Two channels live side-by-side and never overwrite each other:
 
 | Trigger                       | Channel  | URL path     | `DEBUG_BUILD` | Manifest version |
 |-------------------------------|----------|--------------|---------------|------------------|
@@ -230,8 +218,8 @@ Optional flags: `--version <string>` to label the manifest, `--out <dir>` to wri
 ## Codebase layout
 
 ```
-Pala_One_2_1/
-├── Pala_One_2_1.ino     # Sketch entry: board selection + setup()/loop()
+Paginotto/
+├── Paginotto.ino     # Sketch entry: board selection + setup()/loop()
 ├── pala_api.h           # Public app API (firmware ↔ app ABI)
 ├── pala_app.h           # PalaAppHeader + version constants
 ├── partitions.csv       # ESP32 partition table

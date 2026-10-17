@@ -43,8 +43,8 @@ if sha:
     print(f"build_info.py: BUILD_GIT_HASH={sha}")
 else:
     # No git checkout (zip download, CI without history, etc.). Force
-    # DEBUG_BUILD=0 so the library-screen header shows plain "Pala One"
-    # instead of "Pala One unknown". config.h's fallback BUILD_GIT_HASH
+    # DEBUG_BUILD=0 so the library-screen header shows plain "Paginotto"
+    # instead of "Paginotto unknown". config.h's fallback BUILD_GIT_HASH
     # = "unknown" remains the macro value for anything else that needs it.
     env.Append(CPPDEFINES=[("DEBUG_BUILD", 0)])  # noqa: F821
     print("build_info.py: git unavailable, forcing DEBUG_BUILD=0")

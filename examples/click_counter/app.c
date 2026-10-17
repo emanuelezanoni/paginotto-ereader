@@ -1,5 +1,5 @@
-#include "../../Pala_One_2_1/pala_app.h"
-#include "../../Pala_One_2_1/pala_api.h"
+#include "../../Paginotto/pala_app.h"
+#include "../../Paginotto/pala_api.h"
 
 __attribute__((section(".header")))
 const PalaAppHeader pala_header = {

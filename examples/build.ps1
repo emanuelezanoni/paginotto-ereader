@@ -1,4 +1,4 @@
-# Pala One app builder for Windows.
+# Paginotto app builder for Windows.
 #
 # Builds a single example app without requiring `make` or Git Bash. Uses the
 # xtensa-esp32s3 toolchain installed by Arduino IDE plus the system Python.
@@ -63,8 +63,8 @@ if ($Clean) {
 }
 
 # --- Resolve firmware header include path ------------------------------------
-# Script lives in examples/; headers are at <repo>/Pala_One_2_1.
-$headers = (Resolve-Path (Join-Path $PSScriptRoot '..\Pala_One_2_1')).Path
+# Script lives in examples/; headers are at <repo>/Paginotto.
+$headers = (Resolve-Path (Join-Path $PSScriptRoot '..\Paginotto')).Path
 if (-not (Test-Path (Join-Path $headers 'pala_api.h'))) {
     throw "Cannot find pala_api.h under $headers"
 }

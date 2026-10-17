@@ -8,7 +8,7 @@ NM      = $(TOOLCHAIN)/xtensa-esp32s3-elf-nm
 READELF = $(TOOLCHAIN)/xtensa-esp32s3-elf-readelf
 
 CFLAGS = -fPIC -mlongcalls -Os -fno-jump-tables -nostdlib -nodefaultlibs \
-         -I../../Pala_One_2_1
+         -I../../Paginotto
 
 all: palagotchi.bin
 

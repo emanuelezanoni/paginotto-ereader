@@ -161,7 +161,7 @@ jobs:
           cd site/stable
           for board in v1_1 v1_2; do
             for lang in en es; do
-              name="pala-one-${{ steps.meta.outputs.version }}-${board}-${lang}"
+              name="paginotto-${{ steps.meta.outputs.version }}-${board}-${lang}"
               mkdir -p "../../release/${name}"
               cp bootloader.bin partitions.bin boot_app0.bin \
                  "firmware-${board}-${lang}.bin" \

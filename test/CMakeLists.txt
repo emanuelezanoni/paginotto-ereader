@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.13)
-project(pala_one_host_tests CXX)
+project(paginotto_host_tests CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -12,7 +12,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # KV-store-backed modules — also host-compatible (their firmware-only code
 # is inside `#ifdef ARDUINO` blocks).
 # ---------------------------------------------------------------------------
-set(FW_SRC ${CMAKE_SOURCE_DIR}/../Pala_One_2_1/src)
+set(FW_SRC ${CMAKE_SOURCE_DIR}/../Paginotto/src)
 set(SUT_SRC
   ${FW_SRC}/pure/paths.cpp
   ${FW_SRC}/pure/text_util.cpp
@@ -49,7 +49,7 @@ set(TEST_SRC
 add_executable(host_tests ${SUT_SRC} ${TEST_SRC})
 target_include_directories(host_tests PRIVATE
   ${FW_SRC}
-  ${CMAKE_SOURCE_DIR}/../Pala_One_2_1   # for pala_api.h / pala_app.h
+  ${CMAKE_SOURCE_DIR}/../Paginotto   # for pala_api.h / pala_app.h
   ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
