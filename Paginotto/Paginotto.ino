@@ -186,15 +186,13 @@ void setup() {
     drawCenter(D_BOOT_STORAGE_ERROR, D_BOOT_TRY_FACTORY_RESET);
     return;
   }
-  // A previous firmware stored its built-in screensaver as /sleep.bin. Move
-  // it out of the active path once so it cannot survive the rebrand and keep
-  // displaying the old wordmark. User-uploaded screensavers work normally
-  // again after this one-time migration.
-  if (!prefs.getBool("paginotto_ss_migrated", false)) {
-    if (FS.exists("/sleep.bin") && !FS.exists("/legacy_sleep.bin")) {
-      FS.rename("/sleep.bin", "/legacy_sleep.bin");
-    }
-    prefs.putBool("paginotto_ss_migrated", true);
+  // Remove screensaver files written by the old firmware once. The built-in
+  // Paginotto screensaver is compiled into the firmware; user uploads can
+  // still be added later through the web UI.
+  if (!prefs.getBool("paginotto_cat_ss_migrated", false)) {
+    if (FS.exists("/sleep.bin")) FS.remove("/sleep.bin");
+    if (FS.exists("/legacy_sleep.bin")) FS.remove("/legacy_sleep.bin");
+    prefs.putBool("paginotto_cat_ss_migrated", true);
   }
   ensureBooksDir();
 

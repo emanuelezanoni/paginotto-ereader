@@ -11,7 +11,7 @@
 #include "src/hal/display.h"
 #include "src/hal/input.h"          // injectButtonEdgeNow, markUserActivity
 #include "src/storage/statistics.h" // Statistics::flushToNvs
-#include "src/ui/font.h"            // Font::useToast / Font::useBody
+#include "src/ui/default_screensaver.h"
 #include "src/ui/lock.h"            // Lock::isLocked — gates the lock badge
 #include "src/ui/screen.h"
 #include "src/ui/screensavers.h"   // multi-slot rotation
@@ -94,17 +94,12 @@ static void drawLockBadge() {
 
 static void drawDefaultSleepScreen() {
   gfx.fillScreen(1);
-  Font::useAppLarge();
-  const char* label = "PAGINOTTO";
-  const int width = u8g2.getUTF8Width(label);
-  const int ascent = u8g2.getFontAscent();
-  u8g2.setCursor((SCREEN_W - width) / 2, (SCREEN_H + 20 + ascent) / 2);
-  u8g2.print(label);
-  Font::useBody();
+  gfx.drawXBitmap(0, 0, PAGINOTTO_DEFAULT_SCREENSAVER,
+                  SCREEN_W, SCREEN_H, 0);
 }
 
 // Render the screensaver onto the e-ink before powering down. If no user
-// screensaver is configured, show the built-in Paginotto wordmark.
+// screensaver is configured, show the built-in Paginotto cat image.
 static void drawSleepScreen() {
   display.fastmodeOff();
   beginPageCanvas();
