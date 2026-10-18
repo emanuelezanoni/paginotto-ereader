@@ -76,6 +76,9 @@ TEST_CASE("sanitizeUploadedFilename") {
   CHECK(sanitizeUploadedFilename("weird!@#chars.txt") == "weird___chars.txt");
   // Numeric, punctuation in middle stays as filename
   CHECK(sanitizeUploadedFilename("a1-b2.txt") == "a1-b2.txt");
+  CHECK(sanitizeUploadedFilename("...", 12) == "book.txt");
+  CHECK(sanitizeUploadedFilename("long-name.txt", 8) == "long.txt");
+  CHECK(sanitizeUploadedFilename("caf\xC3\xA9.txt", 8) == "caf.txt");
 }
 
 TEST_CASE("sanitizeUploadedAppFilename") {

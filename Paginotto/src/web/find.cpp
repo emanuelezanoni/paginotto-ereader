@@ -244,8 +244,7 @@ static void handleReadView() {
   String out = webPageStart(
     D_WEB_READ_TITLE,
     D_WEB_READ_SUBTITLE,
-    webNav("books"),
-    true
+    webNav("books")
   );
   out.reserve(out.length() + 6000);
   out += FPSTR(kReadStyle);

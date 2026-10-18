@@ -79,7 +79,7 @@ String sanitizeFolderInput(const String& raw) {
   return out;
 }
 
-String sanitizeUploadedFilename(String fname) {
+String sanitizeUploadedFilename(String fname, size_t maxBytes) {
   int slash = fname.lastIndexOf('/');
   if (slash >= 0) fname = fname.substring(slash + 1);
 
@@ -100,7 +100,18 @@ String sanitizeUploadedFilename(String fname) {
 
   clean.replace("..", "");
   while (clean.startsWith(".")) clean.remove(0, 1);
+  if (clean.length() == 0) clean = "book";
   if (!clean.endsWith(".txt")) clean += ".txt";
-  if (clean.length() == 0) clean = "book.txt";
+
+  // String lengths are bytes. Do not split a UTF-8 continuation sequence
+  // when making the leaf fit the fixed catalog path buffer.
+  if (maxBytes > 4 && clean.length() > maxBytes) {
+    size_t stemBytes = maxBytes - 4;  // reserve .txt
+    while (stemBytes > 0 && (((uint8_t)clean[stemBytes] & 0xC0) == 0x80)) {
+      stemBytes--;
+    }
+    if (stemBytes == 0) clean = "book.txt";
+    else clean = clean.substring(0, stemBytes) + ".txt";
+  }
   return clean;
 }

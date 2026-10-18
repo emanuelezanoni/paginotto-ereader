@@ -120,9 +120,20 @@ static void handleUploadBookStream() {
     }
     s_book.maxBytes = freeBytes;
 
-    String clean = sanitizeUploadedFilename(up.filename);
+    constexpr size_t kMaxBookPath = sizeof(g_library.books[0].path) - 1;
+    constexpr size_t kBookRootBytes = sizeof("/books/") - 1;
+    String clean = sanitizeUploadedFilename(up.filename,
+                                             kMaxBookPath - kBookRootBytes);
     s_book.finalName = clean;
     s_book.tmpPath   = "/books/" + clean + ".tmp";
+
+    // Never let an upload replace an existing book. Check again before the
+    // final rename below in case storage changed during a long upload.
+    if (FS.exists("/books/" + clean)) {
+      s_book.error = D_WEB_ERR_DEST_EXISTS;
+      s_book.tmpPath = "";
+      return;
+    }
 
     if (FS.exists(s_book.tmpPath)) FS.remove(s_book.tmpPath);
     s_book.tmpFile = FS.open(s_book.tmpPath, "w");
@@ -197,8 +208,10 @@ static void handleUploadBookStream() {
         }
       } else if (s_book.tmpPath.length() > 0 && up.totalSize > 0) {
         String finalPath = s_book.tmpPath.substring(0, s_book.tmpPath.length() - 4);
-        if (FS.exists(finalPath)) FS.remove(finalPath);
-        if (FS.rename(s_book.tmpPath, finalPath)) {
+        if (FS.exists(finalPath)) {
+          FS.remove(s_book.tmpPath);
+          s_book.error = D_WEB_ERR_DEST_EXISTS;
+        } else if (FS.rename(s_book.tmpPath, finalPath)) {
           s_book.ok = true;
         } else {
           if (FS.exists(s_book.tmpPath)) FS.remove(s_book.tmpPath);

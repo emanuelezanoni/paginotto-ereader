@@ -40,6 +40,9 @@ static const char kStyleCss[] PROGMEM =
   ".list li{padding:11px 0;border-top:1px solid var(--line-soft)}"
   ".list li:first-child{border-top:0;padding-top:0}"
   ".row{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}"
+  ".book-row{display:flex;gap:16px;align-items:flex-start}"
+  ".book-main{min-width:0;flex:1}"
+  ".book-tools{display:flex;flex-direction:column;gap:6px;align-items:stretch;flex:none}"
   ".meta{color:var(--muted);font-size:13px}"
   ".pill{display:inline-block;background:var(--pill-bg);color:var(--pill-fg);border-radius:999px;padding:3px 8px;font-size:12px}"
   ".pre{white-space:pre-wrap;line-height:1.45;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--pre-bg)}"
@@ -68,7 +71,7 @@ static const char kStyleCss[] PROGMEM =
   "p + p{margin-top:10px}"
   "@media(min-width:760px){.stats{grid-template-columns:repeat(4,minmax(0,1fr))}}"
   "@media(min-width:620px){.grid.cols-2{grid-template-columns:1fr 1fr}}"
-  "@media(max-width:640px){.row,.top{flex-direction:column}.top-side{justify-content:flex-start}.wrap{padding:14px}}"
+  "@media(max-width:640px){.row,.top,.book-row{flex-direction:column}.book-tools{align-self:stretch;flex-direction:row;flex-wrap:wrap}.top-side{justify-content:flex-start}.wrap{padding:14px}}"
   ;
 
 static void handleStyleCss() {

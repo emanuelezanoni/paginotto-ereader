@@ -110,14 +110,14 @@ static void handleFiles() {
   if (g_library.bookCount == 0) {
     out += "<p class='muted'>" D_WEB_NO_BOOKS_UPLOADED "</p>";
   } else {
-    out += "<ul class='list'>";
+    out += "<ul class='list book-list'>";
     for (int i = 0; i < g_library.bookCount; i++) {
       String filePath = String(g_library.books[i].path);
       String folderLabel = g_library.books[i].folder[0] ? prettyRelativeLabel(g_library.books[i].folder) : String(D_WEB_BOOK_ROOT);
       int savedPage = savedPageForBookPath(filePath) + 1;
       if (savedPage < 1) savedPage = 1;
 
-      out += "<li><div class='row'><div><h3>";
+      out += "<li class='book-item'><div class='book-row'><div class='book-main'><h3>";
       out += htmlEscape(String(g_library.books[i].name));
       out += "</h3><div class='meta'>";
       out += String((int)g_library.books[i].size);
@@ -137,12 +137,12 @@ static void handleFiles() {
       out += "<form method='POST' action='/move' class='stack small' accept-charset='UTF-8' style='margin-top:10px'>";
       out += "<input type='hidden' name='id' value='" + String(i) + "'>";
       out += "<input type='text' name='folder' value='" + htmlEscape(String(g_library.books[i].folder)) + "' placeholder='" D_WEB_MOVE_PLACEHOLDER "' maxlength='64'>";
-      out += "<div class='actions'><button type='submit'>" D_WEB_MOVE_BUTTON "</button><span class='muted'>" D_WEB_MOVE_HINT "</span></div></form></div>";
+      out += "<div class='actions'><button type='submit'>" D_WEB_MOVE_BUTTON "</button><span class='muted'>" D_WEB_MOVE_HINT "</span></div></form>";
       out += "<form method='POST' action='/rename' class='stack small' accept-charset='UTF-8' style='margin-top:10px'>";
       out += "<input type='hidden' name='id' value='" + String(i) + "'>";
       out += "<input type='text' name='name' value='" + htmlEscape(stripTxtExt(lastPathComponent(filePath))) + "' placeholder='" D_WEB_RENAME_PLACEHOLDER "' maxlength='79' required autocomplete='off' autocapitalize='off' spellcheck='false'>";
       out += "<div class='actions'><button type='submit'>" D_WEB_RENAME_BUTTON "</button><span class='muted'>" D_WEB_RENAME_HINT "</span></div></form></div>";
-      out += "<div style='display:flex;flex-direction:column;gap:6px;align-items:flex-end'>";
+      out += "<div class='book-tools'>";
       out += "<a class='btn secondary' href='/download-book?id=" + String(i) + "' download>" D_WEB_DOWNLOAD_BUTTON "</a>";
       out += "<form method='POST' action='/del' style='margin:0'><input type='hidden' name='id' value='" + String(i) + "'>";
       out += "<button type='submit' class='btn secondary' onclick=\"return confirm('" D_WEB_CONFIRM_DELETE_FILE "')\">" D_WEB_DELETE_BUTTON "</button></form>";
@@ -255,13 +255,17 @@ static void handleMoveBook() {
   String oldPath = String(g_library.books[id].path);
   String folder = sanitizeFolderInput(server.arg("folder"));
   String destDir = (folder.length() == 0) ? String("/books") : String("/books/") + folder;
+  String newPath = destDir + "/" + lastPathComponent(oldPath);
+  if (newPath.length() >= sizeof(g_library.books[id].path)) {
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_NAME);
+    return;
+  }
 
   if (!ensureDirRecursive(destDir)) {
     server.send(500, "text/plain; charset=utf-8", D_WEB_ERR_FOLDER_CREATE_FAILED);
     return;
   }
 
-  String newPath = destDir + "/" + lastPathComponent(oldPath);
   if (newPath == oldPath) {
     server.sendHeader("Location", "/books");
     server.send(302, "text/plain", "");
@@ -302,12 +306,12 @@ static void handleRenameBook() {
   }
 
   String oldPath = String(g_library.books[id].path);
-  String leaf = sanitizeUploadedFilename(server.arg("name"));
-  if (leaf == ".txt") {
-    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_NAME);
-    return;
-  }
   String folder = String(g_library.books[id].folder);
+  const size_t prefixBytes = (folder.length() == 0 ? sizeof("/books/") - 1
+                                                    : sizeof("/books/") - 1 + folder.length() + 1);
+  const size_t maxLeafBytes = (sizeof(g_library.books[id].path) - 1 > prefixBytes)
+                              ? sizeof(g_library.books[id].path) - 1 - prefixBytes : 0;
+  String leaf = sanitizeUploadedFilename(server.arg("name"), maxLeafBytes);
   String newPath = (folder.length() == 0 ? String("/books/") : String("/books/") + folder + "/") + leaf;
   if (newPath.length() >= sizeof(g_library.books[id].path)) {
     server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_NAME);

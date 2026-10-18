@@ -36,7 +36,8 @@ String sanitizeFolderInput(const String& raw);
 
 // Sanitize a user-uploaded filename. Removes path components, restricts to a
 // safe byte set, kills repeated "..", ensures ".txt" suffix, falls back to
-// "book.txt" if empty.
-String sanitizeUploadedFilename(String fname);
+// "book.txt" if empty. If maxBytes is nonzero, truncates on a UTF-8 boundary
+// while preserving the suffix.
+String sanitizeUploadedFilename(String fname, size_t maxBytes = 0);
 
 #endif  // PALA_PURE_PATHS_H
