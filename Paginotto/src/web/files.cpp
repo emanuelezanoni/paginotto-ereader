@@ -14,7 +14,7 @@
 #include "src/web/chrome.h"
 
 // ============================================================================
-//  /               — home page (welcome + storage card + upload form)
+//  /               — home page
 //  /books          — book/folder browser
 //  /download-book  — GET: stream book .txt as attachment (?id=N)
 //  /del            — POST: delete book
@@ -58,31 +58,13 @@ static void handleDownloadBook() {
 }
 
 static void handleRoot() {
-  String subtitle = D_WEB_HOME_FW_PREFIX;
-  subtitle += FW_VERSION;
-  subtitle += D_WEB_HOME_SEPARATOR;
-  subtitle += String(g_library.bookCount);
-  subtitle += D_WEB_HOME_BOOKS_SUFFIX;
-  subtitle += D_WEB_HOME_SEPARATOR;
-  subtitle += D_WEB_HOME_FREE_LABEL;
-  subtitle += humanBytes(fsFreeBytesSafe());
-  subtitle += " / ";
-  subtitle += humanBytes(fsTotalBytesSafe());
-
   String out = webPageStart(
     D_WEB_HOME_TITLE,
-    subtitle,
+    "",
     webNav("home")
   );
 
-  out += "<div class='card'><h2>" D_WEB_HOME_WELCOME_HEADING "</h2><p class='muted'>" D_WEB_HOME_WELCOME_DESC "</p></div>";
-  out += storageCardHtml();
-
-  if (fsTotalBytesSafe() == 0 || fsFreeBytesSafe() < 8192) {
-    out += "<div class='banner-warn'>" D_WEB_HOME_STORAGE_WARN "</div>";
-  }
-
-  out += "<div class='card'><h2>" D_WEB_NOTES_HEADING "</h2><p class='muted'>" D_WEB_NOTES_DESC "</p></div>";
+  out += "<div class='card'><p class='muted'>" D_WEB_HOME_WELCOME_DESC "</p></div>";
 
   out += webPageEnd();
   server.send(200, "text/html; charset=utf-8", out);
@@ -94,6 +76,8 @@ static void handleFiles() {
     D_WEB_BOOKS_SUBTITLE,
     webNav("books")
   );
+
+  out += "<div class='card'><p class='muted'>" D_WEB_BOOKS_PATHS_DESC "</p></div>";
 
   out +=
     "<div class='card'><h2>" D_WEB_UPLOAD_BOOK_HEADING "</h2>"
@@ -164,7 +148,7 @@ static void handleFiles() {
       out += "<div class='actions'><button type='submit'>" D_WEB_MOVE_BUTTON "</button><span class='muted'>" D_WEB_MOVE_HINT "</span></div></form></div>";
       out += "<form method='POST' action='/rename' class='stack small' accept-charset='UTF-8' style='margin-top:10px'>";
       out += "<input type='hidden' name='id' value='" + String(i) + "'>";
-      out += "<input type='text' name='name' value='" + htmlEscape(stripTxtExt(lastPathComponent(filePath))) + "' placeholder='" D_WEB_RENAME_PLACEHOLDER "' maxlength='79' required>";
+      out += "<input type='text' name='name' value='" + htmlEscape(stripTxtExt(lastPathComponent(filePath))) + "' placeholder='" D_WEB_RENAME_PLACEHOLDER "' maxlength='79' required autocomplete='off' autocapitalize='off' spellcheck='false'>";
       out += "<div class='actions'><button type='submit'>" D_WEB_RENAME_BUTTON "</button><span class='muted'>" D_WEB_RENAME_HINT "</span></div></form></div>";
       out += "<div style='display:flex;flex-direction:column;gap:6px;align-items:flex-end'>";
       out += "<a class='btn secondary' href='/download-book?id=" + String(i) + "' download>" D_WEB_DOWNLOAD_BUTTON "</a>";

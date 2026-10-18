@@ -17,7 +17,7 @@
 void registerWebRoutes() {
   registerChromeRoutes();      // /style.css
   registerFilesRoutes();       // /, /books, /del, /mkdir, /rmdir, /move, /rename, /jumppage
-  registerSettingsRoutes();    // /settings, /del-sleep
+  registerSettingsRoutes();    // /settings
   registerFindRoutes();        // /read, /readbook-text, /jumpoffset
   registerScreensaverRoutes(); // /screensavers and subroutes
   registerUploadRoutes();      // /upload, /upload-sleep (legacy)

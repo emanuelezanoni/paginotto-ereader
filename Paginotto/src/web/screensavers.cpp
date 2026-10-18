@@ -4,6 +4,7 @@
 
 #include "src/config.h"
 #include "src/state.h"
+#include "src/ui/sleep.h"
 #include "src/ui/screensavers.h"
 #include "src/web/chrome.h"
 
@@ -525,6 +526,13 @@ static void handleSleepEditorPage() {
   int populated = Screensavers::populatedCount();
   bool hasLegacy = FS.exists("/sleep.bin");
   int nextFree = Screensavers::firstFreeSlot();
+  int curSleep = Sleep::idleTimeoutSecs();
+  String ss30   = (curSleep == 30)   ? " selected" : "";
+  String ss60   = (curSleep == 60)   ? " selected" : "";
+  String ss120  = (curSleep == 120)  ? " selected" : "";
+  String ss300  = (curSleep == 300)  ? " selected" : "";
+  String ss600  = (curSleep == 600)  ? " selected" : "";
+  String ss1800 = (curSleep == 1800) ? " selected" : "";
 
   String out = webPageStart(
     D_WEB_SS_TITLE,
@@ -532,6 +540,30 @@ static void handleSleepEditorPage() {
     webNav("screensavers")
   );
   out.reserve(out.length() + 8000);
+
+  out += "<div class='card'><h2>" D_WEB_SLEEP_HEADING "</h2>"
+         "<form method='POST' action='/screensavers/sleep' class='stack' style='margin-top:12px'>"
+         "<div class='grid cols-2'>"
+         "<div><label for='sleep'>" D_WEB_SLEEP_AFTER_LABEL "</label><select id='sleep' name='sleep'>"
+         "<option value='30'";   out += ss30;   out += ">" D_WEB_SLEEP_30S "</option>"
+         "<option value='60'";   out += ss60;   out += ">" D_WEB_SLEEP_1M  "</option>"
+         "<option value='120'";  out += ss120;  out += ">" D_WEB_SLEEP_2M  "</option>"
+         "<option value='300'";  out += ss300;  out += ">" D_WEB_SLEEP_5M  "</option>"
+         "<option value='600'";  out += ss600;  out += ">" D_WEB_SLEEP_10M "</option>"
+         "<option value='1800'"; out += ss1800; out += ">" D_WEB_SLEEP_30M "</option>"
+         "</select><div class='hint'>" D_WEB_SLEEP_HINT "</div></div></div>"
+         "<label style='display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer'>"
+         "<input type='checkbox' name='noscr' style='width:auto'";
+  if (Sleep::noScreensaver()) out += " checked";
+  out += "><span>" D_WEB_NO_SCREENSAVER_LABEL "</span></label>"
+         "<div class='hint'>" D_WEB_NO_SCREENSAVER_HINT "</div>"
+         "<label style='display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer'>"
+         "<input type='checkbox' name='lckslp' style='width:auto'";
+  if (Sleep::lockOnSleep()) out += " checked";
+  out += "><span>" D_WEB_LOCK_ON_SLEEP_LABEL "</span></label>"
+         "<div class='hint'>" D_WEB_LOCK_ON_SLEEP_HINT "</div>"
+         "<div class='actions' style='margin-top:24px'><button type='submit'>" D_WEB_SAVE_SLEEP_BUTTON "</button></div>"
+         "</form></div>";
 
   // Editor.
   out += editorCardHtml(nextFree);
@@ -576,6 +608,14 @@ static void handleSleepEditorPage() {
   server.send(200, "text/html; charset=utf-8", out);
 }
 
+static void handleSleepSettingsPost() {
+  if (server.hasArg("sleep")) Sleep::setIdleTimeout(server.arg("sleep").toInt());
+  Sleep::setNoScreensaver(server.hasArg("noscr"));
+  Sleep::setLockOnSleep(server.hasArg("lckslp"));
+  server.sendHeader("Location", "/screensavers");
+  server.send(302, "text/plain", "");
+}
+
 // ============================================================================
 //  Route registration.
 // ============================================================================
@@ -585,6 +625,7 @@ void registerScreensaverRoutes() {
   server.on("/screensavers/download", HTTP_GET,  handleSleepDownload);
   server.on("/screensavers/delete",  HTTP_POST, handleSleepDelete);
   server.on("/screensavers/mode",    HTTP_POST, handleSleepModePost);
+  server.on("/screensavers/sleep",   HTTP_POST, handleSleepSettingsPost);
   server.on("/screensavers/upload",  HTTP_POST,
             handleScreensaverUploadDone, handleScreensaverUploadStream);
 }

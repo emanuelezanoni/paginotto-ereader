@@ -11,7 +11,6 @@
 #include "src/ui/reader_actions.h"        // ButtonAction + Gestures
 #include "src/ui/screens/reader_screen.h" // g_readerScreen — active-reader check
 #include "src/ui/lock.h"
-#include "src/ui/sleep.h"
 #include "src/web/chrome.h"
 
 // ----------------------------------------------------------------------------
@@ -50,14 +49,6 @@ static void handleSettings() {
   String sel12 = (curFont == 12) ? " selected" : "";
   String sel14 = (curFont == 14) ? " selected" : "";
 
-  int curSleep = Sleep::idleTimeoutSecs();
-  String ss30   = (curSleep == 30)   ? " selected" : "";
-  String ss60   = (curSleep == 60)   ? " selected" : "";
-  String ss120  = (curSleep == 120)  ? " selected" : "";
-  String ss300  = (curSleep == 300)  ? " selected" : "";
-  String ss600  = (curSleep == 600)  ? " selected" : "";
-  String ss1800 = (curSleep == 1800) ? " selected" : "";
-
   int curGap = Font::currentLineGap();
   String lg0 = (curGap == 0) ? " selected" : "";
   String lg1 = (curGap == 1) ? " selected" : "";
@@ -70,10 +61,13 @@ static void handleSettings() {
 
   String out = webPageStart(
     D_WEB_SETTINGS_TITLE,
-    D_WEB_SETTINGS_SUBTITLE_PREFIX FW_VERSION D_WEB_SETTINGS_SUBTITLE_SUFFIX,
+    D_WEB_SETTINGS_SUBTITLE,
     webNav("settings")
   );
   out.reserve(out.length() + 4500);
+
+  out += "<div class='card'><h2>" D_WEB_FIRMWARE_HEADING "</h2><p class='muted'>" D_WEB_FIRMWARE_LABEL "</p></div>";
+  out += storageCardHtml();
 
   out +=
     "<div class='card'><h2>" D_WEB_READING_HEADING "</h2>"
@@ -86,14 +80,6 @@ static void handleSettings() {
     "<option value='12'"; out += sel12; out += ">" D_WEB_FONT_SIZE_12 "</option>"
     "<option value='14'"; out += sel14; out += ">" D_WEB_FONT_SIZE_14 "</option>"
     "</select><div class='hint'>" D_WEB_FONT_SIZE_HINT "</div></div>"
-    "<div><label for='sleep'>" D_WEB_SLEEP_AFTER_LABEL "</label><select id='sleep' name='sleep'>"
-    "<option value='30'";   out += ss30;   out += ">" D_WEB_SLEEP_30S "</option>"
-    "<option value='60'";   out += ss60;   out += ">" D_WEB_SLEEP_1M  "</option>"
-    "<option value='120'";  out += ss120;  out += ">" D_WEB_SLEEP_2M  "</option>"
-    "<option value='300'";  out += ss300;  out += ">" D_WEB_SLEEP_5M  "</option>"
-    "<option value='600'";  out += ss600;  out += ">" D_WEB_SLEEP_10M "</option>"
-    "<option value='1800'"; out += ss1800; out += ">" D_WEB_SLEEP_30M "</option>"
-    "</select><div class='hint'>" D_WEB_SLEEP_HINT "</div></div>"
     "<div><label for='lgap'>" D_WEB_LINE_SPACING_LABEL "</label><select id='lgap' name='lgap'>"
     "<option value='0'"; out += lg0; out += ">" D_WEB_LINE_SPACING_0 "</option>"
     "<option value='1'"; out += lg1; out += ">" D_WEB_LINE_SPACING_1 "</option>"
@@ -104,21 +90,6 @@ static void handleSettings() {
     "<input type='checkbox' name='bionic' value='1'"; out += bChecked; out += "><span>" D_WEB_BIONIC_LABEL "</span></label>"
     "<div class='hint'>" D_WEB_BIONIC_HINT "</div></div>"
     "</div>"
-    "<div style='margin-top:14px'>"
-    "<label style='display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer'>"
-    "<input type='checkbox' name='noscr' id='noscr' style='width:auto'";
-  if (Sleep::noScreensaver()) out += " checked";
-  out +=
-    "><span>" D_WEB_NO_SCREENSAVER_LABEL "</span></label>"
-    "<div class='hint'>" D_WEB_NO_SCREENSAVER_HINT "</div></div>"
-    "<div style='margin-top:10px'>"
-    "<label style='display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer'>"
-    "<input type='checkbox' name='lckslp' id='lckslp' style='width:auto'";
-  if (Sleep::lockOnSleep()) out += " checked";
-  out +=
-    "><span>" D_WEB_LOCK_ON_SLEEP_LABEL "</span></label>"
-    "<div class='hint'>" D_WEB_LOCK_ON_SLEEP_HINT "</div></div>"
-    "<input type='hidden' name='noscr_form' value='1'>"
     "<div class='actions' style='margin-top:24px'><button type='submit'>" D_WEB_SAVE_SETTINGS_BUTTON "</button>"
     "<span class='muted'>" D_WEB_SETTINGS_APPLY_HINT "</span></div>"
     "</form></div>";
@@ -156,10 +127,6 @@ static bool applySettingsForm() {
   if (server.hasArg("font")) {
     int fs = server.arg("font").toInt();
     if (fs != Font::currentBodySize()) { Font::setBodySize(fs); layoutChanged = true; }
-  }
-  if (server.hasArg("sleep")) {
-    int ss = server.arg("sleep").toInt();
-    if (ss != Sleep::idleTimeoutSecs()) Sleep::setIdleTimeout(ss);
   }
   if (server.hasArg("lgap")) {
     int lg = server.arg("lgap").toInt();
@@ -213,16 +180,6 @@ static void handleSettingsPost() {
     renderCurrentPage();
   }
 
-  // noscr_form is a hidden sentinel always present when the settings form is
-  // submitted, which lets us distinguish an explicit unchecked checkbox from a
-  // POST that didn't come from the settings form at all.
-  if (server.hasArg("noscr_form")) {
-    bool ns = server.hasArg("noscr");
-    if (ns != Sleep::noScreensaver()) Sleep::setNoScreensaver(ns);
-    bool ls = server.hasArg("lckslp");
-    if (ls != Sleep::lockOnSleep()) Sleep::setLockOnSleep(ls);
-  }
-
   // Gesture bindings — `setAction*` clamp internally, but we still check
   // `hasArg` because the page submits this section as a separate form
   // (so a Reading POST won't carry these keys at all).
@@ -240,14 +197,7 @@ static void handleSettingsPost() {
   server.send(302, "text/plain", "");
 }
 
-static void handleDeleteSleepImg() {
-  if (FS.exists("/sleep.bin")) FS.remove("/sleep.bin");
-  server.sendHeader("Location", "/settings");
-  server.send(302, "text/plain", "");
-}
-
 void registerSettingsRoutes() {
   server.on("/settings",  HTTP_GET,  handleSettings);
   server.on("/settings",  HTTP_POST, handleSettingsPost);
-  server.on("/del-sleep", HTTP_POST, handleDeleteSleepImg);
 }

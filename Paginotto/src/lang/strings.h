@@ -98,13 +98,7 @@
 //  Home page (src/web/files.cpp handleRoot)
 // ----------------------------------------------------------------------------
 #define D_WEB_HOME_TITLE            "Paginotto"
-#define D_WEB_HOME_WELCOME_HEADING  "Welcome"
 #define D_WEB_HOME_WELCOME_DESC     "Manage your books, screensaver and reader settings from this control panel."
-#define D_WEB_HOME_FW_PREFIX        "Firmware "
-#define D_WEB_HOME_SEPARATOR        " | "
-#define D_WEB_HOME_BOOKS_SUFFIX     " books"
-#define D_WEB_HOME_FREE_LABEL       "Free: "
-#define D_WEB_HOME_STORAGE_WARN     "&#9888; Storage is not available or almost full. If uploads fail, delete books or use Factory reset from this web UI."
 #define D_WEB_UPLOAD_BOOK_HEADING   "Upload book"
 #define D_WEB_UPLOAD_BOOK_DESC      "Send UTF-8 plain text books to <b>/books</b> on the device, then sort them into folders from the Books page."
 #define D_WEB_UPLOAD_BOOK_BUTTON    "Upload"
@@ -117,6 +111,7 @@
 // ----------------------------------------------------------------------------
 #define D_WEB_BOOKS_HEADING         "Books"
 #define D_WEB_BOOKS_SUBTITLE        "Manage books, folders and library structure for Paginotto."
+#define D_WEB_BOOKS_PATHS_DESC      "Books are stored as UTF-8 .txt files under /books. Folders are relative paths under /books; nested paths are supported, and leaving Move blank returns a book to the /books root."
 #define D_WEB_CREATE_FOLDER_HEADING "Create folder"
 #define D_WEB_CREATE_FOLDER_PLACEHOLDER "books or classics"
 #define D_WEB_CREATE_FOLDER_BUTTON  "Create folder"
@@ -190,8 +185,9 @@
 //  Settings page (src/web/settings.cpp)
 // ----------------------------------------------------------------------------
 #define D_WEB_SETTINGS_TITLE        "Paginotto Settings"
-#define D_WEB_SETTINGS_SUBTITLE_PREFIX "Firmware "
-#define D_WEB_SETTINGS_SUBTITLE_SUFFIX " configuration page stored directly on the device."
+#define D_WEB_SETTINGS_SUBTITLE     "Device settings and storage summary."
+#define D_WEB_FIRMWARE_HEADING      "Firmware"
+#define D_WEB_FIRMWARE_LABEL        "Paginotto"
 #define D_WEB_SETTINGS_BACK_NAV     "&#8592; Home"
 #define D_WEB_READING_HEADING       "Reading"
 #define D_WEB_FONT_SIZE_LABEL       "Font size"
@@ -208,6 +204,7 @@
 #define D_WEB_SLEEP_10M             "10 minutes"
 #define D_WEB_SLEEP_30M             "30 minutes"
 #define D_WEB_SLEEP_HINT            "Auto-sleep keeps battery draw low while idle."
+#define D_WEB_SLEEP_HEADING         "Sleep"
 #define D_WEB_LINE_SPACING_LABEL    "Line spacing"
 #define D_WEB_LINE_SPACING_0        "0 px &mdash; compact"
 #define D_WEB_LINE_SPACING_1        "1 px &mdash; normal"
@@ -218,6 +215,7 @@
 #define D_WEB_NO_SCREENSAVER_HINT   "Device still sleeps on the normal timer and refreshes the screen before going to sleep. Then it shows the last page of the book, and skips a full refresh on wake, so you can continue reading with a single click of the button without the interruption of a display refresh."
 #define D_WEB_LOCK_ON_SLEEP_LABEL   "Lock on sleep"
 #define D_WEB_LOCK_ON_SLEEP_HINT    "Automatically lock the device every time it goes to sleep. You will need to perform a long press to unlock on the next wake."
+#define D_WEB_SAVE_SLEEP_BUTTON     "Save sleep settings"
 #define D_WEB_SAVE_SETTINGS_BUTTON  "Save settings"
 #define D_WEB_SETTINGS_NO_EXTRAS    "No extra files, scripts, or fonts."
 #define D_WEB_SCREENSAVER_HEADING   "Screensaver"

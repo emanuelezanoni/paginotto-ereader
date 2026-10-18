@@ -84,10 +84,7 @@ static void handleUploadDone() {
   inner += "<div class='stats'>";
   inner += "<div class='stat'><span class='muted'>" D_WEB_UPLOAD_BOOK_LABEL  "</span><b>" + htmlEscape(s_book.finalName) + "</b></div>";
   inner += "<div class='stat'><span class='muted'>" D_WEB_UPLOAD_STORED_SIZE "</span><b>" + humanBytes(storedSize)         + "</b></div>";
-  inner += "<div class='stat'><span class='muted'>" D_WEB_UPLOAD_BOOKS_NOW   "</span><b>" + String(g_library.bookCount)    + "</b></div>";
-  inner += "<div class='stat'><span class='muted'>" D_WEB_UPLOAD_FREE_SPACE  "</span><b>" + humanBytes(fsFreeBytesSafe())  + "</b></div>";
   inner += "</div><div class='actions'><a class='btn' href='/books'>" D_WEB_UPLOAD_ANOTHER "</a></div></div>";
-  inner += storageCardHtml();
 
   String page = successPage(
     D_WEB_UPLOAD_COMPLETE_HEADING,
