@@ -6,10 +6,13 @@
 #include "src/pure/paths.h"               // folderLeafLabel, bookLeafLabel
 #include "src/storage/library.h"
 #include "src/ui/font.h"
+#include "src/ui/lock.h"
 #include "src/ui/reader.h"
+#include "src/ui/reader_actions.h"
 #include "src/ui/screens/update_screen.h"
 #include "src/ui/screens/reader_screen.h"
 #include "src/ui/screens/upload_screen.h"
+#include "src/ui/sleep.h"
 #include "src/ui/widgets.h"
 
 // ============================================================================
@@ -21,10 +24,8 @@
 // ============================================================================
 
 // LibraryScreen-specific row indenting. Other menu screens pass nothing
-// extra to drawMenuRow; the library is the only one with folder nesting
-// and a distinguishing nudge for system entries (Update/Upload).
+// extra to drawMenuRow; the library is the only one with folder nesting.
 static const int LIBRARY_DEPTH_INDENT = 10;
-static const int LIBRARY_SYSTEM_NUDGE = 2;
 
 // Nav state — cursor + folder expansion. Persists across library visits
 // (entering library doesn't collapse open folders).
@@ -101,9 +102,7 @@ static bool isSystemEntryType(LibraryEntryType t) {
 }
 
 static int rowIndent(const LibEntry& e) {
-  int indent = e.depth * LIBRARY_DEPTH_INDENT;
-  if (isSystemEntryType(e.type)) indent += LIBRARY_SYSTEM_NUDGE;
-  return indent;
+  return e.depth * LIBRARY_DEPTH_INDENT;
 }
 
 static String entryLabel(const LibEntry& e) {
@@ -114,9 +113,29 @@ static String entryLabel(const LibEntry& e) {
     }
     case LIB_ENTRY_BOOK:      return bookLeafLabel(String(g_library.books[e.ref].path));
     case LIB_ENTRY_UPDATE:     return D_MENU_UPDATE;
-    case LIB_ENTRY_UPLOAD:     return D_MENU_UPLOAD;
+    case LIB_ENTRY_UPLOAD:     return D_MENU_WEB_UI;
   }
   return "";
+}
+
+static bool beginsSystemSection(int idx) {
+  return idx > 0 && isSystemEntryType(s_entries[idx].type)
+      && !isSystemEntryType(s_entries[idx - 1].type);
+}
+
+static void performLibraryAction(ButtonAction action) {
+  switch (action) {
+    case ACTION_LOCK:
+      Lock::engage();
+      Sleep::enter();
+      break;
+    case ACTION_MENU:
+      navigateToLibraryRoot();
+      break;
+    case ACTION_NONE:
+    default:
+      break;
+  }
 }
 
 // ----------------------------------------------------------------------------
@@ -163,9 +182,15 @@ void LibraryScreen::draw() {
   int y = drawSectionHeader(LIB_HEADER_TITLE);
 
   drawScrollableList(y, s_entryCount, s_cursor,
-    [&](int idx, int rowY, bool selected, int /*budget*/) {
+    [&](int idx, int rowY, bool selected, int budget) {
+      const bool spacer = beginsSystemSection(idx) && budget >= 2;
+      if (spacer) rowY += menuLineH();
+      else if (beginsSystemSection(idx)) {
+        gfx.drawFastHLine(UI_LIST_LEFT, rowY - (menuLineH() / 2),
+                          SCREEN_W - UI_LIST_LEFT - MARGIN_X, 1);
+      }
       drawMenuRow(rowY, entryLabel(s_entries[idx]), selected, rowIndent(s_entries[idx]));
-      return 1;
+      return spacer ? 2 : 1;
     });
 
   display.update();
@@ -173,6 +198,16 @@ void LibraryScreen::draw() {
 
 void LibraryScreen::onButton(const ButtonEvent& e) {
   if (!e.any()) return;
+
+  if (e.kind == ButtonEvent::Triple) {
+    navigateToLibraryRoot();
+    return;
+  }
+
+  if (e.kind == ButtonEvent::Long || e.kind == ButtonEvent::ClickHold) {
+    performLibraryAction(Gestures::actionFor(e.kind));
+    return;
+  }
 
   if (e.kind == ButtonEvent::Short) {
     if (s_entryCount > 0) {

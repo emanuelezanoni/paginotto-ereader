@@ -56,7 +56,7 @@ void setLockOnSleep(bool val) {
   prefs.putBool(kKeyLockOnSleep, val);
 }
 
-// Draw a padlock icon in the top-right corner so a user who has locked the
+// Draw a padlock icon in the top-left corner so a user who has locked the
 // device and walked away can tell at a glance why it's not responding.
 // White-on-black pill, icon only (no text label) — stays readable over both
 // the built-in screensaver and any user-uploaded image.
@@ -67,7 +67,7 @@ static void drawLockBadge() {
   const int padY  = 2;
   const int boxW  = padX + iconW + padX;   // 15 px
   const int boxH  = padY + iconH + padY;   // 13 px
-  const int boxX  = SCREEN_W - boxW - 2;
+  const int boxX  = 2;
   const int boxY  = 2;
 
   // Pill: black fill, white 1px border bleed for hairline contrast against

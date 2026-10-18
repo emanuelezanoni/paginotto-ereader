@@ -55,7 +55,7 @@ struct LibEntry {
 // `folderExpanded` must be at least `cat.folderCount` long; entry `i`
 // indicates whether `cat.folders[i]` is currently expanded.
 //
-// `systemEntries` is the list of system entries (Update/Upload, in any
+// `systemEntries` is the list of system entries (Update/WebUI, in any
 // order the caller wants — the screen decides which apply).
 int buildLibraryEntries(
     const Catalog& cat,

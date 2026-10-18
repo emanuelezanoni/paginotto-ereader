@@ -72,7 +72,7 @@ Locking is a remappable button action. In the web UI under **Settings → Button
 - **Long press** → None
 - **Click-hold** → Menu
 
-Unlocking is intentionally **permissive**: *any* long or click-hold press unlocks the device and shows an "Unlocked" toast — after a deep-sleep wake the firmware can't reconstruct a specific chord, so it accepts any hold gesture rather than risk locking you out. While locked, the sleep screen shows a small padlock badge in the top-right corner.
+Unlocking is intentionally **permissive**: *any* long or click-hold press unlocks the device and shows an "Unlocked" toast — after a deep-sleep wake the firmware can't reconstruct a specific chord, so it accepts any hold gesture rather than risk locking you out. While locked, the sleep screen shows a small padlock badge in the top-left corner.
 
 ---
 

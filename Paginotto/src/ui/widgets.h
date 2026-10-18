@@ -31,7 +31,7 @@ void forceNextMenuFrameFull();
 // Draw one row of a scrollable menu list. Text starts at
 // `UI_LIST_LEFT + extraIndent` on the given baseline; bold if selected.
 // Resets font to Body afterwards. Most callers pass no indent;
-// LibraryScreen passes its folder-depth + system-nudge offset.
+// LibraryScreen passes its folder-depth offset.
 void drawMenuRow(int yBaseline, const String& label, bool selected, int extraIndent = 0);
 
 // Row height for the menu screens. Used internally by drawScrollableList;

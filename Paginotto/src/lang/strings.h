@@ -16,14 +16,14 @@
 //  (src/ui/screens/library_screen.cpp). The "+ " / "- " expansion indicators
 //  in entryLabel() are visual symbols and intentionally NOT translated.
 // ----------------------------------------------------------------------------
-#define D_MENU_UPLOAD               "Upload"
+#define D_MENU_WEB_UI               "WebUI"
 #define D_LIBRARY_OPEN_FAILED       "Open failed"
-#define D_LIBRARY_TRY_UPLOAD        "Try upload again"
+#define D_LIBRARY_TRY_UPLOAD        "Try WebUI again"
 
 // ----------------------------------------------------------------------------
 //  Upload screen (src/ui/screens/upload_screen.cpp)
 // ----------------------------------------------------------------------------
-#define D_UPLOAD_HEADER             "Upload"
+#define D_UPLOAD_HEADER             "WebUI"
 #define D_UPLOAD_WIFI               "Wi-Fi"
 #define D_UPLOAD_PASSWORD           "Password"
 #define D_UPLOAD_OPEN               "Open"
