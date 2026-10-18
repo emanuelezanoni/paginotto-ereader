@@ -16,7 +16,7 @@
 // ============================================================================
 void registerWebRoutes() {
   registerChromeRoutes();      // /style.css
-  registerFilesRoutes();       // /, /books, /del, /mkdir, /rmdir, /move, /rename, /jumppage
+  registerFilesRoutes();       // / redirect, /books, /del, /mkdir, /rmdir, /move, /rename, /jumppage
   registerSettingsRoutes();    // /settings
   registerFindRoutes();        // /read, /readbook-text, /jumpoffset
   registerScreensaverRoutes(); // /screensavers and subroutes

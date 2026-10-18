@@ -27,6 +27,7 @@ static const char kStyleCss[] PROGMEM =
   ".wide{max-width:1020px}"
   ".top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px;flex-wrap:wrap}"
   ".top a,.link{color:var(--link);text-decoration:none}"
+  ".brand{font-size:13px;font-weight:750;letter-spacing:.08em;text-transform:uppercase;color:var(--link);margin-bottom:2px}"
   ".top a:hover,.link:hover{text-decoration:underline}"
   ".top-side{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;justify-content:flex-end}"
   ".muted{color:var(--muted);font-size:13px}"
@@ -94,7 +95,7 @@ String webPageStart(const String& title, const String& subtitle,
   out += title;
   out += "</title></head><body><div class='wrap";
   if (wide) out += " wide";
-  out += "'><div class='top'><div><h1>";
+  out += "'><div class='top'><div><div class='brand'>Paginotto</div><h1>";
   out += title;
   out += "</h1><div class='muted'>";
   out += subtitle;
@@ -113,14 +114,14 @@ String webPageEnd() {
 }
 
 String webNav(const char* active) {
-  const char* keys[] = {"home", "books", "screensavers", "settings"};
+  const char* keys[] = {"books", "screensavers", "settings"};
   const char* labels[] = {
-    D_WEB_NAV_HOME, D_WEB_NAV_BOOKS, D_WEB_NAV_SCREENSAVER, D_WEB_NAV_SETTINGS
+    D_WEB_NAV_BOOKS, D_WEB_NAV_SCREENSAVER, D_WEB_NAV_SETTINGS
   };
-  const char* urls[] = {"/", "/books", "/screensavers", "/settings"};
+  const char* urls[] = {"/books", "/screensavers", "/settings"};
 
   String out;
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < 3; i++) {
     out += "<a href='";
     out += urls[i];
     out += "'";

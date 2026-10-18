@@ -87,18 +87,13 @@
 // ----------------------------------------------------------------------------
 //  Navigation links (used across multiple route handlers)
 // ----------------------------------------------------------------------------
-#define D_WEB_NAV_HOME              "Home"
 #define D_WEB_NAV_BOOKS             "Books"
-#define D_WEB_NAV_SCREENSAVER       "Screensaver"
+#define D_WEB_NAV_SCREENSAVER       "Screensavers"
 #define D_WEB_NAV_SETTINGS          "Settings"
-#define D_WEB_NAV_FACTORY_RESET     "Factory reset"
-#define D_WEB_NAV_BACK              "Back"
 
 // ----------------------------------------------------------------------------
-//  Home page (src/web/files.cpp handleRoot)
+//  Book upload (src/web/files.cpp handleFiles)
 // ----------------------------------------------------------------------------
-#define D_WEB_HOME_TITLE            "Paginotto"
-#define D_WEB_HOME_WELCOME_DESC     "Manage your books, screensaver and reader settings from this control panel."
 #define D_WEB_UPLOAD_BOOK_HEADING   "Upload book"
 #define D_WEB_UPLOAD_BOOK_DESC      "Send UTF-8 plain text books to <b>/books</b> on the device, then sort them into folders from the Books page."
 #define D_WEB_UPLOAD_BOOK_BUTTON    "Upload"
@@ -133,7 +128,7 @@
 #define D_WEB_JUMP_HINT2            "The first open may take a moment."
 #define D_WEB_PAGE_PLACEHOLDER      "Page"
 #define D_WEB_MOVE_BUTTON           "Move"
-#define D_WEB_MOVE_HINT             "Use the exact folder path."
+#define D_WEB_MOVE_HINT             "Folder paths are relative to /books; use slash-separated nested folders (for example classics/fiction). Leave blank for /books root."
 #define D_WEB_MOVE_PLACEHOLDER      "leave blank for root"
 #define D_WEB_RENAME_BUTTON         "Rename"
 #define D_WEB_RENAME_HINT           "Keeps .txt and your reading progress."
@@ -175,8 +170,6 @@
 #define D_WEB_RESET_CONFIRM_MESSAGE "Factory reset? This deletes all books, progress, settings, and custom assets."
 #define D_WEB_RESET_COMPLETE_HEADING "Factory reset complete"
 #define D_WEB_RESET_COMPLETE_DESC   "All books, progress and custom assets were removed. The device is now back to a clean state."
-#define D_WEB_GO_HOME_BUTTON        "Go to home"
-#define D_WEB_OPEN_BOOKS_BUTTON     "Open books"
 #define D_WEB_RESET_SUCCESS_TITLE   "Reset complete"
 #define D_WEB_RESET_SUCCESS_SUBTITLE "Paginotto was reset successfully."
 #define D_WEB_RESET_BANNER          "&#10003; Factory reset complete."
@@ -185,10 +178,9 @@
 //  Settings page (src/web/settings.cpp)
 // ----------------------------------------------------------------------------
 #define D_WEB_SETTINGS_TITLE        "Paginotto Settings"
-#define D_WEB_SETTINGS_SUBTITLE     "Device settings and storage summary."
+#define D_WEB_SETTINGS_SUBTITLE     "Device and reading settings."
 #define D_WEB_FIRMWARE_HEADING      "Firmware"
-#define D_WEB_FIRMWARE_LABEL        "Paginotto"
-#define D_WEB_SETTINGS_BACK_NAV     "&#8592; Home"
+#define D_WEB_FIRMWARE_LABEL        "Paginotto firmware v3.0"
 #define D_WEB_READING_HEADING       "Reading"
 #define D_WEB_FONT_SIZE_LABEL       "Font size"
 #define D_WEB_FONT_SIZE_8           "8px &mdash; tiny"

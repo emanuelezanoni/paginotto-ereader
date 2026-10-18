@@ -14,7 +14,7 @@
 #include "src/web/chrome.h"
 
 // ============================================================================
-//  /               — home page
+//  /               — redirect to book/folder browser
 //  /books          — book/folder browser
 //  /download-book  — GET: stream book .txt as attachment (?id=N)
 //  /del            — POST: delete book
@@ -58,16 +58,8 @@ static void handleDownloadBook() {
 }
 
 static void handleRoot() {
-  String out = webPageStart(
-    D_WEB_HOME_TITLE,
-    "",
-    webNav("home")
-  );
-
-  out += "<div class='card'><p class='muted'>" D_WEB_HOME_WELCOME_DESC "</p></div>";
-
-  out += webPageEnd();
-  server.send(200, "text/html; charset=utf-8", out);
+  server.sendHeader("Location", "/books");
+  server.send(302, "text/plain", "");
 }
 
 static void handleFiles() {
@@ -160,6 +152,8 @@ static void handleFiles() {
   }
 
   out += "</div>";
+
+  out += storageCardHtml();
 
   out += webPageEnd();
   server.send(200, "text/html; charset=utf-8", out);
