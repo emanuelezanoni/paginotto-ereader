@@ -11,7 +11,6 @@
 static bool applyHoldKindTo(ButtonState& s, HoldGestureKind k) {
   switch (k) {
     case HoldLong:      s.longClick_      = true; return true;
-    case HoldVeryLong:  s.veryLongClick_  = true; return true;
     case HoldClickHold: s.clickHoldClick_ = true; return true;
     case HoldNone:
     default:            return false;
@@ -333,13 +332,11 @@ void ButtonState::poll() {
     }
   }
 
-  // In-progress hold detection. ClickHold and VeryLong emit at the
+  // In-progress hold detection. ClickHold emits at the
   // earliest threshold the gesture is unambiguously identified, then
   // consume the press so the eventual release is ignored (cleared
   // pressArmed_ → release path's `if (pressArmed_)` guard skips). Plain
-  // Long is deferred to release because at LONG_MS we can't yet tell
-  // whether the user is on their way to a VeryLong — that case lives
-  // in the release classifier above.
+  // Long remains release-triggered; ClickHold is safe to emit on threshold.
   if (stablePressed_ && pressArmed_) {
     uint32_t held = (uint32_t)(millis() - pressStart_);
     HoldGestureKind k = classifyHoldInProgress(held, clickCount_);

@@ -132,7 +132,6 @@ static void handleSettings() {
   out += "<p class='muted'>" D_WEB_BUTTONS_HINT "</p>";
   out += "<form method='POST' action='/settings' accept-charset='UTF-8'><div class='grid cols-2'>";
   appendActionSelect(out, "btnL",  D_WEB_BUTTONS_LONG,       (int)Gestures::actionLong());
-  appendActionSelect(out, "btnXL", D_WEB_BUTTONS_EXTRA_LONG, (int)Gestures::actionExtraLong());
   appendActionSelect(out, "btnCH", D_WEB_BUTTONS_CLICK_HOLD, (int)Gestures::actionClickHold());
   out += "</div><div class='actions' style='margin-top:24px'><button type='submit'>" D_WEB_BUTTONS_SAVE "</button>";
   out += "<span class='muted'>" D_WEB_BUTTONS_LOCK_HINT "</span>";
@@ -224,9 +223,6 @@ static void handleSettingsPost() {
   // (so a Reading POST won't carry these keys at all).
   if (server.hasArg("btnL")) {
     Gestures::setActionLong((ButtonAction)server.arg("btnL").toInt());
-  }
-  if (server.hasArg("btnXL")) {
-    Gestures::setActionExtraLong((ButtonAction)server.arg("btnXL").toInt());
   }
   if (server.hasArg("btnCH")) {
     Gestures::setActionClickHold((ButtonAction)server.arg("btnCH").toInt());

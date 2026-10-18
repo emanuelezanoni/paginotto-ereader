@@ -39,7 +39,6 @@ struct ButtonState {
   bool tripleClick_ = false;
   bool quadClick_ = false;
   bool longClick_ = false;
-  bool veryLongClick_ = false;   // hold >= VERY_LONG_MS with no preceding click
   bool clickHoldClick_ = false;  // chord: short click immediately followed by a long hold
 
   void resetClicks() {
@@ -48,7 +47,6 @@ struct ButtonState {
     tripleClick_ = false;
     quadClick_ = false;
     longClick_ = false;
-    veryLongClick_ = false;
     clickHoldClick_ = false;
   }
 
@@ -82,7 +80,7 @@ struct ButtonState {
 
   bool anyClick() const {
     return shortClick_ || doubleClick_ || tripleClick_ || quadClick_
-        || longClick_ || veryLongClick_ || clickHoldClick_;
+        || longClick_ || clickHoldClick_;
   }
 
   // True iff the classifier is mid-sequence — at least one release has been
@@ -100,12 +98,11 @@ extern ButtonState g_btns;
 // dispatcher calls `fromButtonState(g_btns)` once per loop and hands the
 // result to the current screen.
 struct ButtonEvent {
-  enum Kind { None, Short, Double, Triple, Quad, Long, VeryLong, ClickHold } kind = None;
+  enum Kind { None, Short, Double, Triple, Quad, Long, ClickHold } kind = None;
 
   static ButtonEvent fromButtonState(const ButtonState& b) {
     ButtonEvent e;
     if (b.clickHoldClick_)   e.kind = ClickHold;
-    else if (b.veryLongClick_) e.kind = VeryLong;
     else if (b.longClick_)   e.kind = Long;
     else if (b.quadClick_)   e.kind = Quad;
     else if (b.tripleClick_) e.kind = Triple;

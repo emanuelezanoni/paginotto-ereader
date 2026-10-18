@@ -84,7 +84,7 @@ static void handleUploadDone() {
   inner += "<div class='stats'>";
   inner += "<div class='stat'><span class='muted'>" D_WEB_UPLOAD_BOOK_LABEL  "</span><b>" + htmlEscape(s_book.finalName) + "</b></div>";
   inner += "<div class='stat'><span class='muted'>" D_WEB_UPLOAD_STORED_SIZE "</span><b>" + humanBytes(storedSize)         + "</b></div>";
-  inner += "</div><div class='actions'><a class='btn' href='/books'>" D_WEB_UPLOAD_ANOTHER "</a></div></div>";
+  inner += "</div><div class='actions'>" + webBackLink("/books", D_WEB_BACK_TO_BOOKS) + "<a class='btn' href='/books'>" D_WEB_UPLOAD_ANOTHER "</a></div></div>";
 
   String page = successPage(
     D_WEB_UPLOAD_COMPLETE_HEADING,
@@ -253,7 +253,7 @@ static void handleUploadSleepDone() {
 
   String inner;
   inner.reserve(500);
-  inner += "<div class='card'><h2>" D_WEB_SLEEP_UPLOAD_HEADING "</h2><p class='muted'>" D_WEB_SLEEP_UPLOAD_DESC "</p><div class='actions'><a class='btn' href='/settings'>" D_WEB_BACK_TO_SETTINGS "</a><a class='btn secondary' href='/books'>" D_WEB_NAV_BOOKS "</a></div></div>";
+  inner += "<div class='card'><h2>" D_WEB_SLEEP_UPLOAD_HEADING "</h2><p class='muted'>" D_WEB_SLEEP_UPLOAD_DESC "</p><div class='actions'>" + webBackLink("/screensavers", D_WEB_BACK_TO_SCREENSAVERS) + "</div></div>";
 
   String page = successPage(
     D_WEB_UPLOAD_COMPLETE_HEADING,

@@ -42,6 +42,7 @@ static const char kStyleCss[] PROGMEM =
   ".row{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}"
   ".book-row{display:flex;gap:16px;align-items:flex-start}"
   ".book-main{min-width:0;flex:1}"
+  ".book-title{color:#334e68;font-weight:750;letter-spacing:.01em}"
   ".book-tools{display:flex;flex-direction:column;gap:6px;align-items:stretch;flex:none}"
   ".meta{color:var(--muted);font-size:13px}"
   ".pill{display:inline-block;background:var(--pill-bg);color:var(--pill-fg);border-radius:999px;padding:3px 8px;font-size:12px}"
@@ -134,6 +135,10 @@ String webNav(const char* active) {
     out += "</a>";
   }
   return out;
+}
+
+String webBackLink(const char* href, const char* label) {
+  return String("<a class='btn secondary small' href='") + href + "'>&#8592; " + label + "</a>";
 }
 
 String successPage(const String& title, const String& subtitle,

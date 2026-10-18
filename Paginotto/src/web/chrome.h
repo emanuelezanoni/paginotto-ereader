@@ -23,6 +23,9 @@ String webPageEnd();
 // Shared navigation with the current page marked as active.
 String webNav(const char* active);
 
+// Consistent parent-page navigation for secondary HTML views.
+String webBackLink(const char* href, const char* label);
+
 // Standard "we did the thing" page — banner + inner card content + nav.
 String successPage(const String& title, const String& subtitle,
                    const String& banner, const String& innerHtml,

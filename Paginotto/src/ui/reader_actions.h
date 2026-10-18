@@ -6,7 +6,7 @@
 // ============================================================================
 //  Reader hold-gesture bindings
 //
-//  Maps the three remappable hold gestures (Long / VeryLong / ClickHold)
+//  Maps the two remappable hold gestures (Long / ClickHold)
 //  to one of the reader's actions (none / lock / menu) and
 //  persists the choice. Lives here, not in `src/hal/input.h`, because the
 //  bindable actions are reader-screen concepts — the input layer just
@@ -16,7 +16,6 @@
 //
 //  Defaults (chosen to be useful out of the box):
 //    Long      = None
-//    VeryLong  = Lock     — a deliberate "I'm putting it down" gesture
 //    ClickHold = Menu     — easy chord, doesn't fight short-click paging
 // ============================================================================
 
@@ -32,13 +31,11 @@ namespace Gestures {
 void loadSettings();
 
 // Current bound action for each remappable gesture.
-ButtonAction actionLong();       // plain long press (>= LONG_MS, < VERY_LONG_MS, no preceding click)
-ButtonAction actionExtraLong();  // very-long press (>= VERY_LONG_MS, no preceding click)
+ButtonAction actionLong();       // plain long press (>= LONG_MS, no preceding click)
 ButtonAction actionClickHold();  // short click then immediate long hold
 
 // Apply + persist a binding. Out-of-range values clamp to ACTION_NONE.
 void setActionLong(ButtonAction a);
-void setActionExtraLong(ButtonAction a);
 void setActionClickHold(ButtonAction a);
 
 // Convenience: which action (if any) is currently bound to the gesture

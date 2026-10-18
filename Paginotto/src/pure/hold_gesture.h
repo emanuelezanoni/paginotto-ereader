@@ -3,18 +3,16 @@
 
 #include "src/pure/arduino_compat.h"  // uint32_t, uint8_t
 
-#include "src/config.h"  // LONG_MS, VERY_LONG_MS — the thresholds the
-                         // classifier uses. Same values are also visible to
+#include "src/config.h"  // LONG_MS — threshold classifier uses. Same value is visible to
                          // input.cpp (the only on-device caller) via the
                          // same header.
 
 // ============================================================================
 //  Pure hold-gesture classifier.
 //
-//  Three remappable hold-flavoured gestures fire from the input classifier:
+//  Two remappable hold-flavoured gestures fire from the input classifier:
 //
-//    Long       — solo hold, >= LONG_MS, < VERY_LONG_MS, no prior click.
-//    VeryLong   — solo hold, >= VERY_LONG_MS, no prior click.
+//    Long       — solo hold, >= LONG_MS, no prior click.
 //    ClickHold  — short click immediately followed by a long hold (a chord).
 //
 //  Two decision points consume those rules:
@@ -33,8 +31,7 @@
 enum HoldGestureKind {
   HoldNone     = 0,
   HoldLong     = 1,
-  HoldVeryLong = 2,
-  HoldClickHold = 3,
+  HoldClickHold = 2,
 };
 
 // Release-time classification — called when a press ends with `dur_ms`
@@ -44,8 +41,7 @@ enum HoldGestureKind {
 //
 //   click_count == 1, any dur_ms        → ClickHold  (chord — pending single
 //                                                     is consumed by the chord)
-//   click_count == 0, dur_ms >= VERY_LONG_MS → VeryLong
-//   click_count == 0, LONG_MS <= dur < VERY_LONG_MS → Long
+//   click_count == 0, dur_ms >= LONG_MS → Long
 //   otherwise (click_count >= 2)        → None       (multi-click followed by
 //                                                     a hold isn't a defined
 //                                                     gesture; the pending
@@ -56,11 +52,9 @@ HoldGestureKind classifyHoldRelease(uint32_t dur_ms, uint8_t click_count);
 
 // In-progress classification — called every poll while the button is still
 // down. Returns the gesture we can emit AT THIS INSTANT, given how long the
-// press has been held. Plain Long is intentionally deferred to release (at
-// LONG_MS we can't yet tell whether the user is going on to a VeryLong).
+// press has been held. Plain Long is intentionally deferred to release.
 //
 //   click_count == 1, held_ms >= LONG_MS → ClickHold  (chord crosses threshold)
-//   click_count == 0, held_ms >= VERY_LONG_MS → VeryLong
 //   otherwise                             → None        (keep waiting)
 HoldGestureKind classifyHoldInProgress(uint32_t held_ms, uint8_t click_count);
 

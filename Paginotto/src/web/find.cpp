@@ -248,6 +248,9 @@ static void handleReadView() {
   );
   out.reserve(out.length() + 6000);
   out += FPSTR(kReadStyle);
+  out += "<div class='actions' style='margin-top:0;margin-bottom:14px'>";
+  out += webBackLink("/books", D_WEB_BACK_TO_BOOKS);
+  out += "</div>";
 
   out += "<div class='card'><h2>";
   out += htmlEscape(String(g_library.books[id].name));

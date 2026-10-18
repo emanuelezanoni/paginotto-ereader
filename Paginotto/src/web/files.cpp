@@ -69,6 +69,8 @@ static void handleFiles() {
     webNav("books")
   );
 
+  out += storageCardHtml();
+
   out += "<div class='card'><p class='muted'>" D_WEB_BOOKS_PATHS_DESC "</p></div>";
 
   out +=
@@ -117,7 +119,7 @@ static void handleFiles() {
       int savedPage = savedPageForBookPath(filePath) + 1;
       if (savedPage < 1) savedPage = 1;
 
-      out += "<li class='book-item'><div class='book-row'><div class='book-main'><h3>";
+      out += "<li class='book-item'><div class='book-row'><div class='book-main'><h3 class='book-title'>";
       out += htmlEscape(String(g_library.books[i].name));
       out += "</h3><div class='meta'>";
       out += String((int)g_library.books[i].size);
@@ -152,8 +154,6 @@ static void handleFiles() {
   }
 
   out += "</div>";
-
-  out += storageCardHtml();
 
   out += webPageEnd();
   server.send(200, "text/html; charset=utf-8", out);

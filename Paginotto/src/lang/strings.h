@@ -177,7 +177,7 @@
 // ----------------------------------------------------------------------------
 //  Settings page (src/web/settings.cpp)
 // ----------------------------------------------------------------------------
-#define D_WEB_SETTINGS_TITLE        "Paginotto Settings"
+#define D_WEB_SETTINGS_TITLE        "Settings"
 #define D_WEB_SETTINGS_SUBTITLE     "Device and reading settings."
 #define D_WEB_FIRMWARE_HEADING      "Firmware"
 #define D_WEB_FIRMWARE_LABEL        "Paginotto firmware v3.0"
@@ -221,15 +221,16 @@
 
 // Buttons / remappable hold-gestures section.
 #define D_WEB_BUTTONS_HEADING       "Buttons"
-#define D_WEB_BUTTONS_HINT          "1 click = next, 2 = previous, 3 = home. The three holds below are remappable."
+#define D_WEB_BUTTONS_HINT          "1 click = next, 2 = previous, 3 = home. The two holds below are remappable."
 #define D_WEB_BUTTONS_LONG          "Long press"
-#define D_WEB_BUTTONS_EXTRA_LONG    "Extra-long press"
 #define D_WEB_BUTTONS_CLICK_HOLD    "Click, then hold"
 #define D_WEB_BUTTONS_SAVE          "Save buttons"
 #define D_WEB_BUTTONS_LOCK_HINT     "If locked, repeat any hold gesture to unlock."
 #define D_WEB_BUTTONS_ACTION_NONE     "None"
 #define D_WEB_BUTTONS_ACTION_LOCK     "Lock device"
 #define D_WEB_BUTTONS_ACTION_MENU     "Open menu"
+#define D_WEB_BACK_TO_BOOKS          "Back to books"
+#define D_WEB_BACK_TO_SCREENSAVERS   "Back to screensavers"
 
 // ----------------------------------------------------------------------------
 //  Upload (book + sleep image) routes (src/web/upload.cpp)

@@ -223,7 +223,7 @@ void loop() {
 
   ButtonEvent ev = ButtonEvent::fromButtonState(g_btns);
 
-  // Locked: swallow all input except unlock gestures (Long/VeryLong/ClickHold).
+  // Locked: swallow all input except unlock gestures (Long/ClickHold).
   // Does NOT call markUserActivity for non-unlock events so the idle deadline
   // keeps ticking. cfg_locked persists in NVS so a re-sleep stays locked.
   //

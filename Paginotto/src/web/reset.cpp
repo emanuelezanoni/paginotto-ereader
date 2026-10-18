@@ -30,7 +30,7 @@ static void handleResetDo() {
 
   String inner;
   inner.reserve(600);
-  inner += "<div class='card'><h2>" D_WEB_RESET_COMPLETE_HEADING "</h2><p class='muted'>" D_WEB_RESET_COMPLETE_DESC "</p><div class='actions'><a class='btn' href='/settings'>" D_WEB_BACK_TO_SETTINGS "</a></div></div>";
+  inner += "<div class='card'><h2>" D_WEB_RESET_COMPLETE_HEADING "</h2><p class='muted'>" D_WEB_RESET_COMPLETE_DESC "</p><div class='actions'>" + webBackLink("/settings", D_WEB_BACK_TO_SETTINGS) + "</div></div>";
 
   String page = successPage(
     D_WEB_RESET_SUCCESS_TITLE,
