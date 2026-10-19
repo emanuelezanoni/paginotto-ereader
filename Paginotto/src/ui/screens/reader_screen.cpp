@@ -5,14 +5,13 @@
 #include "src/ui/lock.h"                     // Lock::engage on ACTION_LOCK
 #include "src/ui/reader.h"
 #include "src/ui/reader_actions.h"           // Gestures::actionFor + ButtonAction
-#include "src/ui/reader_menu.h"              // overlay state + dispatch
 #include "src/ui/screens/library_screen.h"
 #include "src/ui/sleep.h"                    // Sleep::enter on ACTION_LOCK
 #include "src/ui/text.h"
 
 // Carry out one of the bindable reader actions. No-op for ACTION_NONE.
 // Lives at the screen layer because the actions are reader-context things
-// (lock, menu) — not generic input-layer concepts.
+// (lock) — not generic input-layer concepts.
 static void performReaderAction(ButtonAction action) {
   switch (action) {
     case ACTION_LOCK:
@@ -22,9 +21,6 @@ static void performReaderAction(ButtonAction action) {
       // boot lands back on this page.
       Lock::engage();
       Sleep::enter();   // does not return
-      break;
-    case ACTION_MENU:
-      ReaderMenu::open();
       break;
     case ACTION_NONE:
     default:
@@ -41,16 +37,6 @@ void ReaderScreen::draw() {
 }
 
 void ReaderScreen::onButton(const ButtonEvent& e) {
-  // Reader menu overlay swallows all input while open. On close, force a
-  // full refresh because the overlay redraw replaced the page.
-  if (ReaderMenu::isActive()) {
-    if (ReaderMenu::onButton(e) && !ReaderMenu::isActive()) {
-      g_bookview.cursor.pageTurnsSinceFull = FULL_REFRESH_EVERY_N_PAGES;
-      renderCurrentPage();
-    }
-    return;
-  }
-
   if (e.kind == ButtonEvent::Triple) {
     // Catch any progress / pagination since the last throttled save before
     // we lose the active book.
@@ -61,8 +47,7 @@ void ReaderScreen::onButton(const ButtonEvent& e) {
 
   // Remappable hold gestures dispatch through the user's binding. NB:
   // An unbound gesture (ACTION_NONE) is a no-op.
-  if (e.kind == ButtonEvent::Long
-   || e.kind == ButtonEvent::ClickHold) {
+  if (e.kind == ButtonEvent::ClickHold) {
     performReaderAction(Gestures::actionFor(e.kind));
     return;
   }

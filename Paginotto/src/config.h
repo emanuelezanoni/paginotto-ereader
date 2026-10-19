@@ -64,8 +64,7 @@ static const int MAX_LIBRARY_ENTRIES = (MAX_BOOKS * 2) + (MAX_FOLDERS * 2) + 8;
 // The press-in-progress gate in input.cpp's trailing-silence check means this
 // effectively bounds "dead time between release and the next press" — once a
 // press starts, the commit pauses until that release lands. So the user can
-// take this long to *start* their next click; the press itself can take as
-// long as it wants (up to LONG_MS).
+// take this long to start next click.
 static const uint32_t MAX_CLICK_GAP_MS = 175;
 
 // Max total duration of a multi-click sequence, measured from the first release.
@@ -73,7 +72,7 @@ static const uint32_t MAX_CLICK_GAP_MS = 175;
 // Combined with MAX_CLICK_GAP_MS this caps both per-gap and overall sloppiness.
 static const uint32_t MAX_CLICK_SEQUENCE_MS = 550;
 
-static const uint32_t LONG_MS = 850;
+static const uint32_t CLICK_HOLD_MS = 850;
 
 static const uint32_t DEBOUNCE_MS = 14;
 

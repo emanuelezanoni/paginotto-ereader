@@ -2,15 +2,14 @@
 
 #include <esp_timer.h>
 
-#include "src/pure/hold_gesture.h"  // classifyHoldRelease / classifyHoldInProgress
+#include "src/pure/hold_gesture.h"  // classifyHoldInProgress
 
 // Local helper: map a HoldGestureKind decision into the matching output
-// flag. Used at both classification sites (release path + in-progress).
+// flag.
 // Returns true if any flag was set — caller uses that to decide whether
 // to consume the press (clear pressArmed_) and zero clickCount_.
 static bool applyHoldKindTo(ButtonState& s, HoldGestureKind k) {
   switch (k) {
-    case HoldLong:      s.longClick_      = true; return true;
     case HoldClickHold: s.clickHoldClick_ = true; return true;
     case HoldNone:
     default:            return false;
@@ -104,8 +103,8 @@ static ButtonQueue s_btnQ;
 //    t~1090: loop() -> poll():
 //      snapshot head, drain (tail..head):
 //        (true, 1000):  debounce OK, transition -> pressStart=1000, armed
-//        (false, 1080): debounce OK, transition -> dur=80 < LONG_MS,
-//                                                  clickCount=1, lastRelease=1080
+//        (false, 1080): debounce OK, transition -> clickCount=1,
+//                                                  lastRelease=1080
 //      trailing-silence check: now-lastRelease = 1090-1080 = 10 < MAX_CLICK_GAP_MS.
 //      Do NOT emit yet — could still become a double.
 //    t=1100..1400: poll() called each loop, queue empty, still waiting.
@@ -218,14 +217,10 @@ void injectButtonEdgeNow(bool pressed) {
 // The classifier is awkward for one reason: the meaning of a click depends
 // on what comes AFTER it. A short click is only a short click once enough
 // silence has passed to rule out a double. So we have three emit points:
-//   1. Inside the drain loop, on a release whose duration >= LONG_MS —
-//      defensive fallback; in normal operation point 2 fires first.
-//   2. After the drain loop, when stablePressed_ AND pressArmed_ AND the
-//      hold has crossed LONG_MS — fires the long-click while the button
-//      is still held, so the user gets feedback at the threshold instead
-//      of after release. Sets pressArmed_=false to make the eventual
-//      release a no-op (the release path's `if (pressArmed_)` guard skips).
-//   3. After the drain loop, when a click sequence (short/double/triple)
+//   1. After the drain loop, when stablePressed_ AND pressArmed_ AND the
+//      ClickHold chord crosses CLICK_HOLD_MS — emits while held, then
+//      consumes the press so its release is a no-op.
+//   2. After the drain loop, when a click sequence (short/double/triple)
 //      has settled past its trailing-silence window.
 //
 // State that persists across calls — defined in input.h on ButtonState.
@@ -235,8 +230,7 @@ void injectButtonEdgeNow(bool pressed) {
 //   pressStart_          edge-time of the current press's down-edge
 //   pressArmed_          has this press not yet produced an event?
 //                        true between press and the event it generates
-//                        (either a release-time classification or a
-//                        hold-detected long-click). Cleared when the press
+//                        (a ClickHold). Cleared when the press
 //                        produces its event, or by clearButtonQueue() /
 //                        resetState() so a release we didn't see the press
 //                        for is ignored.
@@ -245,7 +239,7 @@ void injectButtonEdgeNow(bool pressed) {
 //   clickCount_          releases accumulated, not yet emitted
 //
 // Output flags (cleared at the top of every poll, set when an event emits):
-//   shortClick_, doubleClick_, tripleClick_, quadClick_, longClick_
+//   shortClick_, doubleClick_, tripleClick_, quadClick_, clickHoldClick_
 //
 // Time fields are all milliseconds. Edge times come from the ISR's
 // esp_timer_get_time()/1000; the trailing-silence check uses millis().
@@ -258,12 +252,9 @@ void injectButtonEdgeNow(bool pressed) {
 //        - Reject edges within DEBOUNCE_MS of the last accepted change.
 //        - Reject edges that don't actually flip stablePressed_.
 //        - On a down-edge: record pressStart_, arm the press.
-//        - On an up-edge that's armed:
-//            * duration >= LONG_MS  -> emit longClick_, reset clickCount_
-//            * else                 -> clickCount_++, remember releases
-//   3. After draining, if a press is still held past LONG_MS, emit
-//      longClick_ now and clear pressArmed_ so the eventual release is
-//      ignored. This is the normal path for long-click emission.
+//        - On an up-edge that's armed: clickCount_++, remember releases.
+//   3. After draining, if a click-and-hold is still pressed past
+//      CLICK_HOLD_MS, emit ClickHold and consume its eventual release.
 //   4. After draining, if a click sequence is pending, commit it when ANY of:
 //        - gap elapsed:      now - lastRelease_      > MAX_CLICK_GAP_MS
 //        - sequence timeout: now - firstClickRelease_ > MAX_CLICK_SEQUENCE_MS
@@ -303,40 +294,30 @@ void ButtonState::poll() {
       pressArmed_ = true;
     }
 
-    // On a clean release, if we're armed, classify the click by duration and
-    // accumulated count. Note: in normal operation, the hold-detection block
-    // below this loop fires the long-click and clears pressArmed_ before the
-    // release ever lands, so the `dur >= LONG_MS` branch here is a defensive
-    // fallback (e.g., for the unlikely case where poll() didn't run during
-    // the hold).
+    // A held release is never a plain action. Normally ClickHold already
+    // fired at threshold; preserve it as a fallback only if polling was
+    // blocked through that threshold. A single hold is valid without a
+    // preceding click; multi-click holds are discarded.
     if (prevPressed) {
       if (pressArmed_) {
         uint32_t dur = (uint32_t)(edgeTime - pressStart_);
-        HoldGestureKind k = classifyHoldRelease(dur, clickCount_);
-        if (applyHoldKindTo(*this, k)) {
-          clickCount_ = 0;
-        } else if (dur < LONG_MS) {
-          // Short release — accumulate into the click sequence. Bump the
-          // apps-API raw counter *before* the multi-click accumulator so
-          // apps see every short release even when the classifier later
-          // groups them into a double/triple.
+        if (dur >= CLICK_HOLD_MS) {
+          if (clickCount_ <= 1) {
+            clickHoldClick_ = true;
+            clickCount_ = 0;
+          }
+        } else {
           clickCount_++;
           lastRelease_ = edgeTime;
           if (clickCount_ == 1) firstClickRelease_ = edgeTime;
         }
-        // dur >= LONG_MS but classifyHoldRelease returned None (count >= 2)
-        // → pending clicks commit on their own; the hold contributes nothing.
       }
       pressArmed_ = false;
       pressStart_ = 0;
     }
   }
 
-  // In-progress hold detection. ClickHold emits at the
-  // earliest threshold the gesture is unambiguously identified, then
-  // consume the press so the eventual release is ignored (cleared
-  // pressArmed_ → release path's `if (pressArmed_)` guard skips). Plain
-  // Long remains release-triggered; ClickHold is safe to emit on threshold.
+  // ClickHold emits at threshold, while held. Its release is consumed.
   if (stablePressed_ && pressArmed_) {
     uint32_t held = (uint32_t)(millis() - pressStart_);
     HoldGestureKind k = classifyHoldInProgress(held, clickCount_);
@@ -362,11 +343,6 @@ void ButtonState::poll() {
   // The mapping from final count to which flag to emit is the only thing that
   // varies by count; the timer logic is uniform.
   //
-  // Edge case (knowingly accepted): tap-then-immediate-long-hold loses the
-  // tap. The long branch above resets clickCount_, so the pending single is
-  // dropped. Rationale: long-press is the more deliberate action; preserving
-  // its reliability matters more than chasing a flow that doesn't occur at
-  // human speeds in practice.
   if (clickCount_ > 0) {
     uint32_t now = millis();
     bool gapElapsed      = (uint32_t)(now - lastRelease_)       > MAX_CLICK_GAP_MS;

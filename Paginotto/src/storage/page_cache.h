@@ -16,7 +16,7 @@
 //
 //  Layout values come from `Font::layoutForCache()` (see font.h). Anything
 //  that changes how the body paginates (body size, line gap,
-//  bionic, statusbar reserve height) flows into that one struct, so this
+//  bionic) flows into that one struct, so this
 //  module never has to know what specifically affects layout.
 //
 //  The active reader bulk-loads the whole table into `g_bookview.pages` via
@@ -27,8 +27,6 @@
 
 // Anything that affects page layout — and therefore must invalidate the
 // cache when changed. Body face is fixed; line gap is the user's spacing
-// preference; statusbar reserve is how many pixels the bottom statusbar
-// steals from the text area (which changes the page's `maxLines`).
 // Packed into the on-disk header at save time; the load path rejects files
 // whose stamp doesn't match the *current* layout.
 //
@@ -38,7 +36,6 @@ struct PageCacheLayout {
   int     bodySize;          // 8/10/12/14
   int     lineGap;           // [0, 4]
   uint8_t bionic;            // 0 / 1
-  uint8_t statusbarReserve;  // pixels reserved at the bottom; from Statusbar::reserveH()
 };
 
 // Bulk-load the persisted offset table for `path` into `out`. Layout-stamped

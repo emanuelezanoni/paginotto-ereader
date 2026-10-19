@@ -58,8 +58,8 @@ void setLockOnSleep(bool val) {
 
 // Draw a padlock icon in the top-left corner so a user who has locked the
 // device and walked away can tell at a glance why it's not responding.
-// White-on-black pill, icon only (no text label) — stays readable over both
-// the built-in screensaver and any user-uploaded image.
+// Black icon on white pill, with black border — stays readable over both
+// built-in screensaver and any user-uploaded image.
 static void drawLockBadge() {
   const int iconW = 7;   // padlock body width (cols 0–6)
   const int iconH = 9;   // total height: 4 rows shackle + 5 rows body
@@ -70,25 +70,24 @@ static void drawLockBadge() {
   const int boxX  = 2;
   const int boxY  = 2;
 
-  // Pill: black fill, white 1px border bleed for hairline contrast against
-  // dark uploaded images. Order matters — inner fill draws last.
-  gfx.fillRect(boxX - 1, boxY - 1, boxW + 2, boxH + 2, 0);
-  gfx.fillRect(boxX, boxY, boxW, boxH, 1);
+  // Black 1px border, white fill.
+  gfx.fillRect(boxX - 1, boxY - 1, boxW + 2, boxH + 2, 1);
+  gfx.fillRect(boxX, boxY, boxW, boxH, 0);
 
-  // Padlock glyph, white-on-black.
+  // Padlock glyph, black-on-white.
   const int iconX = boxX + padX;
   const int iconY = boxY + padY;
   const int bodyY = iconY + 4;
-  // Body: solid white 7×5 rectangle.
-  gfx.fillRect(iconX, bodyY, iconW, 5, 0);
-  // Keyhole: one black pixel at the body centre.
-  gfx.drawPixel(iconX + 3, bodyY + 2, 1);
+  // Body: solid black 7×5 rectangle.
+  gfx.fillRect(iconX, bodyY, iconW, 5, 1);
+  // Keyhole: one white pixel at body centre.
+  gfx.drawPixel(iconX + 3, bodyY + 2, 0);
   // Shackle: U-shape — left/right verticals (4 px tall) + 3-px top connector.
-  gfx.drawFastVLine(iconX + 1, iconY, 4, 0);
-  gfx.drawFastVLine(iconX + 5, iconY, 4, 0);
-  gfx.drawPixel(iconX + 2, iconY, 0);
-  gfx.drawPixel(iconX + 3, iconY, 0);
-  gfx.drawPixel(iconX + 4, iconY, 0);
+  gfx.drawFastVLine(iconX + 1, iconY, 4, 1);
+  gfx.drawFastVLine(iconX + 5, iconY, 4, 1);
+  gfx.drawPixel(iconX + 2, iconY, 1);
+  gfx.drawPixel(iconX + 3, iconY, 1);
+  gfx.drawPixel(iconX + 4, iconY, 1);
 }
 
 static void drawDefaultSleepScreen() {

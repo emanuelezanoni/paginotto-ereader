@@ -6,7 +6,6 @@
 #include "src/config.h"
 #include "src/hal/display.h"  // u8g2 instance
 #include "src/state.h"        // prefs
-#include "src/ui/statusbar.h" // Statusbar::reserveH
 
 namespace Font {
 
@@ -89,7 +88,6 @@ const LayoutMetrics& bodyLayout() {
     s_layout.maxWidth = SCREEN_W - (MARGIN_X * 2);
 
     int maxHeight = SCREEN_H - TOP_PAD - BOT_PAD;
-    maxHeight -= Statusbar::reserveH();
 
     s_layout.maxLines = maxHeight / s_layout.lineH;
     if (s_layout.maxLines < 1) s_layout.maxLines = 1;
@@ -128,15 +126,10 @@ int    currentLineGap()  { return s_lineGap; }
 bool   bionicEnabled()   { return s_bionic; }
 
 PageCacheLayout layoutForCache() {
-  // Statusbar reserve goes into the cache stamp too — toggling between
-  // Full / Minimal / Hidden modes changes the page's text area (and
-  // therefore `maxLines`), which shifts every page boundary in the cached
-  // offset table. See Statusbar::setMode and page_cache.cpp's magic history.
   return PageCacheLayout{
     /*bodySize        =*/s_size,
     /*lineGap         =*/s_lineGap,
     /*bionic          =*/(uint8_t)(s_bionic ? 1 : 0),
-    /*statusbarReserve=*/(uint8_t)Statusbar::reserveH(),
   };
 }
 

@@ -6,8 +6,7 @@
 // ============================================================================
 //  Reader hold-gesture bindings
 //
-//  Maps the two remappable hold gestures (Long / ClickHold)
-//  to one of the reader's actions (none / lock / menu) and
+//  Maps ClickHold to its remappable action and
 //  persists the choice. Lives here, not in `src/hal/input.h`, because the
 //  bindable actions are reader-screen concepts — the input layer just
 //  classifies button events; what an event *means* belongs to the screen
@@ -15,14 +14,12 @@
 //  table it can do so without touching the HAL.
 //
 //  Defaults (chosen to be useful out of the box):
-//    Long      = None
-//    ClickHold = Menu     — easy chord, doesn't fight short-click paging
+//    ClickHold = Lock
 // ============================================================================
 
 enum ButtonAction {
   ACTION_NONE     = 0,
   ACTION_LOCK     = 2,
-  ACTION_MENU     = 3,
 };
 
 namespace Gestures {
@@ -30,17 +27,14 @@ namespace Gestures {
 // NVS load on boot — call once from setup() after `prefs.begin`.
 void loadSettings();
 
-// Current bound action for each remappable gesture.
-ButtonAction actionLong();       // plain long press (>= LONG_MS, no preceding click)
-ButtonAction actionClickHold();  // short click then immediate long hold
+// Current ClickHold action.
+ButtonAction actionClickHold();
 
 // Apply + persist a binding. Out-of-range values clamp to ACTION_NONE.
-void setActionLong(ButtonAction a);
 void setActionClickHold(ButtonAction a);
 
 // Convenience: which action (if any) is currently bound to the gesture
-// kind that just fired. Returns ACTION_NONE for non-remappable kinds
-// (Short, Double, Triple, Quad, None).
+// kind that just fired. Returns ACTION_NONE for all except ClickHold.
 ButtonAction actionFor(ButtonEvent::Kind kind);
 
 }  // namespace Gestures

@@ -206,7 +206,7 @@
 #define D_WEB_NO_SCREENSAVER_LABEL  "No-screensaver mode"
 #define D_WEB_NO_SCREENSAVER_HINT   "Device still sleeps on the normal timer and refreshes the screen before going to sleep. Then it shows the last page of the book, and skips a full refresh on wake, so you can continue reading with a single click of the button without the interruption of a display refresh."
 #define D_WEB_LOCK_ON_SLEEP_LABEL   "Lock on sleep"
-#define D_WEB_LOCK_ON_SLEEP_HINT    "Automatically lock the device every time it goes to sleep. You will need to perform a long press to unlock on the next wake."
+#define D_WEB_LOCK_ON_SLEEP_HINT    "Automatically lock the device every time it goes to sleep. Click-hold to unlock on next wake."
 #define D_WEB_SAVE_SLEEP_BUTTON     "Save sleep settings"
 #define D_WEB_SAVE_SETTINGS_BUTTON  "Save settings"
 #define D_WEB_SETTINGS_NO_EXTRAS    "No extra files, scripts, or fonts."
@@ -222,13 +222,11 @@
 // Buttons / remappable hold-gestures section.
 #define D_WEB_BUTTONS_HEADING       "Buttons"
 #define D_WEB_BUTTONS_HINT          "1 click = next, 2 = previous, 3 = home. The two holds below are remappable."
-#define D_WEB_BUTTONS_LONG          "Long press"
 #define D_WEB_BUTTONS_CLICK_HOLD    "Click, then hold"
 #define D_WEB_BUTTONS_SAVE          "Save buttons"
 #define D_WEB_BUTTONS_LOCK_HINT     "If locked, repeat any hold gesture to unlock."
 #define D_WEB_BUTTONS_ACTION_NONE     "None"
 #define D_WEB_BUTTONS_ACTION_LOCK     "Lock device"
-#define D_WEB_BUTTONS_ACTION_MENU     "Open menu"
 #define D_WEB_BACK_TO_BOOKS          "Back to books"
 #define D_WEB_BACK_TO_SCREENSAVERS   "Back to screensavers"
 

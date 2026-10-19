@@ -11,7 +11,7 @@
 //  power cycles via NVS, so a locked device that fully powers down still
 //  comes back locked.
 //
-//  Unlock policy is permissive: any of {Long, ClickHold} unlocks,
+//  Unlock policy accepts ClickHold,
 //  not strictly the gesture currently bound to ACTION_LOCK. After a
 //  deep-sleep wake the firmware can't reliably reconstruct a chord
 //  (the wake press's start edge happens before the ISR is attached), so

@@ -8,7 +8,7 @@
 //  File format (little-endian):
 //    uint32 magic            kPageCacheMagic
 //    uint32 layoutVersion    encodeLayoutVersion(layout)
-//                            — bodySize/lineGap/bionic/statusbarReserve
+//                            — bodySize/lineGap/bionic
 //    uint32 fileSize         source-book size at save time
 //    uint16 count            number of entries that follow
 //    uint32 offsets[count]   byte offsets of pages 0..count-1
@@ -17,17 +17,14 @@
 //    0x50434F46 — original, no stamp
 //    0x50434F47 — added 16-bit `(bodySize, lineGap)` stamp
 //    0x50434F48 — widened stamp to 32 bits to also cover bionic
-//    0x50434F49 — added statusbar-reserve byte to the 32-bit stamp; cache
-//                 must rebuild when Statusbar::setMode toggles between
-//                 Full / Minimal / Hidden because each has a different
-//                 reserve height and therefore a different maxLines
 //    0x50434F4A — removed the obsolete font-family field
+//    0x50434F4B — removed obsolete display-reserve field
 //
 //  Old files fail the magic check, get ignored, then overwritten on the next
 //  save. No migration code needed.
 // ============================================================================
 
-static constexpr uint32_t kPageCacheMagic = 0x50434F4AUL;
+static constexpr uint32_t kPageCacheMagic = 0x50434F4BUL;
 
 static constexpr size_t kHeaderBytes =
     sizeof(uint32_t)   // magic
@@ -37,13 +34,11 @@ static constexpr size_t kHeaderBytes =
 
 // Compact encoding of "what layout were the offsets in this file computed
 // under?" — every field tucks into one byte (bodySize ∈ {8,10,12,14},
-// lineGap ∈ [0,4], bionic ∈ {0,1}, statusbarReserve in pixels — currently
-// 0/1/STATUS_H). The upper byte is reserved for the statusbar height.
+// lineGap ∈ [0,4], bionic ∈ {0,1}.
 static uint32_t encodeLayoutVersion(const PageCacheLayout& layout) {
   return ((uint32_t)(layout.bodySize         & 0xFF))
        | ((uint32_t)(layout.lineGap          & 0xFF) << 8)
-       | ((uint32_t)(layout.bionic           & 0x0F) << 16)
-       | ((uint32_t)(layout.statusbarReserve & 0xFF) << 24);
+       | ((uint32_t)(layout.bionic           & 0x0F) << 16);
 }
 
 static String pageCachePathForBook(const String& path) {

@@ -65,14 +65,13 @@ Glyph coverage: Latin Extended (`á é í ó ú ñ Ñ ¿ ¡ ü Ü`) is provided 
 
 ## Device lock
 
-The device can be locked to stop accidental input (page turns, menu, navigation) while it rests in a bag or pocket. The locked state is persisted to NVS (`cfg_locked`), so a device that fully powers down comes back locked.
+The device can be locked to stop accidental input (page turns, navigation) while it rests in a bag or pocket. The locked state is persisted to NVS (`cfg_locked`), so a device that fully powers down comes back locked.
 
-Locking is a remappable button action. In the web UI under **Settings → Buttons** you can bind either hold gesture — long press or click-hold — to *None*, *Lock device*, or *Menu*. Out-of-box defaults:
+Locking is a remappable button action. In the web UI under **Settings → Buttons** you can bind click-hold to *None* or *Lock device*. Out-of-box default:
 
-- **Long press** → None
-- **Click-hold** → Menu
+- **Click-hold** → Lock device
 
-Unlocking is intentionally **permissive**: *any* long or click-hold press unlocks the device and shows an "Unlocked" toast — after a deep-sleep wake the firmware can't reconstruct a specific chord, so it accepts any hold gesture rather than risk locking you out. While locked, the sleep screen shows a small padlock badge in the top-left corner.
+Unlocking uses click-hold and shows an "Unlocked" toast. While locked, sleep screen shows a small padlock badge in top-left corner.
 
 ---
 

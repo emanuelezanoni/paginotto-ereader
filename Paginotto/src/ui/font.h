@@ -47,9 +47,7 @@ void useAppLarge();
 // Calling this leaves the active u8g2 font set to Body.
 const LayoutMetrics& bodyLayout();
 
-// Drop the cached layout. External owners of layout-affecting state call
-// this after they mutate (e.g. `Statusbar::setMode` changes the bottom
-// reserve, which changes how many text lines fit on a page).
+// Drop cached layout after font settings change.
 void invalidateLayoutCache();
 
 // ----------------------------------------------------------------------------
@@ -76,9 +74,7 @@ bool   bionicEnabled();
 
 // One-shot snapshot of every layout-affecting setting, packed for stamping
 // the on-disk page cache. Centralizing this here means call sites in
-// reader.cpp / text.cpp don't need to know which fields the cache stamps.
-// Includes the statusbar reserve height so that toggling statusbar mode
-// (which changes how many lines fit on a page) invalidates the cache too.
+// reader.cpp / text.cpp don't need to know which fields cache stamps.
 PageCacheLayout layoutForCache();
 
 // Pixel gap inserted between the bold prefix and the regular tail of a

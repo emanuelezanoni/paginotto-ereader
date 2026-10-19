@@ -77,7 +77,6 @@
 #include "src/ui/lock.h"
 #include "src/ui/screensavers.h"
 #include "src/ui/sleep.h"
-#include "src/ui/statusbar.h"
 #include "src/ui/text.h"
 #include "src/ui/toast.h"
 #include "src/web/web.h"
@@ -108,7 +107,7 @@ void setup() {
   // Button held through ext0 wake: its down-edge predates the ISR, so seed
   // the press state manually. Pass 0 (not millis()) to credit the full boot
   // time; millis() ≈ 200 here (after delay(200)) would shorten the hold and
-  // misclassify a Long press as Short.
+  // miss ClickHold threshold after wake.
   if (digitalRead(BTN) == LOW) {
     g_btns.seedPressOnWake(0);
   }
@@ -166,7 +165,6 @@ void setup() {
 
   Font::loadSettings();
   Screensavers::loadSettings();
-  Statusbar::loadSettings();
   Gestures::loadSettings();
   // Sleep::loadSettings() and Lock::loadSettings() already ran earlier in
   // setup() so both flags were available for the boot-clear gate above —
@@ -223,7 +221,7 @@ void loop() {
 
   ButtonEvent ev = ButtonEvent::fromButtonState(g_btns);
 
-  // Locked: swallow all input except unlock gestures (Long/ClickHold).
+  // Locked: swallow all input except ClickHold unlock.
   // Does NOT call markUserActivity for non-unlock events so the idle deadline
   // keeps ticking. cfg_locked persists in NVS so a re-sleep stays locked.
   //
@@ -263,7 +261,7 @@ void loop() {
         }
       }
       // Short locked-idle: re-sleep after 1500ms with no input.
-      // Don't sleep while the button is held — a Long-press unlock gesture
+      // Don't sleep while button held — ClickHold unlock may still complete.
       // fires on release, so sleeping mid-hold would swallow the gesture.
       if (ENABLE_DEEP_SLEEP && g_currentScreen->allowSleep()
           && userIdleMs() > 1500 && !g_btns.isPressed()) {

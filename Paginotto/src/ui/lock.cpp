@@ -27,8 +27,7 @@ void disengage() {
 }
 
 bool isUnlockGesture(const ButtonEvent& ev) {
-  return ev.kind == ButtonEvent::Long
-      || ev.kind == ButtonEvent::ClickHold;
+  return ev.kind == ButtonEvent::ClickHold;
 }
 
 }  // namespace Lock

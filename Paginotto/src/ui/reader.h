@@ -89,30 +89,6 @@ bool tryRestoreReadingSession();
 // side is private to reader.cpp; nothing else needs to disarm.
 void armResumeOnWake();    // arm: persist currently-open book for resume
 
-// Layout changed mid-session — the byte offsets in `g_bookview.pages` were
-// computed under the old layout and no longer map to page boundaries under
-// the new one. The byte offset of the *current* page is layout-invariant,
-// though, so this keeps the existing offsets as back-history, truncates the
-// table at the current page, and lets pages ahead re-paginate lazily under
-// the new layout on the next advance. O(1) — no file I/O, no full re-walk.
-// No-op if no book is open. Caller is responsible for the redraw.
-//
-// Mid-session callers should still route through
-// `markPagesDirtyForLayoutChange` so multiple rapid changes (cycling the
-// Statusbar mode) collapse into a single rebase on the next render. Font
-// size / line gap go through the web /settings form — the user can't be in
-// the reader at that moment, and the next `openBookByIndex` rebuilds the
-// table from scratch anyway.
-void repaginateForLayoutChange();
-
-// Mark the in-memory page offset table as stale because a layout-affecting
-// setting (currently: Statusbar mode) just changed. The actual rebuild
-// happens lazily on the next `renderCurrentPage` call, keeping the
-// triggering input handler responsive. No-op-safe if no book is open: the
-// flag is set unconditionally and consumed inside `prepareForRender`, which
-// already early-outs when the book is closed.
-void markPagesDirtyForLayoutChange();
-
 // ============================================================================
 //  View lifecycle — full reset of every piece of `g_bookview` (and the reader's
 //  private save-throttle state). Called when leaving the reader entirely

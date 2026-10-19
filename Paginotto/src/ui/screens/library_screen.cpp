@@ -129,9 +129,6 @@ static void performLibraryAction(ButtonAction action) {
       Lock::engage();
       Sleep::enter();
       break;
-    case ACTION_MENU:
-      navigateToLibraryRoot();
-      break;
     case ACTION_NONE:
     default:
       break;
@@ -204,7 +201,7 @@ void LibraryScreen::onButton(const ButtonEvent& e) {
     return;
   }
 
-  if (e.kind == ButtonEvent::Long || e.kind == ButtonEvent::ClickHold) {
+  if (e.kind == ButtonEvent::ClickHold) {
     performLibraryAction(Gestures::actionFor(e.kind));
     return;
   }
