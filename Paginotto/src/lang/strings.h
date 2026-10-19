@@ -95,7 +95,7 @@
 //  Book upload (src/web/files.cpp handleFiles)
 // ----------------------------------------------------------------------------
 #define D_WEB_UPLOAD_BOOK_HEADING   "Upload book"
-#define D_WEB_UPLOAD_BOOK_DESC      "Send UTF-8 plain text books to <b>/books</b> on the device, then sort them into folders from the Books page."
+#define D_WEB_UPLOAD_BOOK_DESC      "Send UTF-8 plain text books or EPUBs to <b>/books</b>. EPUBs convert to plain text in this browser before upload; the device stores only .txt files."
 #define D_WEB_UPLOAD_BOOK_BUTTON    "Upload"
 #define D_WEB_MANAGE_BOOKS_BUTTON   "Manage books"
 #define D_WEB_NOTES_HEADING         "Notes"

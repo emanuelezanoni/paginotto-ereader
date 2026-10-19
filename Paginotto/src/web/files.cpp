@@ -62,6 +62,62 @@ static void handleRoot() {
   server.send(302, "text/plain", "");
 }
 
+// EPUB conversion deliberately lives entirely in the browser.  The ESP32
+// continues to receive only the compact UTF-8 text stream handled by /upload.
+// Modern offline browsers provide raw-DEFLATE through DecompressionStream, so
+// this avoids adding a ZIP/XML parser (and its ROM cost) to firmware.
+static const char kEpubUploadScript[] = R"EPUBJS(
+<script>
+(()=>{
+const form=document.getElementById('bookUpload'),input=document.getElementById('bookFile'),status=document.getElementById('bookUploadStatus'),button=document.getElementById('bookUploadButton');
+let converted=null,choice=0;
+const fail=m=>{converted=null;status.textContent='EPUB conversion failed: '+m;button.disabled=true;};
+const u16=(a,o)=>a[o]|a[o+1]<<8, u32=(a,o)=>(u16(a,o)|u16(a,o+2)<<16)>>>0;
+const name=(a,o,n)=>new TextDecoder('utf-8').decode(a.subarray(o,o+n));
+const badXml=d=>d.getElementsByTagName('parsererror').length!==0;
+const xml=(s,label)=>{const d=new DOMParser().parseFromString(s,'application/xml');if(badXml(d))throw Error('invalid '+label);return d;};
+const path=(base,href)=>{try{const u=new URL(href,'https://epub.invalid/'+base);if(u.origin!=='https://epub.invalid')throw Error();return decodeURIComponent(u.pathname.replace(/^\//,''));}catch(_){throw Error('bad EPUB path');}};
+async function zip(file){
+ if(file.size>64*1024*1024)throw Error('file exceeds 64 MiB browser conversion limit');
+ if(!('DecompressionStream'in window))throw Error('browser lacks offline EPUB decompression support');
+ const a=new Uint8Array(await file.arrayBuffer());let end=-1;
+ for(let i=a.length-22;i>=Math.max(0,a.length-65557);i--)if(u32(a,i)===0x06054b50){end=i;break;}
+ if(end<0)throw Error('ZIP end record missing');
+ if(u16(a,end+4)||u16(a,end+6))throw Error('multi-disk EPUB unsupported');
+ const count=u16(a,end+10),start=u32(a,end+16),size=u32(a,end+12);if(start+size>a.length)throw Error('bad ZIP directory');
+ const entries=new Map();let p=start;
+ for(let i=0;i<count;i++){
+  if(p+46>a.length||u32(a,p)!==0x02014b50)throw Error('bad ZIP entry');
+  const flags=u16(a,p+8),method=u16(a,p+10),packed=u32(a,p+20),plain=u32(a,p+24),nl=u16(a,p+28),xl=u16(a,p+30),cl=u16(a,p+32),off=u32(a,p+42),n=name(a,p+46,nl);
+  if(flags&1)throw Error('encrypted EPUB unsupported');if(off+30>a.length||u32(a,off)!==0x04034b50)throw Error('bad ZIP data');
+  const data=off+30+u16(a,off+26)+u16(a,off+28);if(data+packed>a.length)throw Error('truncated ZIP entry');
+  entries.set(n,{method,packed,plain,data});p+=46+nl+xl+cl;
+ }
+ return async n=>{const e=entries.get(n);if(!e)throw Error('missing '+n);if(e.plain>64*1024*1024)throw Error('EPUB entry exceeds 64 MiB limit');let out;
+  if(e.method===0)out=a.slice(e.data,e.data+e.packed);else if(e.method===8)out=new Uint8Array(await new Response(new Blob([a.slice(e.data,e.data+e.packed)]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer());else throw Error('unsupported ZIP compression');
+  if(out.length!==e.plain)throw Error('corrupt ZIP entry');return new TextDecoder('utf-8',{fatal:true}).decode(out);
+ };
+}
+function chapter(source){
+ let d=new DOMParser().parseFromString(source,'application/xhtml+xml');if(badXml(d))d=new DOMParser().parseFromString(source,'text/html');
+ const root=d.body||d.documentElement,parts=[],block=new Set(['address','article','aside','blockquote','br','div','dl','dt','dd','figcaption','figure','footer','h1','h2','h3','h4','h5','h6','header','hr','li','main','nav','ol','p','pre','section','table','td','th','tr','ul']);
+ const walk=n=>{if(n.nodeType===3){parts.push(n.nodeValue);return;}if(n.nodeType!==1)return;const tag=n.localName.toLowerCase();if(['head','script','style','noscript','template','svg','math','audio','video','canvas','iframe','object'].includes(tag))return;if(block.has(tag))parts.push('\n');for(const c of n.childNodes)walk(c);if(block.has(tag))parts.push('\n');};
+ walk(root);return parts.join('').replace(/\u00a0/g,' ').replace(/[ \t\f\v]+/g,' ').replace(/ *\n */g,'\n').replace(/\n{3,}/g,'\n\n').trim();
+}
+async function convert(file){
+ const get=await zip(file),container=xml(await get('META-INF/container.xml'),'container.xml'),root=container.getElementsByTagNameNS('*','rootfile')[0];if(!root)throw Error('package document missing');
+ const opfPath=root.getAttribute('full-path');if(!opfPath)throw Error('package path missing');const opf=xml(await get(opfPath),'package document'),base=opfPath.replace(/[^/]*$/,'');
+ const manifest=new Map();for(const item of opf.getElementsByTagNameNS('*','item'))manifest.set(item.getAttribute('id'),item);
+ const sections=[];for(const ref of opf.getElementsByTagNameNS('*','itemref')){const item=manifest.get(ref.getAttribute('idref'));if(!item)throw Error('spine item missing from manifest');const href=item.getAttribute('href');if(!href)throw Error('spine item path missing');const text=chapter(await get(path(base,href)));if(text)sections.push(text);}
+ if(!sections.length)throw Error('no readable XHTML/HTML spine content');const text=sections.join('\n\n').replace(/\n{3,}/g,'\n\n');if(!text)throw Error('empty EPUB');
+ const filename=(file.name.replace(/\.epub$/i,'')||'book')+'.txt';return new File([text],filename,{type:'text/plain;charset=utf-8'});
+}
+input.addEventListener('change',async()=>{const file=input.files[0],selected=++choice;converted=null;button.disabled=false;if(!file){status.textContent='';return;}if(!/\.epub$/i.test(file.name)){status.textContent='';return;}status.textContent='Converting EPUB…';button.disabled=true;try{const result=await convert(file);if(selected!==choice)return;converted=result;status.textContent='Ready: '+converted.name+' ('+converted.size.toLocaleString()+' bytes)';button.disabled=false;}catch(e){if(selected===choice)fail(e&&e.message?e.message:'invalid EPUB');}});
+form.addEventListener('submit',async e=>{if(!converted)return;e.preventDefault();button.disabled=true;status.textContent='Uploading '+converted.name+'…';try{const fd=new FormData();fd.append('file',converted,converted.name);const r=await fetch('/upload',{method:'POST',body:fd});const body=await r.text();if(!r.ok)throw Error(body||('HTTP '+r.status));document.open();document.write(body);document.close();}catch(err){status.textContent='Upload failed: '+(err&&err.message?err.message:'error');button.disabled=false;}});
+})();
+</script>
+)EPUBJS";
+
 static void handleFiles() {
   String out = webPageStart(
     D_WEB_BOOKS_HEADING,
@@ -76,10 +132,13 @@ static void handleFiles() {
   out +=
     "<div class='card'><h2>" D_WEB_UPLOAD_BOOK_HEADING "</h2>"
     "<p class='muted'>" D_WEB_UPLOAD_BOOK_DESC "</p>"
-    "<form method='POST' action='/upload' enctype='multipart/form-data' accept-charset='UTF-8' style='margin-top:14px'>"
-    "<input type='file' name='file' accept='.txt,text/plain' required>"
-    "<div class='actions'><button type='submit'>" D_WEB_UPLOAD_BOOK_BUTTON "</button></div>"
-    "</form></div>";
+    "<form id='bookUpload' method='POST' action='/upload' enctype='multipart/form-data' accept-charset='UTF-8' style='margin-top:14px'>"
+    "<input id='bookFile' type='file' name='file' accept='.txt,text/plain,.epub,application/epub+zip' required>"
+    "<p id='bookUploadStatus' class='muted' aria-live='polite'></p>"
+    "<div class='actions'><button id='bookUploadButton' type='submit'>" D_WEB_UPLOAD_BOOK_BUTTON "</button></div>"
+    "</form>";
+  out += kEpubUploadScript;
+  out += "</div>";
 
   out +=
     "<div class='card'><h2>" D_WEB_CREATE_FOLDER_HEADING "</h2>"
