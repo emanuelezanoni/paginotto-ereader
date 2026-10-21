@@ -118,8 +118,11 @@ void UpdateScreen::pollWifiScan() {
 }
 
 void UpdateScreen::startSelectedWifi() {
-  if (!visibleCount_ || selectedWifi_ >= visibleCount_) return;
-  WifiCreds::Network saved = WifiCreds::network(visible_[selectedWifi_]);
+  // Item zero is the static placeholder shown while no network has been
+  // found. Network rows start at one, exactly like UploadScreen's hotspot
+  // row, but the placeholder is intentionally not actionable.
+  if (!visibleCount_ || selectedWifi_ == 0 || selectedWifi_ > visibleCount_) return;
+  WifiCreds::Network saved = WifiCreds::network(visible_[selectedWifi_ - 1]);
   cancelWifiScan();
   WiFi.mode(WIFI_OFF);
   delay(100);
@@ -209,19 +212,22 @@ void UpdateScreen::draw() {
     u8g2.print(D_UPDATE_WIFI_HEADER);
     y += 16;
     Font::useBody();
-    if (!visibleCount_) {
-      u8g2.setCursor(MARGIN_X, y);
-      if (scanState_ == ScanState::Searching) u8g2.print(D_UPDATE_WIFI_SEARCHING);
-      else if (scanState_ == ScanState::TimedOut) u8g2.print("No Wi-Fi network found yet");
-      else u8g2.print(D_UPDATE_WIFI_NONE);
+    const int itemCount = static_cast<int>(visibleCount_) + 1;
+    const int selectedItem = static_cast<int>(selectedWifi_);
+    drawScrollableList(y, itemCount, selectedItem,
+      [&](int idx, int rowY, bool selected, int) {
+        if (idx == 0) {
+          drawMenuRow(rowY, D_UPDATE_WIFI_NOT_FOUND, selected);
+        } else {
+          drawMenuRow(rowY, WifiCreds::network(visible_[idx - 1]).ssid, selected);
+        }
+        return 1;
+      });
+    Font::useBody();
+    u8g2.setCursor(MARGIN_X, SCREEN_H - 6);
+    if (scanState_ == ScanState::Searching && !visibleCount_) {
+      u8g2.print(D_UPDATE_WIFI_SEARCHING);
     } else {
-      drawScrollableList(y, visibleCount_, selectedWifi_,
-        [&](int idx, int rowY, bool selected, int) {
-          drawMenuRow(rowY, WifiCreds::network(visible_[idx]).ssid, selected);
-          return 1;
-        });
-      Font::useBody();
-      u8g2.setCursor(MARGIN_X, SCREEN_H - 6);
       u8g2.print(D_UPDATE_WIFI_HINT);
     }
     display.update();
@@ -370,9 +376,8 @@ void UpdateScreen::onButton(const ButtonEvent& e) {
   }
 
   if (phase_ == Phase::SelectingWifi) {
-    if (!visibleCount_) return;
     if (e.kind == ButtonEvent::Short) {
-      selectedWifi_ = (selectedWifi_ + 1) % visibleCount_;
+      selectedWifi_ = (selectedWifi_ + 1) % (visibleCount_ + 1);
       draw();
     } else if (e.kind == ButtonEvent::Double) {
       startSelectedWifi();

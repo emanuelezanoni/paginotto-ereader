@@ -50,6 +50,7 @@
 #define D_UPDATE_WIFI_HEADER        "Select Wi-Fi network"
 #define D_UPDATE_WIFI_SEARCHING     "Searching saved networks..."
 #define D_UPDATE_WIFI_NONE          "No saved Wi-Fi networks"
+#define D_UPDATE_WIFI_NOT_FOUND     "No Wi-Fi network found yet"
 #define D_UPDATE_WIFI_HINT          "2x connect  3x back"
 #define D_UPDATE_CHANNEL_LABEL      "Choose update channel"
 #define D_UPDATE_CHAN_STABLE        "Stable"
