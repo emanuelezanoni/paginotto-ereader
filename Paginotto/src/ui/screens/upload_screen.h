@@ -12,6 +12,7 @@ public:
   void draw() override;
   void onIdleTick() override;
   void requestWebUiExit();
+  void openForFirmwareUpdate();
 
   // The Wi-Fi session (AP or STA) can't keep running while the device
   // deep-sleeps.
@@ -34,6 +35,7 @@ private:
   bool connectionFailed_ = false;
   uint32_t connectionFailedUntilMs_ = 0;
   bool sessionActive_ = false;
+  bool firmwareMode_ = false;
   bool exitRequested_ = false;
   uint32_t goodbyeStartedMs_ = 0;
 

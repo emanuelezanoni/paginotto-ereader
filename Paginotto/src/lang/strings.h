@@ -34,6 +34,7 @@
 #define D_UPLOAD_SEARCHING_CONFIGURED "Looking for saved networks..."
 #define D_UPLOAD_NO_CONFIGURED      "No saved networks configured"
 #define D_UPLOAD_NONE_VISIBLE       "No saved networks visible"
+#define D_UPLOAD_WAITING_NETWORK    "No networks found yet - please wait"
 #define D_UPLOAD_SELECT_NETWORK     "Saved network"
 #define D_UPLOAD_SELECT_HINT        "Tap: select  2x: next"
 #define D_UPLOAD_CONN_FAILED        "Connection failed. Resuming search..."

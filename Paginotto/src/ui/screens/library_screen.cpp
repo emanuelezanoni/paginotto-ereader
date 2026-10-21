@@ -300,6 +300,7 @@ void LibraryScreen::onButton(const ButtonEvent& e) {
     // Use the exact same Wi-Fi screen as Web UI/upload for the first OTA
     // integration pass. The update-specific picker is intentionally bypassed
     // until this known-good path has been validated on hardware.
+    g_uploadScreen.openForFirmwareUpdate();
     nextScreen = &g_uploadScreen;
     return;
   }

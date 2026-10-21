@@ -98,19 +98,27 @@ void UploadScreen::draw() {
     // Selection screen: no network is active yet. Hotspot details are shown
     // only after the user explicitly selects Hotspot.
     Font::useBody();
-    const int itemCount = static_cast<int>(visibleCount_) + 1;
+    const int itemCount = firmwareMode_
+      ? (visibleCount_ ? static_cast<int>(visibleCount_) : 1)
+      : static_cast<int>(visibleCount_) + 1;
     drawScrollableList(y, itemCount, selectedItem_,
       [&](int idx, int rowY, bool selected, int) {
-        if (idx == 0) {
+        if (!firmwareMode_ && idx == 0) {
           drawMenuRow(rowY, D_UPLOAD_HOTSPOT_OPTION, selected);
+        } else if (firmwareMode_ && !visibleCount_) {
+          const char* message = scanState_ == ScanState::NoSavedNetworks
+            ? D_UPLOAD_NO_CONFIGURED : D_UPLOAD_WAITING_NETWORK;
+          drawMenuRow(rowY, message, false);
         } else {
-          drawMenuRow(rowY, WifiCreds::network(visible_[idx - 1]).ssid, selected);
+          const uint8_t savedIndex = firmwareMode_ ? idx : idx - 1;
+          drawMenuRow(rowY, WifiCreds::network(visible_[savedIndex]).ssid, selected);
         }
         return 1;
       });
     Font::useBody(); u8g2.setCursor(MARGIN_X, SCREEN_H - 6);
     if (connectionFailed_ && (int32_t)(connectionFailedUntilMs_ - millis()) > 0) u8g2.print(D_UPLOAD_CONN_FAILED);
     else if (scanState_ == ScanState::NoSavedNetworks) u8g2.print(D_UPLOAD_NO_CONFIGURED);
+    else if (firmwareMode_ && !visibleCount_ && scanState_ != ScanState::NoSavedNetworks) u8g2.print(D_UPLOAD_WAITING_NETWORK);
     else if (scanState_ == ScanState::Searching) u8g2.print(D_UPLOAD_SEARCHING_CONFIGURED);
     else if (scanState_ == ScanState::TimedOut) u8g2.print(D_UPLOAD_SCAN_TIMED_OUT);
     else if (visibleCount_) u8g2.print(D_UPLOAD_SCAN_COMPLETE);
@@ -137,6 +145,10 @@ void UploadScreen::draw() {
 // ---- Lifecycle ------------------------------------------------------------
 void UploadScreen::onEnter() {
   beginSession();
+}
+
+void UploadScreen::openForFirmwareUpdate() {
+  firmwareMode_ = true;
 }
 
 void UploadScreen::beginSession() {
@@ -230,8 +242,13 @@ void UploadScreen::cancelConfiguredScan() {
 }
 
 void UploadScreen::startSelectedStation() {
-  if (!selectedItem_ || selectedItem_ > visibleCount_) return;
-  WifiCreds::Network saved = WifiCreds::network(visible_[selectedItem_ - 1]);
+  if (firmwareMode_) {
+    if (selectedItem_ >= visibleCount_) return;
+  } else if (!selectedItem_ || selectedItem_ > visibleCount_) {
+    return;
+  }
+  const uint8_t savedIndex = firmwareMode_ ? selectedItem_ : selectedItem_ - 1;
+  WifiCreds::Network saved = WifiCreds::network(visible_[savedIndex]);
   cancelConfiguredScan();
   server.stop();
   WiFi.softAPdisconnect(true);
@@ -268,6 +285,7 @@ void UploadScreen::stopSessionToLibrary() {
 
   resetBookUpload();
   resetSleepUpload();
+  firmwareMode_ = false;
 
   loadBooks();
   // Discard the exit-click so it doesn't leak into the library screen as a
@@ -304,14 +322,17 @@ void UploadScreen::onButton(const ButtonEvent& e) {
 
   if (net_.mode == WifiMode::AccessPoint && !sessionActive_) {
     if (e.kind == ButtonEvent::Short) {
-      selectedItem_ = (selectedItem_ + 1) % (visibleCount_ + 1);
+      const uint8_t itemCount = firmwareMode_ ? visibleCount_ : visibleCount_ + 1;
+      if (!itemCount) return;
+      selectedItem_ = (selectedItem_ + 1) % itemCount;
       connectionFailed_ = false;
       connectionFailedUntilMs_ = 0;
       draw();
       return;
     }
     if (e.kind == ButtonEvent::Double) {
-      if (selectedItem_) startSelectedStation();
+      if (firmwareMode_) startSelectedStation();
+      else if (selectedItem_) startSelectedStation();
       else useHotspot();
       return;
     }
