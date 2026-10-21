@@ -37,6 +37,7 @@ private:
     DownloadFailed,   // write/validation error — shows Install button for retry
     RebootPrompt      // binary flashed — waiting for reboot confirmation
   };
+  enum class ScanState { NoSavedNetworks, Searching, TimedOut, Complete };
 
   Phase       phase_         = Phase::Connecting;
   uint32_t    staStartMs_    = 0;
@@ -49,6 +50,7 @@ private:
   uint8_t     selectedWifi_ = 0;
   bool        scanInProgress_ = false;
   uint32_t    scanStartedMs_ = 0;
+  ScanState   scanState_ = ScanState::NoSavedNetworks;
   String      stableVersion_;
   String      devCommit_;
   bool        stableAvailable_ = false;

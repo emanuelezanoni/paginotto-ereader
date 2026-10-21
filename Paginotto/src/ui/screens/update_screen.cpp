@@ -66,13 +66,10 @@ void UpdateScreen::beginWifiScan() {
   }
   phase_ = Phase::SelectingWifi;
   scanStartedMs_ = millis();
-  // Keep the radio in the same mode used by the working WebUI scanner.
-  // Starting a STA-only scan here could tear down the active provisioning
-  // interface and leave the ESP32 Wi-Fi driver in an inconsistent state.
-  WiFi.mode(WIFI_AP_STA);
-  WiFi.scanDelete();
-  WiFi.scanNetworks(true, true);
+  scanState_ = ScanState::Searching;
+  WiFi.mode(WIFI_STA);
   scanInProgress_ = true;
+  WiFi.scanNetworks(true, true);
 }
 
 void UpdateScreen::cancelWifiScan() {
@@ -86,17 +83,19 @@ void UpdateScreen::pollWifiScan() {
   if (phase_ != Phase::SelectingWifi || !scanInProgress_) return;
   if ((uint32_t)(millis() - scanStartedMs_) >= kWifiScanTimeoutMs) {
     cancelWifiScan();
+    scanState_ = ScanState::TimedOut;
     draw();
     return;
   }
   int found = WiFi.scanComplete();
   if (found == -1) return;
   if (found < 0) {
+    // Keep the same retry cycle as the working WebUI/upload scanner.
     WiFi.scanDelete();
-    scanInProgress_ = false;
-    draw();
+    WiFi.scanNetworks(true, true);
     return;
   }
+  bool changed = false;
   for (uint8_t saved = 0; saved < WifiCreds::count(); saved++) {
     String ssid = WifiCreds::network(saved).ssid;
     for (int i = 0; i < found; i++) {
@@ -107,13 +106,15 @@ void UpdateScreen::pollWifiScan() {
       }
       if (!alreadyVisible && visibleCount_ < WifiCreds::kMaxNetworks) {
         visible_[visibleCount_++] = saved;
+        changed = true;
       }
       break;
     }
   }
   WiFi.scanDelete();
-  scanInProgress_ = false;
-  draw();
+  scanState_ = ScanState::Complete;
+  if (changed) draw();
+  WiFi.scanNetworks(true, true);
 }
 
 void UpdateScreen::startSelectedWifi() {
@@ -210,7 +211,9 @@ void UpdateScreen::draw() {
     Font::useBody();
     if (!visibleCount_) {
       u8g2.setCursor(MARGIN_X, y);
-      u8g2.print(scanInProgress_ ? D_UPDATE_WIFI_SEARCHING : D_UPDATE_WIFI_NONE);
+      if (scanState_ == ScanState::Searching) u8g2.print(D_UPDATE_WIFI_SEARCHING);
+      else if (scanState_ == ScanState::TimedOut) u8g2.print("No Wi-Fi network found yet");
+      else u8g2.print(D_UPDATE_WIFI_NONE);
     } else {
       drawScrollableList(y, visibleCount_, selectedWifi_,
         [&](int idx, int rowY, bool selected, int) {
