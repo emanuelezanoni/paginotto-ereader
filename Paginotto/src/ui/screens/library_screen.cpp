@@ -145,7 +145,9 @@ static void drawFolderMenuRow(int yBaseline, const String& label,
 }
 
 static bool beginsSystemSection(int idx) {
-  if (idx <= 0) return false;
+  // drawScrollableList supplies valid entry indices, but keep the array bound
+  // explicit here so static analysis can verify both indexed accesses.
+  if (idx <= 0 || idx >= MAX_LIBRARY_ENTRIES) return false;
   return isSystemEntryType(s_entries[idx].type)
       && !isSystemEntryType(s_entries[idx - 1].type);
 }

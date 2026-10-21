@@ -29,9 +29,6 @@ void forceNextRenderFull() { s_forceNextFull = true; }
 // reader menu: the page number and progress indicator are part of the reading
 // view itself, not an optional settings/status menu.
 static void drawReaderFooter(uint32_t startOffset) {
-  const bool footerEnabled = SHOW_PROGRESS_BAR || SHOW_PAGE_NUMBER;
-  if (!footerEnabled) return;
-
   size_t total = g_bookview.book.size();
   if (total == 0) total = 1;
 
