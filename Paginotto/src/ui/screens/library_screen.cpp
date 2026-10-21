@@ -109,7 +109,6 @@ static int rowIndent(const LibEntry& e) {
 static String truncateBookLabel(const String& label) {
   if (label.length() <= MAX_DEVICE_BOOK_LABEL_CHARS) return label;
   const int keep = MAX_DEVICE_BOOK_LABEL_CHARS - 3;
-  if (keep <= 0) return String("...").substring(0, MAX_DEVICE_BOOK_LABEL_CHARS);
   return label.substring(0, keep) + "...";
 }
 
@@ -146,7 +145,8 @@ static void drawFolderMenuRow(int yBaseline, const String& label,
 }
 
 static bool beginsSystemSection(int idx) {
-  return idx > 0 && isSystemEntryType(s_entries[idx].type)
+  if (idx <= 0) return false;
+  return isSystemEntryType(s_entries[idx].type)
       && !isSystemEntryType(s_entries[idx - 1].type);
 }
 
@@ -202,7 +202,7 @@ void LibraryScreen::draw() {
   } else {
     // Root view: folders are entries in their own right. Opening one enters
     // a dedicated folder page instead of expanding a second tree inline.
-    bool collapsed[MAX_FOLDERS] = {false};
+    const bool collapsed[MAX_FOLDERS] = {false};
     s_entryCount = buildLibraryEntries(g_library, collapsed,
                                        systemEntries, systemCount,
                                        s_entries, MAX_LIBRARY_ENTRIES);
