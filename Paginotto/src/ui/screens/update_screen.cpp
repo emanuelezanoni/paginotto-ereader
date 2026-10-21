@@ -209,6 +209,7 @@ void UpdateScreen::onIdleTick() {
   if (r == WifiStaResult::Connected) {
     phase_ = Phase::Idle;
     draw();
+    checkForUpdates();
     return;
   }
   if (r == WifiStaResult::Failed ||
@@ -310,50 +311,28 @@ void UpdateScreen::draw() {
 
   // ---- Full UI (Idle, ServerFail, UpToDate, UpdateAvailable, DownloadFailed)
 
-  bool selectedInstallable = stableChan_ ? stableAvailable_ : devAvailable_;
-  bool hasInstall = selectedInstallable || phase_ == Phase::DownloadFailed;
-  int maxItems = hasInstall ? 4 : 3;
-  if (focusItem_ >= maxItems) focusItem_ = 0;
+  if (focusItem_ >= 2) focusItem_ = 0;
 
   // Version line
   u8g2.setCursor(MARGIN_X, y);
   u8g2.print(D_UPDATE_VERSION_PREFIX FW_VERSION);
   y += 16;
 
-  // Channel label on its own line
-  Font::useBody();
-  u8g2.setCursor(MARGIN_X, y);
-  u8g2.print(D_UPDATE_CHANNEL_LABEL);
+  // The check already happened immediately after Wi-Fi connection. The only
+  // interactive elements here are the two update channels.
+  String stableLabel = "Stable";
+  if (!stableReachable_) stableLabel += " (unavailable)";
+  else if (stableAvailable_) stableLabel += " (update available)";
+  else stableLabel += " (up to date)";
+  drawMenuRow(y, stableLabel, focusItem_ == 0);
   y += 14;
 
-  // Channel checkboxes
-  int cx = MARGIN_X;
-
-  Font::useBody();
-  u8g2.setCursor(cx, y);
-  u8g2.print(stableChan_ ? "[x] " : "[ ] ");
-  cx += u8g2.getUTF8Width("[x] ");
-  if (focusItem_ == 0) Font::useBold(); else Font::useBody();
-  u8g2.setCursor(cx, y);
-  u8g2.print(D_UPDATE_CHAN_STABLE);
-  cx += u8g2.getUTF8Width(D_UPDATE_CHAN_STABLE);
-  Font::useBody();
-  cx += u8g2.getUTF8Width("   ");
-
-  u8g2.setCursor(cx, y);
-  u8g2.print(!stableChan_ ? "[x] " : "[ ] ");
-  cx += u8g2.getUTF8Width("[x] ");
-  if (focusItem_ == 1) Font::useBold(); else Font::useBody();
-  u8g2.setCursor(cx, y);
-  u8g2.print(D_UPDATE_CHAN_DEV);
-  y += 14;
-
-
-  // Check button
-  if (focusItem_ == 2) Font::useBold(); else Font::useBody();
-  u8g2.setCursor(MARGIN_X, y);
-  u8g2.print(D_UPDATE_BTN_CHECK);
-  y += 20;
+  String devLabel = "Dev";
+  if (!devReachable_) devLabel += " (unavailable)";
+  else if (devAvailable_) devLabel += " (update available)";
+  else devLabel += " (up to date)";
+  drawMenuRow(y, devLabel, focusItem_ == 1);
+  y += 18;
 
   // Status lines — stable and dev are checked together.
   Font::useBody();
@@ -396,13 +375,6 @@ void UpdateScreen::draw() {
     u8g2.setCursor(MARGIN_X, y);
     u8g2.print(D_UPDATE_DOWNLOAD_FAILED);
     y += 14;
-  }
-
-  // Install button — shown when update is available or after failed download
-  if (hasInstall) {
-    if (focusItem_ == 3) Font::useBold(); else Font::useBody();
-    u8g2.setCursor(MARGIN_X, y);
-    u8g2.print(D_UPDATE_BTN_INSTALL);
   }
 
   display.update();
@@ -451,9 +423,7 @@ void UpdateScreen::onButton(const ButtonEvent& e) {
   if (!fullUi) return;
 
   if (e.kind == ButtonEvent::Short) {
-    bool hasInstall = stableAvailable_ || devAvailable_ ||
-                      phase_ == Phase::DownloadFailed;
-    focusItem_ = (focusItem_ + 1) % (hasInstall ? 4 : 3);
+    focusItem_ = (focusItem_ + 1) % 2;
     draw();
     return;
   }
@@ -471,13 +441,6 @@ void UpdateScreen::onButton(const ButtonEvent& e) {
       if (devAvailable_) installSelectedUpdate();
       else draw();
 
-    } else if (focusItem_ == 2) {
-      // Check both channels so the screen can show the two release tracks.
-      checkForUpdates();
-
-    } else if (focusItem_ == 3) {
-      if (!(stableChan_ ? stableAvailable_ : devAvailable_)) return;
-      installSelectedUpdate();
     }
     return;
   }

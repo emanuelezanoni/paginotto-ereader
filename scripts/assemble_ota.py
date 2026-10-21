@@ -19,6 +19,7 @@ def main() -> int:
     parser.add_argument("--channel", required=True, choices=("dev", "stable"))
     parser.add_argument("--version", required=True)
     parser.add_argument("--commit", required=True)
+    parser.add_argument("--commit-timestamp", required=True, type=int)
     parser.add_argument("--out", default="site")
     args = parser.parse_args()
 
@@ -40,6 +41,7 @@ def main() -> int:
             "channel": args.channel,
             "version": args.version,
             "commit": args.commit,
+            "commitTimestamp": args.commit_timestamp,
             "firmware": filename,
         }
         (output / f"manifest-{board}.json").write_text(

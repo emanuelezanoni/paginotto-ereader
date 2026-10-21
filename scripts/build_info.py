@@ -37,6 +37,10 @@ def fw_version():
     return _git("describe", "--tags", "--always", "--dirty") or None
 
 
+def commit_timestamp():
+    return _git("show", "-s", "--format=%ct", "HEAD")
+
+
 sha = build_id()
 if sha:
     env.Append(CPPDEFINES=[("BUILD_GIT_HASH", env.StringifyMacro(sha))])  # noqa: F821
@@ -57,3 +61,8 @@ else:
     # No git available — config.h's fallback "dev" wins. Same situations
     # as above (zip download, etc.).
     print("build_info.py: git unavailable, leaving FW_VERSION to config.h fallback")
+
+timestamp = commit_timestamp()
+if timestamp and timestamp.isdigit():
+    env.Append(CPPDEFINES=[("BUILD_GIT_TIMESTAMP", timestamp)])  # noqa: F821
+    print(f"build_info.py: BUILD_GIT_TIMESTAMP={timestamp}")

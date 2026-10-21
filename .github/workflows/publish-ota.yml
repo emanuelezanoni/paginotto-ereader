@@ -83,7 +83,8 @@ jobs:
           python scripts/assemble_ota.py \
             --channel "${{ steps.meta.outputs.channel }}" \
             --version "${{ steps.meta.outputs.version }}" \
-            --commit "${GITHUB_SHA::7}"
+            --commit "${GITHUB_SHA::7}" \
+            --commit-timestamp "$(git show -s --format=%ct "$GITHUB_SHA")"
 
       - name: Publish OTA files to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4

@@ -32,6 +32,10 @@
 #define BUILD_GIT_HASH "unknown"
 #endif
 
+#ifndef BUILD_GIT_TIMESTAMP
+#define BUILD_GIT_TIMESTAMP 0
+#endif
+
 // DEBUG_BUILD = 1 shows the git hash in the on-device library screen header.
 // Keep it disabled for normal device builds: the firmware identity should be
 // the product name, not the state of the developer's working tree.

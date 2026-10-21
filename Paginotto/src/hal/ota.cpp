@@ -99,8 +99,9 @@ OtaCheckResult OTA::checkAvailable(const String& channel) {
   result.remoteVersion   = ver;
   const char* commit = doc["commit"];
   if (commit && commit[0] != '\0') result.remoteCommit = commit;
+  result.remoteCommitTimestamp = doc["commitTimestamp"] | 0U;
   if (channel == "dev" && result.remoteCommit.length() > 0) {
-    result.updateAvailable = result.remoteCommit != String(BUILD_GIT_HASH);
+    result.updateAvailable = result.remoteCommitTimestamp > BUILD_GIT_TIMESTAMP;
   } else {
     result.updateAvailable = result.remoteVersion != String(FW_VERSION);
   }

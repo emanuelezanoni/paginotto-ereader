@@ -8,6 +8,7 @@ struct OtaCheckResult {
   bool   reachable       = false;
   String remoteVersion;
   String remoteCommit;
+  uint32_t remoteCommitTimestamp = 0;
 };
 
 struct OtaDownloadResult {
