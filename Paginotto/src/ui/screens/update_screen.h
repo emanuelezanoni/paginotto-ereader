@@ -2,9 +2,7 @@
 #define PALA_UI_SCREENS_UPDATE_SCREEN_H
 
 #include <Arduino.h>
-#include <WiFi.h>
 #include "src/hal/wifi.h"
-#include "src/storage/wifi_creds.h"
 #include "src/ui/screen.h"
 
 class UpdateScreen : public Screen {
@@ -12,7 +10,6 @@ public:
   void onEnter() override;
   void onButton(const ButtonEvent& e) override;
   void draw() override;
-  void onIdleTick() override;
 
   // Block sleep only while the Wi-Fi session is active; once wifiEnd() is
   // called (after flash or on exit) the device may sleep normally.
@@ -28,10 +25,7 @@ public:
 
 private:
   enum class Phase {
-    NoCreds,          // no stored Wi-Fi credentials — prompt to use the WebUI
-    SelectingWifi,    // choose one of the saved networks visible nearby
-    Connecting,       // STA association in flight
-    ConnFailed,       // association error
+    NoCreds,          // reached without the UploadScreen handoff
     Idle,             // connected — ready to check
     Checking,         // probe + manifest fetch running (drawn then blocks)
     ServerFail,       // probe or manifest fetch failed
@@ -41,22 +35,13 @@ private:
     DownloadFailed,   // write/validation error — shows Install button for retry
     RebootPrompt      // binary flashed — waiting for reboot confirmation
   };
-  enum class ScanState { NoSavedNetworks, Searching, TimedOut, Complete };
-
-  Phase       phase_         = Phase::Connecting;
-  uint32_t    staStartMs_    = 0;
+  Phase       phase_         = Phase::NoCreds;
   WifiSession net_;
   bool        stableChan_    = true;
   bool        wifiStarted_   = false;  // true only between wifiStaBegin() and wifiEnd()
   bool        connectedHandoff_ = false;
   WifiSession handoffSession_;
-  int         focusItem_     = 0;  // 0=Stable 1=Dev 2=Check 3=Install
-  uint8_t     visible_[WifiCreds::kMaxNetworks] = {};
-  uint8_t     visibleCount_ = 0;
-  uint8_t     selectedWifi_ = 0;
-  bool        scanInProgress_ = false;
-  uint32_t    scanStartedMs_ = 0;
-  ScanState   scanState_ = ScanState::NoSavedNetworks;
+  int         focusItem_     = 0;  // 0=Stable 1=Dev
   String      stableVersion_;
   String      devCommit_;
   bool        stableAvailable_ = false;
@@ -67,10 +52,6 @@ private:
 
   void loadChannel();
   void saveChannel();
-  void beginWifiScan();
-  void pollWifiScan();
-  void cancelWifiScan();
-  void startSelectedWifi();
   void checkForUpdates();
   void installSelectedUpdate();
   void exitToLibrary();

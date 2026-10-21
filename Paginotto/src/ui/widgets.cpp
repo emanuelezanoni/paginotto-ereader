@@ -76,6 +76,14 @@ int drawSectionHeader(const char* title) {
   return contentTop;
 }
 
+void drawStatusLine(int yBaseline, const char* text, bool bold) {
+  if (bold) Font::useBold();
+  else      Font::useBody();
+  u8g2.setCursor(MARGIN_X, yBaseline);
+  u8g2.print(text);
+  Font::useBody();
+}
+
 void drawMenuRow(int yBaseline, const String& label, bool selected, int extraIndent) {
   u8g2.setForegroundColor(1);
   if (selected) Font::useBold();

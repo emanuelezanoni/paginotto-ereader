@@ -13,8 +13,6 @@
 #include "src/ui/screens/library_screen.h"
 #include "src/ui/widgets.h"
 
-static constexpr uint32_t    kStaTimeoutMs  = 15000;
-static constexpr uint32_t    kWifiScanTimeoutMs = 60000;
 static constexpr const char* kKeyOtaChannel = "cfg_ota_channel";
 
 // Static progress callback — called from OTA::download() during the blocking
@@ -51,92 +49,12 @@ void UpdateScreen::beginWithConnectedWifi(const WifiSession& session) {
 //  Exit
 // ----------------------------------------------------------------------------
 void UpdateScreen::exitToLibrary() {
-  cancelWifiScan();
   if (wifiStarted_) {
     wifiEnd();
     wifiStarted_ = false;
   }
   WifiProvisioning::notifyUploadSession(false);
   nextScreen = &g_libraryScreen;
-}
-
-void UpdateScreen::beginWifiScan() {
-  WifiProvisioning::notifyUploadSession(true);
-  cancelWifiScan();
-  visibleCount_ = 0;
-  selectedWifi_ = 0;
-  if (!WifiCreds::has()) {
-    phase_ = Phase::NoCreds;
-    return;
-  }
-  phase_ = Phase::SelectingWifi;
-  scanStartedMs_ = millis();
-  scanState_ = ScanState::Searching;
-  WiFi.mode(WIFI_STA);
-  scanInProgress_ = true;
-  WiFi.scanNetworks(true, true);
-}
-
-void UpdateScreen::cancelWifiScan() {
-  if (scanInProgress_) {
-    WiFi.scanDelete();
-  }
-  scanInProgress_ = false;
-}
-
-void UpdateScreen::pollWifiScan() {
-  if (phase_ != Phase::SelectingWifi || !scanInProgress_) return;
-  if ((uint32_t)(millis() - scanStartedMs_) >= kWifiScanTimeoutMs) {
-    cancelWifiScan();
-    scanState_ = ScanState::TimedOut;
-    draw();
-    return;
-  }
-  int found = WiFi.scanComplete();
-  if (found == -1) return;
-  if (found < 0) {
-    // Keep the same retry cycle as the working WebUI/upload scanner.
-    WiFi.scanDelete();
-    WiFi.scanNetworks(true, true);
-    return;
-  }
-  bool changed = false;
-  for (uint8_t saved = 0; saved < WifiCreds::count(); saved++) {
-    String ssid = WifiCreds::network(saved).ssid;
-    for (int i = 0; i < found; i++) {
-      if (WiFi.SSID(i) != ssid) continue;
-      bool alreadyVisible = false;
-      for (uint8_t j = 0; j < visibleCount_; j++) {
-        if (visible_[j] == saved) alreadyVisible = true;
-      }
-      if (!alreadyVisible && visibleCount_ < WifiCreds::kMaxNetworks) {
-        visible_[visibleCount_++] = saved;
-        changed = true;
-      }
-      break;
-    }
-  }
-  WiFi.scanDelete();
-  scanState_ = ScanState::Complete;
-  if (changed) draw();
-  WiFi.scanNetworks(true, true);
-}
-
-void UpdateScreen::startSelectedWifi() {
-  // Item zero is the static placeholder shown while no network has been
-  // found. Network rows start at one, exactly like UploadScreen's hotspot
-  // row, but the placeholder is intentionally not actionable.
-  if (!visibleCount_ || selectedWifi_ == 0 || selectedWifi_ > visibleCount_) return;
-  WifiCreds::Network saved = WifiCreds::network(visible_[selectedWifi_ - 1]);
-  cancelWifiScan();
-  WiFi.mode(WIFI_OFF);
-  delay(100);
-  wifiStaBegin(saved.ssid, saved.pass);
-  wifiStarted_ = true;
-  WifiProvisioning::notifyUploadSession(true);
-  phase_ = Phase::Connecting;
-  staStartMs_ = millis();
-  draw();
 }
 
 // ----------------------------------------------------------------------------
@@ -164,12 +82,9 @@ void UpdateScreen::onEnter() {
     return;
   }
 
-  if (!WifiCreds::has()) {
-    phase_ = Phase::NoCreds;
-  } else {
-    WifiProvisioning::notifyUploadSession(true);
-    beginWifiScan();
-  }
+  // Firmware Update is entered through UploadScreen, which owns the proven
+  // saved-network picker and hands this screen an already connected session.
+  phase_ = Phase::NoCreds;
   draw();
 }
 
@@ -197,29 +112,6 @@ void UpdateScreen::checkForUpdates() {
   draw();
 }
 
-void UpdateScreen::onIdleTick() {
-  if (phase_ == Phase::SelectingWifi) {
-    pollWifiScan();
-    return;
-  }
-  if (phase_ != Phase::Connecting) return;
-
-  WifiStaResult r = wifiStaPoll(net_);
-  if (r == WifiStaResult::Connected) {
-    phase_ = Phase::Idle;
-    checkForUpdates();
-    return;
-  }
-  if (r == WifiStaResult::Failed ||
-      (uint32_t)(millis() - staStartMs_) > kStaTimeoutMs) {
-    wifiEnd();
-    WifiProvisioning::notifyUploadSession(false);
-    wifiStarted_ = false;
-    phase_ = Phase::ConnFailed;
-    draw();
-  }
-}
-
 // ----------------------------------------------------------------------------
 //  Drawing
 // ----------------------------------------------------------------------------
@@ -231,64 +123,19 @@ void UpdateScreen::draw() {
   // ---- Transient / single-message states -----------------------------------
 
   if (phase_ == Phase::NoCreds) {
-    u8g2.setCursor(MARGIN_X, y);
-    u8g2.print(D_UPDATE_NO_CREDS_L1);
+    drawStatusLine(y, D_UPDATE_NO_CREDS_L1);
     y += 14;
-    u8g2.setCursor(MARGIN_X, y);
-    u8g2.print(D_UPDATE_NO_CREDS_L2);
-    display.update();
-    return;
-  }
-  if (phase_ == Phase::Connecting) {
-    u8g2.setCursor(MARGIN_X, y);
-    u8g2.print(D_UPDATE_CONNECTING);
-    display.update();
-    return;
-  }
-  if (phase_ == Phase::SelectingWifi) {
-    Font::useBold();
-    u8g2.setCursor(MARGIN_X, y);
-    u8g2.print(D_UPDATE_WIFI_HEADER);
-    y += 16;
-    Font::useBody();
-    const int itemCount = static_cast<int>(visibleCount_) + 1;
-    const int selectedItem = static_cast<int>(selectedWifi_);
-    drawScrollableList(y, itemCount, selectedItem,
-      [&](int idx, int rowY, bool selected, int) {
-        if (idx == 0) {
-          drawMenuRow(rowY, D_UPDATE_WIFI_NOT_FOUND, selected);
-        } else {
-          drawMenuRow(rowY, WifiCreds::network(visible_[idx - 1]).ssid, selected);
-        }
-        return 1;
-      });
-    Font::useBody();
-    u8g2.setCursor(MARGIN_X, SCREEN_H - 6);
-    if (scanState_ == ScanState::Searching && !visibleCount_) {
-      u8g2.print(D_UPDATE_WIFI_SEARCHING);
-    } else {
-      u8g2.print(D_UPDATE_WIFI_HINT);
-    }
-    display.update();
-    return;
-  }
-  if (phase_ == Phase::ConnFailed) {
-    u8g2.setCursor(MARGIN_X, y);
-    u8g2.print(D_UPDATE_CONN_FAILED);
+    drawStatusLine(y, D_UPDATE_NO_CREDS_L2);
     display.update();
     return;
   }
   if (phase_ == Phase::Checking) {
-    Font::useBold();
-    u8g2.setCursor(MARGIN_X, y);
-    u8g2.print(D_UPDATE_CHECKING);
-    Font::useBody();
+    drawStatusLine(y, D_UPDATE_CHECKING, true);
     display.update();
     return;
   }
   if (phase_ == Phase::Downloading) {
-    u8g2.setCursor(MARGIN_X, y);
-    u8g2.print(D_UPDATE_INSTALLING);
+    drawStatusLine(y, D_UPDATE_INSTALLING);
     y += 16;
     char pctBuf[8];
     snprintf(pctBuf, sizeof(pctBuf), "%d%%", progress_);
@@ -298,13 +145,9 @@ void UpdateScreen::draw() {
     return;
   }
   if (phase_ == Phase::RebootPrompt) {
-    Font::useBold();
-    u8g2.setCursor(MARGIN_X, y);
-    u8g2.print(D_UPDATE_REBOOT_MSG);
+    drawStatusLine(y, D_UPDATE_REBOOT_MSG, true);
     y += 18;
-    Font::useBody();
-    u8g2.setCursor(MARGIN_X, y);
-    u8g2.print(D_UPDATE_REBOOT_HINT);
+    drawStatusLine(y, D_UPDATE_REBOOT_HINT);
     display.update();
     return;
   }
@@ -372,21 +215,6 @@ void UpdateScreen::onButton(const ButtonEvent& e) {
 
   if (e.kind == ButtonEvent::Triple) {
     exitToLibrary();
-    return;
-  }
-
-  if (phase_ == Phase::SelectingWifi) {
-    if (e.kind == ButtonEvent::Short) {
-      selectedWifi_ = (selectedWifi_ + 1) % (visibleCount_ + 1);
-      draw();
-    } else if (e.kind == ButtonEvent::Double) {
-      startSelectedWifi();
-    }
-    return;
-  }
-
-  if (phase_ == Phase::ConnFailed) {
-    if (e.kind == ButtonEvent::Double) beginWifiScan();
     return;
   }
 

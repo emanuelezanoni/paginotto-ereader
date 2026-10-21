@@ -25,10 +25,6 @@ static constexpr uint32_t kStaTimeoutMs = 10000;
 // stopped. ESP32 can briefly report WL_CONNECT_FAILED from the previous scan
 // transition before the new association attempt has actually started.
 static constexpr uint32_t kStaFailureGraceMs = 1500;
-// Device WebUI scans only saved SSIDs, in repeated async cycles, for this
-// exact bounded period. Keep named so product policy can change it easily.
-static constexpr uint32_t kConfiguredScanTimeoutMs = 60000;
-
 // Keep the QR compact enough to sit beside the connection details on the
 // 250x122 display. Version 3 at ECC_LOW fits both the AP and mDNS/IP URLs.
 static constexpr uint8_t kQrVersion = 3;
@@ -64,7 +60,7 @@ void UploadScreen::draw() {
   int y = drawSectionHeader(firmwareMode_ ? D_UPDATE_HEADER : D_UPLOAD_HEADER);
 
   if (phase_ == Phase::ConnectingSta) {
-    Font::useBold(); u8g2.setCursor(MARGIN_X, y); u8g2.print(D_UPLOAD_CONNECTING); y += 20;
+    drawStatusLine(y, D_UPLOAD_CONNECTING, true); y += 20;
     Font::useBody(); u8g2.setCursor(MARGIN_X, y); u8g2.print(net_.staSsid.c_str());
   } else if (net_.mode == WifiMode::Station) {
     Font::useBold();
@@ -100,28 +96,27 @@ void UploadScreen::draw() {
     // only after the user explicitly selects Hotspot.
     Font::useBody();
     const int itemCount = firmwareMode_
-      ? (visibleCount_ ? static_cast<int>(visibleCount_) : 1)
-      : static_cast<int>(visibleCount_) + 1;
+      ? (scanner_.count() ? static_cast<int>(scanner_.count()) : 1)
+      : static_cast<int>(scanner_.count()) + 1;
     drawScrollableList(y, itemCount, selectedItem_,
       [&](int idx, int rowY, bool selected, int) {
         if (!firmwareMode_ && idx == 0) {
           drawMenuRow(rowY, D_UPLOAD_HOTSPOT_OPTION, selected);
-        } else if (firmwareMode_ && !visibleCount_) {
-          const char* message = scanState_ == ScanState::NoSavedNetworks
+        } else if (firmwareMode_ && !scanner_.count()) {
+          const char* message = scanner_.state() == WifiNetworkScanState::NoSavedNetworks
             ? D_UPLOAD_NO_CONFIGURED : D_UPLOAD_WAITING_NETWORK;
           drawMenuRow(rowY, message, false);
         } else {
           const uint8_t savedIndex = firmwareMode_ ? idx : idx - 1;
-          drawMenuRow(rowY, WifiCreds::network(visible_[savedIndex]).ssid, selected);
+          drawMenuRow(rowY, WifiCreds::network(scanner_.savedIndexAt(savedIndex)).ssid, selected);
         }
         return 1;
       });
     Font::useBody(); u8g2.setCursor(MARGIN_X, SCREEN_H - 6);
     if (connectionFailed_ && (int32_t)(connectionFailedUntilMs_ - millis()) > 0) u8g2.print(D_UPLOAD_CONN_FAILED);
-    else if (scanState_ == ScanState::NoSavedNetworks) u8g2.print(D_UPLOAD_NO_CONFIGURED);
-    else if (scanState_ == ScanState::Searching) u8g2.print(D_UPLOAD_SEARCHING_CONFIGURED);
-    else if (scanState_ == ScanState::TimedOut) u8g2.print(D_UPLOAD_SCAN_TIMED_OUT);
-    else if (visibleCount_) u8g2.print(D_UPLOAD_SCAN_COMPLETE);
+    else if (scanner_.state() == WifiNetworkScanState::NoSavedNetworks) u8g2.print(D_UPLOAD_NO_CONFIGURED);
+    else if (scanner_.state() == WifiNetworkScanState::Searching) u8g2.print(D_UPLOAD_SEARCHING_CONFIGURED);
+    else if (scanner_.state() == WifiNetworkScanState::TimedOut) u8g2.print(D_UPLOAD_SCAN_TIMED_OUT);
     else u8g2.print(D_UPLOAD_NONE_VISIBLE);
   } else {
     // Hotspot details are shown only after Hotspot was selected.
@@ -185,7 +180,7 @@ void UploadScreen::enterReady() {
 }
 
 void UploadScreen::useHotspot() {
-  cancelConfiguredScan();
+  scanner_.cancel();
   if (phase_ == Phase::ConnectingSta) wifiStaAbort();
   net_ = wifiBeginAccessPoint();
   phase_ = Phase::Ready;
@@ -196,66 +191,19 @@ void UploadScreen::useHotspot() {
 }
 
 void UploadScreen::beginConfiguredScan() {
-  cancelConfiguredScan();
-  visibleCount_ = selectedItem_ = 0;
-  if (!WifiCreds::has()) { scanState_ = ScanState::NoSavedNetworks; return; }
-  scanState_ = ScanState::Searching;
-  scanStartedMs_ = millis();
-  WiFi.mode(WIFI_STA);
-  WiFi.scanNetworks(true, true);
-  scanInProgress_ = true;
-}
-
-void UploadScreen::pollConfiguredScan() {
-  if (scanState_ != ScanState::Searching) return;
-  if ((uint32_t)(millis() - scanStartedMs_) >= kConfiguredScanTimeoutMs) {
-    cancelConfiguredScan();
-    scanState_ = ScanState::TimedOut;
-    draw();
-    return;
-  }
-  if (!scanInProgress_) return;
-  int found = WiFi.scanComplete();
-  if (found == -1) return;
-  if (found < 0) {
-    // Failed cycle: keep trying until fixed 60-second deadline.
-    WiFi.scanDelete();
-    WiFi.scanNetworks(true, true);
-    return;
-  }
-  bool changed = false;
-  for (uint8_t saved = 0; saved < WifiCreds::count(); saved++) {
-    String ssid = WifiCreds::network(saved).ssid;
-    for (int i = 0; i < found; i++) {
-      if (WiFi.SSID(i) != ssid) continue;
-      bool alreadyVisible = false;
-      for (uint8_t j = 0; j < visibleCount_; j++) if (visible_[j] == saved) alreadyVisible = true;
-      if (!alreadyVisible && visibleCount_ < WifiCreds::kMaxNetworks) {
-        visible_[visibleCount_++] = saved;
-        changed = true;
-      }
-      break;
-    }
-  }
-  WiFi.scanDelete();
-  if (changed) draw();
-  WiFi.scanNetworks(true, true);
-}
-
-void UploadScreen::cancelConfiguredScan() {
-  if (scanInProgress_) WiFi.scanDelete();
-  scanInProgress_ = false;
+  selectedItem_ = 0;
+  scanner_.begin();
 }
 
 void UploadScreen::startSelectedStation() {
   if (firmwareMode_) {
-    if (selectedItem_ >= visibleCount_) return;
-  } else if (!selectedItem_ || selectedItem_ > visibleCount_) {
+    if (selectedItem_ >= scanner_.count()) return;
+  } else if (!selectedItem_ || selectedItem_ > scanner_.count()) {
     return;
   }
   const uint8_t savedIndex = firmwareMode_ ? selectedItem_ : selectedItem_ - 1;
-  WifiCreds::Network saved = WifiCreds::network(visible_[savedIndex]);
-  cancelConfiguredScan();
+  WifiCreds::Network saved = WifiCreds::network(scanner_.savedIndexAt(savedIndex));
+  scanner_.cancel();
   server.stop();
   WiFi.softAPdisconnect(true);
   // Do not start STA association while the asynchronous scan is still
@@ -284,7 +232,7 @@ void UploadScreen::returnToSelection(bool failed) {
 }
 
 void UploadScreen::stopSessionToLibrary() {
-  cancelConfiguredScan();
+  scanner_.cancel();
   server.stop();
   wifiEnd();
   WifiProvisioning::notifyUploadSession(false);
@@ -328,7 +276,7 @@ void UploadScreen::onButton(const ButtonEvent& e) {
 
   if (net_.mode == WifiMode::AccessPoint && !sessionActive_) {
     if (e.kind == ButtonEvent::Short) {
-      const uint8_t itemCount = firmwareMode_ ? visibleCount_ : visibleCount_ + 1;
+      const uint8_t itemCount = firmwareMode_ ? scanner_.count() : scanner_.count() + 1;
       if (!itemCount) return;
       selectedItem_ = (selectedItem_ + 1) % itemCount;
       connectionFailed_ = false;
@@ -377,7 +325,7 @@ void UploadScreen::onIdleTick() {
     return;   // still associating — server isn't up yet
   }
 
-  if (!sessionActive_) pollConfiguredScan();
+  if (!sessionActive_ && scanner_.poll()) draw();
   if (!sessionActive_ && connectionFailed_ &&
       (int32_t)(connectionFailedUntilMs_ - millis()) <= 0) {
     connectionFailed_ = false;

@@ -11,6 +11,10 @@
 // ============================================================================
 int drawSectionHeader(const char* title);
 
+// Draw a single status line with a consistent font reset. Callers can opt
+// into the bold treatment used for active operations such as Checking.
+void drawStatusLine(int yBaseline, const char* text, bool bold = false);
+
 // Full-screen single- or two-line centered message. Always full-refreshes
 // (no fastmode), so use it sparingly — for hard errors or status notices
 // the user should notice. `b` is optional second line.
