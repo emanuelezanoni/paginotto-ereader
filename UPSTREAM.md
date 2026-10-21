@@ -9,7 +9,10 @@ Paginotto firmware starts from the Pala One firmware project:
 
 This repository is a substantially modified derivative for the Paginotto
 e-reader. Paginotto-specific product code, firmware behaviour, device/WebUI
-design and deployment work are maintained separately in this repository.
+design and deployment work are maintained separately in this repository. After
+the initial import, the codebase was heavily debloated: unused features,
+dependencies and legacy paths were removed before the Paginotto-specific
+systems were developed.
 
 The upstream repository does not provide a standard LICENSE file. This is why
 Paginotto does not claim a new MIT/GPL/Apache license over the complete

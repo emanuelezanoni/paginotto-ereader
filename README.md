@@ -18,6 +18,8 @@ remote.
 
 Since the import, Paginotto has been substantially redesigned and extended:
 
+- heavily debloated by removing unused features, dependencies and legacy
+  paths that are not part of the Paginotto product;
 - new product identity, UI hierarchy and e-ink interaction model;
 - reworked reader, gestures, sleep behaviour and library navigation;
 - redesigned WebUI for books, folders, editing, search and settings;
