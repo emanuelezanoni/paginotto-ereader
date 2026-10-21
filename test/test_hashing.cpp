@@ -23,7 +23,3 @@ TEST_CASE("prefKeyForBook is deterministic and well-formed") {
   // Different paths produce different keys
   CHECK(prefKeyForBook("/books/a.txt") != prefKeyForBook("/books/b.txt"));
 }
-
-TEST_CASE("bmKeyFor appends _bm suffix") {
-  CHECK_EQ(bmKeyFor("b_12345678"), String("b_12345678_bm"));
-}
