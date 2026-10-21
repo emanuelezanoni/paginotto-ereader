@@ -31,8 +31,8 @@ struct WifiSession {
   WifiMode    mode = WifiMode::AccessPoint;
   String      primaryUrl;     // STA: http://paginotto.local  AP: http://192.168.4.1
   String      fallbackUrl;    // STA: http://<lan-ip>        AP: ""
-  const char* apSsid = "";    // populated in AccessPoint mode only
-  const char* apPass = "";    // populated in AccessPoint mode only
+  String      apSsid;          // populated in AccessPoint mode only
+  String      apPass;          // populated in AccessPoint mode only
   String      staSsid;        // populated in Station mode only
 };
 
@@ -46,6 +46,7 @@ enum class WifiStaResult {
 // Returns false if no creds are saved (caller should go straight to AP).
 // Non-blocking; bumps CPU to 240 MHz.
 bool          wifiStaBegin();
+bool          wifiStaBegin(const String& ssid, const String& pass);
 
 // Poll the in-flight STA attempt. On Connected, `out` is filled with the
 // session and the caller takes ownership. On Failed, the caller should

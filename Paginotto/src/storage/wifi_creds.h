@@ -9,11 +9,22 @@
 // (`prefs`), under per-module keys following the existing convention.
 namespace WifiCreds {
 
-bool   has();                                   // true iff a non-empty SSID is stored
-String ssid();                                  // "" if not set
-String pass();                                  // "" if not set
-void   save(const String& ssid, const String& pass);
-void   clear();
+static constexpr uint8_t kMaxNetworks = 5;
+
+struct Network { String ssid; String pass; };
+
+uint8_t count();
+bool has();
+Network network(uint8_t index);
+bool add(const String& ssid, const String& pass); // replaces same SSID; false when full
+void remove(uint8_t index);
+
+// Legacy convenience for firmware-update flow. It deliberately keeps using
+// first saved network; WebUI has explicit user selection and no fallback.
+String ssid();
+String pass();
+void save(const String& ssid, const String& pass);
+void clear();
 
 }  // namespace WifiCreds
 

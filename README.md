@@ -1,15 +1,40 @@
 # Paginotto firmware
 
-Firmware for the Paginotto pocket e-book reader.
+Firmware for the Paginotto pocket e-book reader: a small, distraction-free
+TXT reader built around the Heltec Wireless Paper.
 
 The goal of the project was to create a simple, distraction-free reading device that feels minimal, portable and easy to build while still looking and behaving more like a real product than a typical DIY electronics project.
 
-This repository contains the firmware source code for the project.
+This repository contains the firmware, device UI, WebUI, storage layer and the
+GitHub-based installer/OTA deployment pipeline.
+
+## Project origin and attribution
+
+Paginotto is an independent derivative of the Pala One firmware
+(https://github.com/PaulLagier/pala-one-firmware), originally created by
+**Paul Lagier**. The original import and provenance are documented in
+UPSTREAM.md, including the imported upstream commit and the upstream Git
+remote.
+
+Since the import, Paginotto has been substantially redesigned and extended:
+
+- new product identity, UI hierarchy and e-ink interaction model;
+- reworked reader, gestures, sleep behaviour and library navigation;
+- redesigned WebUI for books, folders, editing, search and settings;
+- one-level folders with device-side folder navigation;
+- streaming text editing with automatic repagination;
+- GitHub Pages installer and dual-channel OTA updates;
+- many storage, reliability and display-flow changes specific to Paginotto.
+
+The upstream project remains the origin of the inherited code and deserves
+its original attribution. Paginotto-specific work is maintained by Emanuele
+Zanoni and contributors to this repository.
 
 ## Install (no toolchain needed)
 
-The web installer will be published here when the Paginotto deployment pipeline
-is ready.
+The web installer is published through GitHub Pages at:
+
+https://emanuelezanoni.github.io/paginotto-ereader/
 
 The easiest way to flash a board is via the web installer. Plug your Heltec Wireless Paper into a desktop computer running Chrome, Edge, or Opera, then open the installer page and pick a channel:
 
@@ -32,7 +57,10 @@ Pick your board's revision in the build step below — either by uncommenting th
 
 Besides the SoftAP captive portal, the firmware supports **Improv Serial** Wi-Fi provisioning ([improv-wifi.com](https://www.improv-wifi.com)) over the USB-CDC port, using the [`jnthas/Improv-WiFi-Library`](https://github.com/jnthas/Improv-WiFi-Library). When the board is plugged into a computer, a browser can hand it Wi-Fi credentials directly; the Paginotto installer will handle the post-flash redirect once deployed.
 
-Saved credentials let the device join your network in **Station mode** the next time it enters the web UI / upload mode; if none are saved (or the join fails) it falls back to the open SoftAP at `192.168.4.1`.
+Saved credentials let the device join your network in **Station mode**. The
+Firmware Update screen only uses saved networks visible nearby and never
+falls back to hotspot mode. The WebUI can still use the device hotspot for
+initial provisioning when no network has been saved.
 
 ## OTA firmware updates
 
@@ -41,19 +69,22 @@ Once the device has Wi-Fi credentials stored (see [Wi-Fi provisioning](#wi-fi-pr
 ### How to update
 
 1. Navigate to **Firmware Update** at the bottom of the library menu.
-2. The device connects to your home network automatically.
-3. Select a channel with **1×** press:
-   - `[x] Stable` — latest tagged release. 
-   - `[ ] Dev` — latest development build; may contain new features or instabilities.
-4. Navigate to **[ Check for update ]** with **1×** and confirm with **2×**.
-   The device probes the update server, fetches the manifest, and compares the remote version against the installed one.
-5. If an update is available, **[ Install update ]** appears. Navigate to it with **1×** and confirm with **2×**.
+2. The device shows nearby networks for which credentials are already saved.
+   Select one with **1×** and connect with **2×**. There is no hotspot option
+   in this screen.
+3. Select Stable or Dev and choose **[ Check for update ]**.
+4. The device checks both channels and displays either:
+   - the stable transition, for example **v3.0 → v3.1.0**;
+   - **Dev: update to commit abc1234**;
+   - or that each channel is already up to date.
+5. Select the channel to install, then confirm **[ Install update ]** with **2×**.
    The binary streams directly into the idle OTA partition (~5–30 s depending on your network).
 6. When flashing is complete, press **2×** to reboot into the new firmware.
 
 ### Requirements
 
-- Wi-Fi credentials must be provisioned first (see below). If none are stored the screen shows *"No Wi-Fi credentials — setup via web installer"*.
+- Wi-Fi credentials must be provisioned first (see below). If none are stored
+  the screen asks you to configure Wi-Fi through the WebUI first.
 - The device must be able to reach the configured update server over HTTPS. A local network without internet access will be reported as *"Cannot reach update server"*.
 
 
@@ -123,7 +154,9 @@ Arduino IDE / host-test builds skip the script and fall back to `"dev"` and `"un
 
 ### Web Installer site (channels & CI)
 
-The web installer will be published to the `gh-pages` branch by [`.github/workflows/deploy-installer.yml`](.github/workflows/deploy-installer.yml) once its deployment target is configured. Two channels live side-by-side and never overwrite each other:
+The web installer is published to the gh-pages branch by
+the workflow at .github/workflows/deploy-installer.yml. Two channels live
+side-by-side and never overwrite each other:
 
 | Trigger                       | Channel  | URL path     | `DEBUG_BUILD` | Manifest version |
 |-------------------------------|----------|--------------|---------------|------------------|
@@ -158,7 +191,9 @@ To iterate on the installer page (HTML, Improv Serial provisioning flow, manifes
    ```
 4. Open <http://localhost:8000> in Chrome, Edge, or Opera. With `--channel`, the landing page is served; without, the installer is served directly.
 
-Optional flags: `--version <string>` to label the manifest, `--out <dir>` to write somewhere other than `site/`. The channel-aware layout produced locally is bit-identical to what the workflow uploads to `gh-pages`.
+Optional flags: --version <string>, --commit <short-sha> and --out <dir>.
+The channel-aware layout produced locally is bit-identical to what the
+workflow uploads to gh-pages.
 
 ## Codebase layout
 
@@ -213,7 +248,7 @@ See [test/README.md](test/README.md) for prerequisites (CMake + a C++17 compiler
 - Deep sleep mode
 - USB-C charging
 - Lightweight portable design
-- Open-source firmware
+- Firmware source available for inspection and modification subject to the attribution terms above
 
 
 ## Community & Modifications
@@ -221,7 +256,12 @@ See [test/README.md](test/README.md) for prerequisites (CMake + a C++17 compiler
 Community improvements, forks and firmware modifications are welcome.
 If you build your own version or improve the project, feel free to share it with the community.
 
-## License & Copyright
+## License and copyright
+
+This repository does not currently declare a new standard open-source license.
+The inherited upstream code and its original terms remain attributable to Paul
+Lagier; see UPSTREAM.md. A permissive license cannot be added to the complete
+derivative without explicit permission from the upstream copyright holder.
 
 The firmware in this repository is provided for personal and educational use.
 
@@ -235,4 +275,7 @@ The design, branding, documentation and paid project assets remain copyright © 
 
 ---
 
-Created by Paul Lagier
+Paginotto-specific code, documentation and design changes are maintained by
+Emanuele Zanoni and contributors, subject to the same attribution boundary.
+Do not treat this repository as a grant to redistribute upstream or paid
+project assets.

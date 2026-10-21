@@ -77,7 +77,7 @@ void begin() {
       "Paginotto",
       FW_VERSION,
       "Paginotto",
-      "https://paginotto.invalid/connected.html");
+      "https://emanuelezanoni.github.io/paginotto-ereader/connected.html");
 
   // The library handles WiFi.begin() itself; we only persist creds once the
   // association succeeds. If the association fails the library reports the

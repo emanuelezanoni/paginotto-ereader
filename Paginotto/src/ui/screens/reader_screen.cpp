@@ -47,7 +47,7 @@ void ReaderScreen::onButton(const ButtonEvent& e) {
 
   // Remappable hold gestures dispatch through the user's binding. NB:
   // An unbound gesture (ACTION_NONE) is a no-op.
-  if (e.kind == ButtonEvent::ClickHold) {
+  if (e.kind == ButtonEvent::Hold || e.kind == ButtonEvent::ClickHold) {
     performReaderAction(Gestures::actionFor(e.kind));
     return;
   }

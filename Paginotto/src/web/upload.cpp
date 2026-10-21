@@ -37,7 +37,12 @@ struct SleepUpload {
 
 BookUpload  s_book;
 SleepUpload s_sleep;
+uint32_t s_lastActivityMs = 0;
 }  // namespace
+
+void notifyUploadActivity() { s_lastActivityMs = millis(); }
+
+uint32_t uploadLastActivityMs() { return s_lastActivityMs; }
 
 void resetBookUpload() {
   if (s_book.tmpFile) s_book.tmpFile.close();
@@ -60,6 +65,7 @@ void resetSleepUpload() {
 // ============================================================================
 
 static void handleUploadDone() {
+  notifyUploadActivity();
   if (!s_book.ok) {
     server.send(400, "text/plain; charset=utf-8",
                 s_book.error.length()
@@ -96,6 +102,7 @@ static void handleUploadDone() {
 }
 
 static void handleUploadBookStream() {
+  notifyUploadActivity();
   HTTPUpload& up = server.upload();
 
   if (up.status == UPLOAD_FILE_START) {
@@ -120,10 +127,10 @@ static void handleUploadBookStream() {
     }
     s_book.maxBytes = freeBytes;
 
-    constexpr size_t kMaxBookPath = sizeof(g_library.books[0].path) - 1;
-    constexpr size_t kBookRootBytes = sizeof("/books/") - 1;
-    String clean = sanitizeUploadedFilename(up.filename,
-                                             kMaxBookPath - kBookRootBytes);
+    // Keep uploaded stems within the catalog name buffer as well as the
+    // filesystem path buffer. The reader can display only 29 title chars;
+    // longer names are still preserved up to the safe catalog limit.
+    String clean = sanitizeUploadedFilename(up.filename, MAX_BOOK_TITLE_BYTES + 4);
     s_book.finalName = clean;
     s_book.tmpPath   = "/books/" + clean + ".tmp";
 

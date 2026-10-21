@@ -16,7 +16,7 @@
 //  (src/ui/screens/library_screen.cpp). The "+ " / "- " expansion indicators
 //  in entryLabel() are visual symbols and intentionally NOT translated.
 // ----------------------------------------------------------------------------
-#define D_MENU_WEB_UI               "WebUI"
+#define D_MENU_WEB_UI               "Open WebUI"
 #define D_LIBRARY_OPEN_FAILED       "Open failed"
 #define D_LIBRARY_TRY_UPLOAD        "Try WebUI again"
 
@@ -27,10 +27,19 @@
 #define D_UPLOAD_WIFI               "Wi-Fi"
 #define D_UPLOAD_PASSWORD           "Password"
 #define D_UPLOAD_OPEN               "Open"
-#define D_UPLOAD_CONNECTING         "Connecting"
+#define D_UPLOAD_CONNECTING         "Connecting..."
 #define D_UPLOAD_CONNECTED          "Connected"
 #define D_UPLOAD_HOTSPOT_HINT_L1    "Press button to"
 #define D_UPLOAD_HOTSPOT_HINT_L2    "use hotspot instead"
+#define D_UPLOAD_SEARCHING_CONFIGURED "Looking for saved networks..."
+#define D_UPLOAD_NO_CONFIGURED      "No saved networks configured"
+#define D_UPLOAD_NONE_VISIBLE       "No saved networks visible"
+#define D_UPLOAD_SELECT_NETWORK     "Saved network"
+#define D_UPLOAD_SELECT_HINT        "Tap: select  2x: next"
+#define D_UPLOAD_CONN_FAILED        "Connection failed. Resuming search..."
+#define D_UPLOAD_HOTSPOT_OPTION     "Use hotspot (no Wi-Fi)"
+#define D_UPLOAD_SCAN_TIMED_OUT     "Search timed out"
+#define D_UPLOAD_SCAN_COMPLETE      "Search complete"
 
 // ----------------------------------------------------------------------------
 //  Update screen (src/ui/screens/update_screen.cpp)
@@ -38,18 +47,24 @@
 #define D_MENU_UPDATE               "Firmware Update"
 #define D_UPDATE_HEADER             "Firmware Update"
 #define D_UPDATE_VERSION_PREFIX     "Current Version: "
-#define D_UPDATE_CHANNEL_LABEL      "Select Firmware Channel:"
+#define D_UPDATE_WIFI_HEADER        "Select Wi-Fi network"
+#define D_UPDATE_WIFI_SEARCHING     "Searching saved networks..."
+#define D_UPDATE_WIFI_NONE          "No saved Wi-Fi networks"
+#define D_UPDATE_WIFI_HINT          "2x connect  3x back"
+#define D_UPDATE_CHANNEL_LABEL      "Choose update channel"
 #define D_UPDATE_CHAN_STABLE        "Stable"
 #define D_UPDATE_CHAN_DEV           "Dev"
 #define D_UPDATE_BTN_CHECK          "[ Check for update ]"
 #define D_UPDATE_NO_CREDS_L1        "No Wi-Fi credentials."
-#define D_UPDATE_NO_CREDS_L2        "Setup via web installer."
+#define D_UPDATE_NO_CREDS_L2        "Connect Wi-Fi via WebUI first."
 #define D_UPDATE_CONNECTING         "Connecting..."
 #define D_UPDATE_CONN_FAILED        "Wi-Fi connection failed"
 #define D_UPDATE_CHECKING           "Checking..."
 #define D_UPDATE_SERVER_FAIL        "Cannot reach update server"
-#define D_UPDATE_UP_TO_DATE         "Already up to date"
-#define D_UPDATE_AVAILABLE_PREFIX   "Available: "
+#define D_UPDATE_STABLE_CURRENT     "Stable: up to date"
+#define D_UPDATE_STABLE_AVAILABLE   "Stable: "
+#define D_UPDATE_DEV_CURRENT        "Dev: up to date"
+#define D_UPDATE_DEV_AVAILABLE      "Dev: update to commit "
 #define D_UPDATE_BTN_INSTALL        "[ Install update ]"
 #define D_UPDATE_INSTALLING         "Installing..."
 #define D_UPDATE_DOWNLOAD_FAILED    "Download failed"
@@ -66,7 +81,6 @@
 //  Lock / screensaver (src/ui/sleep.cpp, Paginotto.ino)
 // ----------------------------------------------------------------------------
 #define D_SCREENSAVER_LOCKED        "Locked"
-#define D_TOAST_UNLOCKED            "Unlocked"
 
 // ============================================================================
 //  Web UI (captive portal) — strings embedded in HTML via adjacent-literal
@@ -106,12 +120,12 @@
 // ----------------------------------------------------------------------------
 #define D_WEB_BOOKS_HEADING         "Books"
 #define D_WEB_BOOKS_SUBTITLE        "Manage books, folders and library structure for Paginotto."
-#define D_WEB_BOOKS_PATHS_DESC      "Books are stored as UTF-8 .txt files under /books. Folders are relative paths under /books; nested paths are supported, and leaving Move blank returns a book to the /books root."
+#define D_WEB_BOOKS_PATHS_DESC      "Books are stored as UTF-8 .txt files under /books. Only one folder level is supported; leaving Move blank returns a book to the library root."
 #define D_WEB_CREATE_FOLDER_HEADING "Create folder"
-#define D_WEB_CREATE_FOLDER_PLACEHOLDER "books or classics"
+#define D_WEB_CREATE_FOLDER_PLACEHOLDER "folder name"
 #define D_WEB_CREATE_FOLDER_BUTTON  "Create folder"
-#define D_WEB_CREATE_FOLDER_HINT    "Folders live inside /books."
-#define D_WEB_FOLDERS_HEADING       "Folders"
+#define D_WEB_CREATE_FOLDER_HINT    "One level only; maximum 24 characters."
+#define D_WEB_FOLDERS_HEADING       "Library tree"
 #define D_WEB_NO_FOLDERS            "No folders yet. Books currently live in the root of /books."
 #define D_WEB_CONFIRM_DELETE_FOLDER "Delete folder? Only empty folders can be deleted."
 #define D_WEB_DELETE_BUTTON         "Delete"
@@ -121,6 +135,10 @@
 #define D_WEB_NO_BOOKS_UPLOADED     "No books uploaded yet."
 #define D_WEB_BOOK_ROOT             "Root"
 #define D_WEB_BOOK_BYTES_LABEL      " bytes"
+#define D_WEB_BOOK_KB_LABEL         " KB"
+#define D_WEB_BOOK_NAME_LIMIT_HINT  "The device shows 29 characters; longer titles appear as [...]"
+#define D_WEB_BOOK_NAME_COUNTER     " characters"
+#define D_WEB_FOLDER_NAME_COUNTER   " characters"
 #define D_WEB_BOOK_FOLDER_LABEL     " | folder: "
 #define D_WEB_BOOK_CURRENT_PAGE     " | current page: "
 #define D_WEB_JUMP_BUTTON           "Jump"
@@ -128,7 +146,7 @@
 #define D_WEB_JUMP_HINT2            "The first open may take a moment."
 #define D_WEB_PAGE_PLACEHOLDER      "Page"
 #define D_WEB_MOVE_BUTTON           "Move"
-#define D_WEB_MOVE_HINT             "Folder paths are relative to /books; use slash-separated nested folders (for example classics/fiction). Leave blank for /books root."
+#define D_WEB_MOVE_HINT             "Choose a top-level folder, or leave it in the library root."
 #define D_WEB_MOVE_PLACEHOLDER      "leave blank for root"
 #define D_WEB_RENAME_BUTTON         "Rename"
 #define D_WEB_RENAME_HINT           "Keeps .txt and your reading progress."
@@ -223,6 +241,7 @@
 #define D_WEB_BUTTONS_HEADING       "Buttons"
 #define D_WEB_BUTTONS_HINT          "1 click = next, 2 = previous, 3 = home. The two holds below are remappable."
 #define D_WEB_BUTTONS_CLICK_HOLD    "Click, then hold"
+#define D_WEB_BUTTONS_HOLD          "Hold"
 #define D_WEB_BUTTONS_SAVE          "Save buttons"
 #define D_WEB_BUTTONS_LOCK_HINT     "If locked, repeat any hold gesture to unlock."
 #define D_WEB_BUTTONS_ACTION_NONE     "None"
@@ -264,9 +283,10 @@
 // ----------------------------------------------------------------------------
 //  In-browser reader + find/jump (src/web/find.cpp).
 // ----------------------------------------------------------------------------
-#define D_WEB_READ_TITLE            "Read"
-#define D_WEB_READ_SUBTITLE         "Browse and search the book in your browser. Use Jump to set the device's resume point."
+#define D_WEB_READ_TITLE            "Edit &amp; jump"
+#define D_WEB_READ_SUBTITLE         "Browse, edit and position the book in your browser."
 #define D_WEB_READ_BYTES_LABEL      "bytes"
+#define D_WEB_READ_KB_LABEL         "KB"
 #define D_WEB_READ_CURRENT_PAGE_LABEL "current page:"
 #define D_WEB_READ_FIND_PLACEHOLDER "Find in book"
 #define D_WEB_READ_FIND_ALL         "Find all"
@@ -277,7 +297,12 @@
 #define D_WEB_READ_PAGE_PLACEHOLDER "Page number"
 #define D_WEB_READ_JUMP_PAGE        "Jump to page"
 #define D_WEB_READ_JUMP_HINT        "Saves the next-open page directly."
-#define D_WEB_READ_AND_FIND_LINK    "Read &amp; find"
+#define D_WEB_READ_AND_FIND_LINK    "Edit &amp; jump"
+#define D_WEB_READ_EDIT_TEXT        "Edit text"
+#define D_WEB_READ_EDIT_WARNING     "Warning: saving replaces the book on the device immediately. There is no device backup. Download the current TXT first if you may need to recover it."
+#define D_WEB_READ_DOWNLOAD_BACKUP  "Download current TXT"
+#define D_WEB_READ_SAVE_EDIT        "Save &amp; repaginate"
+#define D_WEB_READ_EDIT_CANCEL      "Cancel editing"
 
 // ----------------------------------------------------------------------------
 //  Bionic reading + reading-position retention

@@ -37,6 +37,7 @@ static const int LIBRARY_DEPTH_INDENT = 10;
 static int  s_cursor = 0;
 static char s_expandedNames[MAX_FOLDERS][MAX_FOLDER_PATH + 1];
 static int  s_expandedCount = 0;
+static char s_openFolder[MAX_FOLDER_PATH + 1] = "";
 
 // Cached entry list, rebuilt each draw, read by onButton until the next
 // draw. Sized for the same upper bound the catalog can produce.
@@ -105,17 +106,43 @@ static int rowIndent(const LibEntry& e) {
   return e.depth * LIBRARY_DEPTH_INDENT;
 }
 
+static String truncateBookLabel(const String& label) {
+  if (label.length() <= MAX_DEVICE_BOOK_LABEL_CHARS) return label;
+  const int keep = MAX_DEVICE_BOOK_LABEL_CHARS - 3;
+  if (keep <= 0) return String("...").substring(0, MAX_DEVICE_BOOK_LABEL_CHARS);
+  return label.substring(0, keep) + "...";
+}
+
 static String entryLabel(const LibEntry& e) {
   switch (e.type) {
     case LIB_ENTRY_FOLDER: {
-      String prefix = isExpanded(g_library.folders[e.ref]) ? "- " : "+ ";
-      return prefix + folderLeafLabel(String(g_library.folders[e.ref]));
+      return folderLeafLabel(String(g_library.folders[e.ref]));
     }
-    case LIB_ENTRY_BOOK:      return bookLeafLabel(String(g_library.books[e.ref].path));
+    case LIB_ENTRY_BOOK:      return truncateBookLabel(bookLeafLabel(String(g_library.books[e.ref].path)));
     case LIB_ENTRY_UPDATE:     return D_MENU_UPDATE;
     case LIB_ENTRY_UPLOAD:     return D_MENU_WEB_UI;
   }
   return "";
+}
+
+// Small bitmap folder icon: no Unicode glyphs, no font dependency, and it
+// remains legible after the e-ink panel's partial refreshes. Selected rows use
+// a heavier outline but keep exactly the same bounding box.
+static void drawFolderMenuRow(int yBaseline, const String& label,
+                              bool selected, int extraIndent) {
+  const int x = UI_LIST_LEFT + extraIndent;
+  if (selected) Font::useBold();
+  else          Font::useBody();
+
+  gfx.drawRect(x + 1, yBaseline - 9, 13, 8, 1);
+  gfx.drawFastHLine(x + 3, yBaseline - 11, 6, 1);
+  if (selected) {
+    gfx.drawRect(x + 2, yBaseline - 8, 11, 6, 1);
+    gfx.drawFastHLine(x + 3, yBaseline - 10, 6, 1);
+  }
+  u8g2.setCursor(x + 19, yBaseline);
+  u8g2.print(label.c_str());
+  Font::useBody();
 }
 
 static bool beginsSystemSection(int idx) {
@@ -162,21 +189,35 @@ void LibraryScreen::draw() {
   systemEntries[systemCount++] = LIB_ENTRY_UPLOAD;
   systemEntries[systemCount++] = LIB_ENTRY_UPDATE;
 
-  // Build the bool[] view that the assembler wants from our name-keyed
-  // expansion set, against the current folder ordering.
-  bool expanded[MAX_FOLDERS] = {false};
-  for (int i = 0; i < g_library.folderCount; i++) {
-    expanded[i] = isExpanded(g_library.folders[i]);
+  String folderTitle = s_openFolder[0]
+                     ? folderLeafLabel(String(s_openFolder))
+                     : String(LIB_HEADER_TITLE);
+  if (s_openFolder[0]) {
+    s_entryCount = 0;
+    for (int i = 0; i < g_library.bookCount && s_entryCount < MAX_LIBRARY_ENTRIES; i++) {
+      if (strcmp(g_library.books[i].folder, s_openFolder) == 0) {
+        s_entries[s_entryCount++] = {LIB_ENTRY_BOOK, i, 0};
+      }
+    }
+  } else {
+    // Root view: folders are entries in their own right. Opening one enters
+    // a dedicated folder page instead of expanding a second tree inline.
+    bool collapsed[MAX_FOLDERS] = {false};
+    s_entryCount = buildLibraryEntries(g_library, collapsed,
+                                       systemEntries, systemCount,
+                                       s_entries, MAX_LIBRARY_ENTRIES);
   }
-
-  s_entryCount = buildLibraryEntries(g_library, expanded,
-                                     systemEntries, systemCount,
-                                     s_entries, MAX_LIBRARY_ENTRIES);
 
   if (s_cursor < 0) s_cursor = 0;
   if (s_cursor >= s_entryCount) s_cursor = max(0, s_entryCount - 1);
 
-  int y = drawSectionHeader(LIB_HEADER_TITLE);
+  int y = drawSectionHeader(folderTitle.c_str());
+
+  if (s_openFolder[0] && s_entryCount == 0) {
+    drawMenuRow(y, "Folder is empty", false, 0);
+    display.update();
+    return;
+  }
 
   drawScrollableList(y, s_entryCount, s_cursor,
     [&](int idx, int rowY, bool selected, int budget) {
@@ -186,7 +227,13 @@ void LibraryScreen::draw() {
         gfx.drawFastHLine(UI_LIST_LEFT, rowY - (menuLineH() / 2),
                           SCREEN_W - UI_LIST_LEFT - MARGIN_X, 1);
       }
-      drawMenuRow(rowY, entryLabel(s_entries[idx]), selected, rowIndent(s_entries[idx]));
+      if (s_entries[idx].type == LIB_ENTRY_FOLDER) {
+        drawFolderMenuRow(rowY, entryLabel(s_entries[idx]), selected,
+                          rowIndent(s_entries[idx]));
+      } else {
+        drawMenuRow(rowY, entryLabel(s_entries[idx]), selected,
+                    rowIndent(s_entries[idx]));
+      }
       return spacer ? 2 : 1;
     });
 
@@ -197,11 +244,17 @@ void LibraryScreen::onButton(const ButtonEvent& e) {
   if (!e.any()) return;
 
   if (e.kind == ButtonEvent::Triple) {
+    if (s_openFolder[0]) {
+      s_openFolder[0] = '\0';
+      s_cursor = 0;
+      draw();
+      return;
+    }
     navigateToLibraryRoot();
     return;
   }
 
-  if (e.kind == ButtonEvent::ClickHold) {
+  if (e.kind == ButtonEvent::Hold || e.kind == ButtonEvent::ClickHold) {
     performLibraryAction(Gestures::actionFor(e.kind));
     return;
   }
@@ -224,7 +277,9 @@ void LibraryScreen::onButton(const ButtonEvent& e) {
   const LibEntry& sel = s_entries[s_cursor];
 
   if (sel.type == LIB_ENTRY_FOLDER) {
-    toggleExpanded(g_library.folders[sel.ref]);
+    strncpy(s_openFolder, g_library.folders[sel.ref], MAX_FOLDER_PATH);
+    s_openFolder[MAX_FOLDER_PATH] = '\0';
+    s_cursor = 0;
     draw();
     return;
   }
@@ -256,10 +311,12 @@ void LibraryScreen::onButton(const ButtonEvent& e) {
 //  Public ops for callers outside the screen
 // ============================================================================
 void navigateToLibraryRoot() {
+  s_openFolder[0] = '\0';
   if (g_currentScreen) g_currentScreen->nextScreen = &g_libraryScreen;
 }
 
 void resetLibraryNav() {
   s_cursor = 0;
   s_expandedCount = 0;
+  s_openFolder[0] = '\0';
 }

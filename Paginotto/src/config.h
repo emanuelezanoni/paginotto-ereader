@@ -57,8 +57,16 @@ static const int SCREEN_H = 122;
 static const int MAX_BOOKS = 80;
 static const int MAX_FOLDERS = 32;
 static const int MAX_FOLDER_PATH = 63;  // chars, excluding null
+static const int MAX_FOLDER_NAME_BYTES = 24;
 static const int MAX_PAGES = 10000;
 static const int MAX_LIBRARY_ENTRIES = (MAX_BOOKS * 2) + (MAX_FOLDERS * 2) + 8;
+// Conservative character limit for book labels in the e-ink library list.
+// The renderer appends an ellipsis when a label reaches this limit.
+static const int MAX_DEVICE_BOOK_LABEL_CHARS = 32;
+// BookInfo::name has 80 bytes including the terminator. This is the maximum
+// safe title length exposed by the WebUI; the display has its own smaller
+// visual limit above.
+static const int MAX_BOOK_TITLE_BYTES = 79;
 
 // Max silence after the most recent release before we commit a click sequence.
 // The press-in-progress gate in input.cpp's trailing-silence check means this
@@ -78,7 +86,7 @@ static const uint32_t DEBOUNCE_MS = 14;
 
 static const uint32_t SAVE_EVERY_MS = 7000;
 static const uint32_t TOAST_MS = 650;
-static const uint32_t UPLOAD_AUTO_EXIT_MS = 15UL * 60UL * 1000UL;
+static const uint32_t UPLOAD_INACTIVITY_TIMEOUT_MS = 5UL * 60UL * 1000UL;
 static const uint32_t BAT_CACHE_MS = 180000; // 3 min — battery changes slowly
 
 static const int FULL_REFRESH_EVERY_N_PAGES = 100;

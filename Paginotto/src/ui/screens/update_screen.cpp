@@ -14,6 +14,7 @@
 #include "src/ui/widgets.h"
 
 static constexpr uint32_t    kStaTimeoutMs  = 15000;
+static constexpr uint32_t    kWifiScanTimeoutMs = 60000;
 static constexpr const char* kKeyOtaChannel = "cfg_ota_channel";
 
 // Static progress callback — called from OTA::download() during the blocking
@@ -45,12 +46,81 @@ void UpdateScreen::setProgress(int pct) {
 //  Exit
 // ----------------------------------------------------------------------------
 void UpdateScreen::exitToLibrary() {
+  cancelWifiScan();
   if (wifiStarted_) {
     wifiEnd();
-    WifiProvisioning::notifyUploadSession(false);
     wifiStarted_ = false;
   }
+  WifiProvisioning::notifyUploadSession(false);
   nextScreen = &g_libraryScreen;
+}
+
+void UpdateScreen::beginWifiScan() {
+  WifiProvisioning::notifyUploadSession(true);
+  cancelWifiScan();
+  visibleCount_ = 0;
+  selectedWifi_ = 0;
+  if (!WifiCreds::has()) {
+    phase_ = Phase::NoCreds;
+    return;
+  }
+  phase_ = Phase::SelectingWifi;
+  scanStartedMs_ = millis();
+  scanInProgress_ = true;
+  WiFi.mode(WIFI_STA);
+  WiFi.scanNetworks(true, true);
+}
+
+void UpdateScreen::cancelWifiScan() {
+  if (scanInProgress_) WiFi.scanDelete();
+  scanInProgress_ = false;
+}
+
+void UpdateScreen::pollWifiScan() {
+  if (phase_ != Phase::SelectingWifi || !scanInProgress_) return;
+  if ((uint32_t)(millis() - scanStartedMs_) >= kWifiScanTimeoutMs) {
+    cancelWifiScan();
+    draw();
+    return;
+  }
+  int found = WiFi.scanComplete();
+  if (found == -1) return;
+  if (found < 0) {
+    WiFi.scanDelete();
+    WiFi.scanNetworks(true, true);
+    return;
+  }
+  for (uint8_t saved = 0; saved < WifiCreds::count(); saved++) {
+    String ssid = WifiCreds::network(saved).ssid;
+    for (int i = 0; i < found; i++) {
+      if (WiFi.SSID(i) != ssid) continue;
+      bool alreadyVisible = false;
+      for (uint8_t j = 0; j < visibleCount_; j++) {
+        if (visible_[j] == saved) alreadyVisible = true;
+      }
+      if (!alreadyVisible && visibleCount_ < WifiCreds::kMaxNetworks) {
+        visible_[visibleCount_++] = saved;
+      }
+      break;
+    }
+  }
+  WiFi.scanDelete();
+  WiFi.scanNetworks(true, true);
+  draw();
+}
+
+void UpdateScreen::startSelectedWifi() {
+  if (!visibleCount_ || selectedWifi_ >= visibleCount_) return;
+  WifiCreds::Network saved = WifiCreds::network(visible_[selectedWifi_]);
+  cancelWifiScan();
+  WiFi.mode(WIFI_OFF);
+  delay(100);
+  wifiStaBegin(saved.ssid, saved.pass);
+  wifiStarted_ = true;
+  WifiProvisioning::notifyUploadSession(true);
+  phase_ = Phase::Connecting;
+  staStartMs_ = millis();
+  draw();
 }
 
 // ----------------------------------------------------------------------------
@@ -59,24 +129,29 @@ void UpdateScreen::exitToLibrary() {
 void UpdateScreen::onEnter() {
   loadChannel();
   focusItem_     = 0;
-  remoteVersion_ = "";
+  stableVersion_ = "";
+  devCommit_     = "";
+  stableAvailable_ = false;
+  devAvailable_ = false;
+  stableReachable_ = false;
+  devReachable_ = false;
   progress_      = 0;
   wifiStarted_   = false;
 
   if (!WifiCreds::has()) {
     phase_ = Phase::NoCreds;
-  } else if (wifiStaBegin()) {
-    wifiStarted_ = true;
-    WifiProvisioning::notifyUploadSession(true);
-    phase_      = Phase::Connecting;
-    staStartMs_ = millis();
   } else {
-    phase_ = Phase::ConnFailed;
+    WifiProvisioning::notifyUploadSession(true);
+    beginWifiScan();
   }
   draw();
 }
 
 void UpdateScreen::onIdleTick() {
+  if (phase_ == Phase::SelectingWifi) {
+    pollWifiScan();
+    return;
+  }
   if (phase_ != Phase::Connecting) return;
 
   WifiStaResult r = wifiStaPoll(net_);
@@ -120,6 +195,28 @@ void UpdateScreen::draw() {
     display.update();
     return;
   }
+  if (phase_ == Phase::SelectingWifi) {
+    Font::useBold();
+    u8g2.setCursor(MARGIN_X, y);
+    u8g2.print(D_UPDATE_WIFI_HEADER);
+    y += 16;
+    Font::useBody();
+    if (!visibleCount_) {
+      u8g2.setCursor(MARGIN_X, y);
+      u8g2.print(scanInProgress_ ? D_UPDATE_WIFI_SEARCHING : D_UPDATE_WIFI_NONE);
+    } else {
+      drawScrollableList(y, visibleCount_, selectedWifi_,
+        [&](int idx, int rowY, bool selected, int) {
+          drawMenuRow(rowY, WifiCreds::network(visible_[idx]).ssid, selected);
+          return 1;
+        });
+      Font::useBody();
+      u8g2.setCursor(MARGIN_X, SCREEN_H - 6);
+      u8g2.print(D_UPDATE_WIFI_HINT);
+    }
+    display.update();
+    return;
+  }
   if (phase_ == Phase::ConnFailed) {
     u8g2.setCursor(MARGIN_X, y);
     u8g2.print(D_UPDATE_CONN_FAILED);
@@ -157,8 +254,8 @@ void UpdateScreen::draw() {
 
   // ---- Full UI (Idle, ServerFail, UpToDate, UpdateAvailable, DownloadFailed)
 
-  bool hasInstall = (phase_ == Phase::UpdateAvailable ||
-                     phase_ == Phase::DownloadFailed);
+  bool selectedInstallable = stableChan_ ? stableAvailable_ : devAvailable_;
+  bool hasInstall = selectedInstallable || phase_ == Phase::DownloadFailed;
   int maxItems = hasInstall ? 4 : 3;
   if (focusItem_ >= maxItems) focusItem_ = 0;
 
@@ -202,20 +299,30 @@ void UpdateScreen::draw() {
   u8g2.print(D_UPDATE_BTN_CHECK);
   y += 20;
 
-  // Status line — shown below the check button
+  // Status lines — stable and dev are checked together.
   Font::useBody();
   if (phase_ == Phase::ServerFail) {
     u8g2.setCursor(MARGIN_X, y);
     u8g2.print(D_UPDATE_SERVER_FAIL);
     y += 14;
-  } else if (phase_ == Phase::UpToDate) {
+  } else if (phase_ == Phase::UpdateAvailable || phase_ == Phase::UpToDate) {
     u8g2.setCursor(MARGIN_X, y);
-    u8g2.print(D_UPDATE_UP_TO_DATE);
+    if (stableAvailable_) {
+      u8g2.print(D_UPDATE_STABLE_AVAILABLE);
+      u8g2.print(FW_VERSION);
+      u8g2.print(" -> ");
+      u8g2.print(stableVersion_.c_str());
+    } else {
+      u8g2.print(D_UPDATE_STABLE_CURRENT);
+    }
     y += 14;
-  } else if (phase_ == Phase::UpdateAvailable) {
     u8g2.setCursor(MARGIN_X, y);
-    u8g2.print(D_UPDATE_AVAILABLE_PREFIX);
-    u8g2.print(remoteVersion_.c_str());
+    if (devAvailable_) {
+      u8g2.print(D_UPDATE_DEV_AVAILABLE);
+      u8g2.print(devCommit_.c_str());
+    } else {
+      u8g2.print(D_UPDATE_DEV_CURRENT);
+    }
     y += 14;
   } else if (phase_ == Phase::DownloadFailed) {
     u8g2.setCursor(MARGIN_X, y);
@@ -252,6 +359,22 @@ void UpdateScreen::onButton(const ButtonEvent& e) {
     return;
   }
 
+  if (phase_ == Phase::SelectingWifi) {
+    if (!visibleCount_) return;
+    if (e.kind == ButtonEvent::Short) {
+      selectedWifi_ = (selectedWifi_ + 1) % visibleCount_;
+      draw();
+    } else if (e.kind == ButtonEvent::Double) {
+      startSelectedWifi();
+    }
+    return;
+  }
+
+  if (phase_ == Phase::ConnFailed) {
+    if (e.kind == ButtonEvent::Double) beginWifiScan();
+    return;
+  }
+
   // Full UI phases only
   const bool fullUi = phase_ == Phase::Idle        ||
                       phase_ == Phase::ServerFail   ||
@@ -261,8 +384,8 @@ void UpdateScreen::onButton(const ButtonEvent& e) {
   if (!fullUi) return;
 
   if (e.kind == ButtonEvent::Short) {
-    bool hasInstall = (phase_ == Phase::UpdateAvailable ||
-                       phase_ == Phase::DownloadFailed);
+    bool hasInstall = stableAvailable_ || devAvailable_ ||
+                      phase_ == Phase::DownloadFailed;
     focusItem_ = (focusItem_ + 1) % (hasInstall ? 4 : 3);
     draw();
     return;
@@ -280,26 +403,35 @@ void UpdateScreen::onButton(const ButtonEvent& e) {
       draw();
 
     } else if (focusItem_ == 2) {
-      // Check: probe + manifest fetch
+      // Check both channels so the screen can show the two release tracks.
       phase_ = Phase::Checking;
       draw();
+      stableAvailable_ = false;
+      devAvailable_ = false;
+      stableReachable_ = false;
+      devReachable_ = false;
       if (OTA::isUpdateServerReachable()) {
-        OtaCheckResult r = OTA::checkAvailable(stableChan_ ? "stable" : "dev");
-        if (r.updateAvailable) {
-          remoteVersion_ = r.remoteVersion;
-          phase_         = Phase::UpdateAvailable;
-        } else if (r.remoteVersion.length() > 0) {
-          phase_ = Phase::UpToDate;
-        } else {
-          phase_ = Phase::ServerFail;
-        }
-      } else {
+        OtaCheckResult stable = OTA::checkAvailable("stable");
+        OtaCheckResult dev = OTA::checkAvailable("dev");
+        stableReachable_ = stable.reachable;
+        devReachable_ = dev.reachable;
+        stableAvailable_ = stable.updateAvailable;
+        devAvailable_ = dev.updateAvailable;
+        stableVersion_ = stable.remoteVersion;
+        devCommit_ = dev.remoteCommit;
+      }
+      if (!stableReachable_ && !devReachable_) {
         phase_ = Phase::ServerFail;
+      } else if (stableAvailable_ || devAvailable_) {
+        phase_ = Phase::UpdateAvailable;
+      } else {
+        phase_ = Phase::UpToDate;
       }
       clearButtonQueue();
       draw();
 
     } else if (focusItem_ == 3) {
+      if (!(stableChan_ ? stableAvailable_ : devAvailable_)) return;
       // Install: download + flash
       progress_ = 0;
       phase_    = Phase::Downloading;

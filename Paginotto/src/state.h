@@ -20,8 +20,9 @@
 extern WebServer server;
 extern Preferences prefs;
 
-extern char AP_SSID[24];
-extern const char* AP_PASS;
+String hotspotSsid();
+String hotspotPass();
+bool saveHotspotConfig(const String& ssid, const String& pass);
 
 // Pick the right Heltec display class based on the env-selected build flag.
 // Set in platformio.ini: [env:wireless-paper-v1_2] / [env:wireless-paper-v1_1].

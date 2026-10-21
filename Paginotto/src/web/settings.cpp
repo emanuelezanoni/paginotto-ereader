@@ -130,6 +130,7 @@ static void handleSettings() {
   out += "<div class='card'><h2>" D_WEB_BUTTONS_HEADING "</h2>";
   out += "<p class='muted'>" D_WEB_BUTTONS_HINT "</p>";
   out += "<form method='POST' action='/settings' accept-charset='UTF-8'><div class='grid cols-2'>";
+  appendActionSelect(out, "btnH", D_WEB_BUTTONS_HOLD, (int)Gestures::actionHold());
   appendActionSelect(out, "btnCH", D_WEB_BUTTONS_CLICK_HOLD, (int)Gestures::actionClickHold());
   out += "</div><div class='actions' style='margin-top:24px'><button type='submit'>" D_WEB_BUTTONS_SAVE "</button>";
   out += "<span class='muted'>" D_WEB_BUTTONS_LOCK_HINT "</span>";
@@ -219,6 +220,9 @@ static void handleSettingsPost() {
   // Gesture bindings — `setAction*` clamp internally, but we still check
   // `hasArg` because the page submits this section as a separate form
   // (so a Reading POST won't carry these keys at all).
+  if (server.hasArg("btnH")) {
+    Gestures::setActionHold((ButtonAction)server.arg("btnH").toInt());
+  }
   if (server.hasArg("btnCH")) {
     Gestures::setActionClickHold((ButtonAction)server.arg("btnCH").toInt());
   }

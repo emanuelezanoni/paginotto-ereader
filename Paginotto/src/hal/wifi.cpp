@@ -5,7 +5,7 @@
 #include <esp_bt.h>
 #include <esp_wifi.h>
 
-#include "src/state.h"               // AP_SSID, AP_PASS
+#include "src/state.h"
 #include "src/storage/wifi_creds.h"
 
 static constexpr const char* kMdnsHost = "paginotto";
@@ -16,11 +16,15 @@ static String s_staSsid;
 
 bool wifiStaBegin() {
   if (!WifiCreds::has()) return false;
+  return wifiStaBegin(WifiCreds::ssid(), WifiCreds::pass());
+}
+
+bool wifiStaBegin(const String& ssid, const String& pass) {
+  if (!ssid.length()) return false;
 
   setCpuFrequencyMhz(240);
 
-  s_staSsid = WifiCreds::ssid();
-  const String pass = WifiCreds::pass();
+  s_staSsid = ssid;
 
   WiFi.mode(WIFI_STA);
   WiFi.begin(s_staSsid.c_str(), pass.c_str());
@@ -61,13 +65,15 @@ WifiSession wifiBeginAccessPoint() {
   setCpuFrequencyMhz(240);
 
   WiFi.mode(WIFI_AP);
-  WiFi.softAP(AP_SSID, AP_PASS);
+  String ssid = hotspotSsid();
+  String pass = hotspotPass();
+  WiFi.softAP(ssid.c_str(), pass.c_str());
   IPAddress ip = WiFi.softAPIP();
 
   WifiSession s;
   s.mode       = WifiMode::AccessPoint;
-  s.apSsid     = AP_SSID;
-  s.apPass     = AP_PASS;
+  s.apSsid     = ssid;
+  s.apPass     = pass;
   s.primaryUrl = String("http://") + ip.toString();
   return s;
 }

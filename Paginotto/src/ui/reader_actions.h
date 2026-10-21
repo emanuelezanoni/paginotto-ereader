@@ -6,7 +6,7 @@
 // ============================================================================
 //  Reader hold-gesture bindings
 //
-//  Maps ClickHold to its remappable action and
+//  Maps Hold and ClickHold to their remappable actions and
 //  persists the choice. Lives here, not in `src/hal/input.h`, because the
 //  bindable actions are reader-screen concepts — the input layer just
 //  classifies button events; what an event *means* belongs to the screen
@@ -14,7 +14,8 @@
 //  table it can do so without touching the HAL.
 //
 //  Defaults (chosen to be useful out of the box):
-//    ClickHold = Lock
+//    Hold = Lock
+//    ClickHold = None
 // ============================================================================
 
 enum ButtonAction {
@@ -29,9 +30,11 @@ void loadSettings();
 
 // Current ClickHold action.
 ButtonAction actionClickHold();
+ButtonAction actionHold();
 
 // Apply + persist a binding. Out-of-range values clamp to ACTION_NONE.
 void setActionClickHold(ButtonAction a);
+void setActionHold(ButtonAction a);
 
 // Convenience: which action (if any) is currently bound to the gesture
 // kind that just fired. Returns ACTION_NONE for all except ClickHold.

@@ -70,8 +70,11 @@ static void scanBooksRecursive(const String& absDir, const String& relDir) {
       strncpy(b.folder, relDir.c_str(), MAX_FOLDER_PATH);
       b.folder[MAX_FOLDER_PATH] = '\0';
 
-      String pretty = prettyRelativeLabel(relFile);
-      strncpy(b.name, pretty.c_str(), 79);
+      // The folder is metadata, not part of the book title. Keeping it out
+      // of BookInfo::name prevents WebUI rename and device labels from
+      // becoming "folder / title" for books stored below /books.
+      String title = bookLeafLabel(relFile);
+      strncpy(b.name, title.c_str(), 79);
       b.name[79] = '\0';
       b.size = f.size();
       g_library.bookCount++;

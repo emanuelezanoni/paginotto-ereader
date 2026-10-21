@@ -9,7 +9,8 @@
 
 enum HoldGestureKind {
   HoldNone = 0,
-  HoldClickHold = 1,
+  HoldSingle = 1,
+  HoldClickHold = 2,
 };
 
 // Called while the press is down. `threshold_ms` is the hold threshold.

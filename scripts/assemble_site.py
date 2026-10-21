@@ -63,7 +63,7 @@ def find_boot_app0() -> Path:
 
 
 def write_installer_bundle(out: Path, repo: Path, version: str,
-                           channel: Optional[str]) -> None:
+                           channel: Optional[str], commit: str) -> None:
     """Populate `out` with the installer page + firmware artefacts."""
     leaves = [
         ("wireless-paper-v1_1", "firmware-v1_1.bin"),
@@ -99,6 +99,7 @@ def write_installer_bundle(out: Path, repo: Path, version: str,
     for name in ("manifest-v1_1.json", "manifest-v1_2.json"):
         data = json.loads(require_file(inst / name).read_text())
         data["version"] = version
+        data["commit"] = commit
         (out / name).write_text(json.dumps(data, indent=2) + "\n")
 
 
@@ -114,7 +115,9 @@ def main() -> int:
                              "set, the installer files are placed under "
                              "site/<channel>/ and a landing index.html is "
                              "written at site/ that links to both channels. "
-                             "Omit for a flat local-dev layout.")
+                         "Omit for a flat local-dev layout.")
+    parser.add_argument("--commit", default="unknown",
+                        help="Short source commit injected into OTA manifests.")
     args = parser.parse_args()
 
     if args.channel is not None and not re.fullmatch(r"[a-z0-9_-]+", args.channel):
@@ -132,7 +135,7 @@ def main() -> int:
         shutil.copy(require_file(inst / "landing.html"),   out / "index.html")
         shutil.copy(require_file(inst / "connected.html"), out / "connected.html")
         bundle_dir = out / args.channel
-        write_installer_bundle(bundle_dir, repo, args.version, args.channel)
+        write_installer_bundle(bundle_dir, repo, args.version, args.channel, args.commit)
         print(f"Assembled {args.channel} installer bundle -> {bundle_dir}  "
               f"(version: {args.version})")
         print(f"Landing page    -> {out / 'index.html'}")
@@ -140,7 +143,7 @@ def main() -> int:
         for p in sorted(bundle_dir.iterdir()):
             print(f"  {args.channel}/{p.name:30s} {p.stat().st_size:>10d} bytes")
     else:
-        write_installer_bundle(out, repo, args.version, None)
+        write_installer_bundle(out, repo, args.version, None, args.commit)
         # Flat local-dev mode: connected.html lives alongside the installer.
         shutil.copy(require_file(inst / "connected.html"), out / "connected.html")
         print(f"Assembled installer bundle -> {out}  (version: {args.version})")

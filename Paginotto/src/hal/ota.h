@@ -5,7 +5,9 @@
 
 struct OtaCheckResult {
   bool   updateAvailable = false;
+  bool   reachable       = false;
   String remoteVersion;
+  String remoteCommit;
 };
 
 struct OtaDownloadResult {

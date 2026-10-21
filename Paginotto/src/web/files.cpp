@@ -62,6 +62,18 @@ static void handleRoot() {
   server.send(302, "text/plain", "");
 }
 
+// The filesystem check is necessary, but the catalog check is deliberate too:
+// it prevents deleting a directory when the catalog still associates a book
+// with it (or with one of its legacy nested paths).
+static bool catalogContainsFolderBook(const String& folder) {
+  String prefix = folder + "/";
+  for (int i = 0; i < g_library.bookCount; i++) {
+    String bookFolder = String(g_library.books[i].folder);
+    if (bookFolder == folder || bookFolder.startsWith(prefix)) return true;
+  }
+  return false;
+}
+
 // EPUB conversion deliberately lives entirely in the browser.  The ESP32
 // continues to receive only the compact UTF-8 text stream handled by /upload.
 // Modern offline browsers provide raw-DEFLATE through DecompressionStream, so
@@ -140,29 +152,54 @@ static void handleFiles() {
   out += kEpubUploadScript;
   out += "</div>";
 
-  out +=
-    "<div class='card'><h2>" D_WEB_CREATE_FOLDER_HEADING "</h2>"
-    "<form method='POST' action='/mkdir' class='stack' accept-charset='UTF-8' style='margin-top:12px'>"
-    "<input type='text' name='folder' placeholder='" D_WEB_CREATE_FOLDER_PLACEHOLDER "' maxlength='64'>"
-    "<div class='actions'><button type='submit'>" D_WEB_CREATE_FOLDER_BUTTON "</button><span class='muted'>" D_WEB_CREATE_FOLDER_HINT "</span></div>"
-    "</form></div>";
-
-  out += "<div class='card'><h2>" D_WEB_FOLDERS_HEADING "</h2>";
-  if (g_library.folderCount == 0) {
-    out += "<p class='muted'>" D_WEB_NO_FOLDERS "</p>";
-  } else {
-    out += "<ul class='list'>";
-    for (int i = 0; i < g_library.folderCount; i++) {
-      out += "<li><div class='row'><div><span class='pill'>";
-      out += htmlEscape(prettyRelativeLabel(String(g_library.folders[i])));
-      out += "</span></div><div><form method='POST' action='/rmdir' style='display:inline'>";
-      out += "<input type='hidden' name='folder' value='";
-      out += htmlEscape(g_library.folders[i]);
-      out += "'><button type='submit' class='btn secondary' onclick=\"return confirm('" D_WEB_CONFIRM_DELETE_FOLDER "')\">" D_WEB_DELETE_BUTTON "</button></form></div></div></li>";
-    }
-    out += "</ul>";
+  // This is an index, not a second action list: each book entry links to the
+  // corresponding card below. It gives the library a stable mental model:
+  // Library -> folder -> book, while keeping all actions in the book card.
+  out += "<div class='card'><h2>" D_WEB_FOLDERS_HEADING "</h2>"
+         "<div class='tree-create'><h3>" D_WEB_CREATE_FOLDER_HEADING "</h3>"
+         "<form method='POST' action='/mkdir' class='stack' accept-charset='UTF-8' style='margin-top:12px'>"
+         "<input id='folderName' type='text' name='folder' placeholder='" D_WEB_CREATE_FOLDER_PLACEHOLDER "' maxlength='24' oninput=\"document.getElementById('folderNameCount').textContent=this.value.length\">"
+         "<div class='hint'><span id='folderNameCount'>0</span>/24" D_WEB_FOLDER_NAME_COUNTER ".</div>"
+         "<div class='actions'><button type='submit'>" D_WEB_CREATE_FOLDER_BUTTON "</button><span class='muted'>" D_WEB_CREATE_FOLDER_HINT "</span></div>"
+         "</form></div>"
+         "<div class='library-tree'>"
+         "<div class='tree-root'><div class='tree-root-header'><div class='tree-label'><span class='tree-mark'>&#9670;</span><span>Library</span></div></div><div class='tree-children'>";
+  bool rootHasBooks = false;
+  for (int i = 0; i < g_library.bookCount; i++) {
+    if (g_library.books[i].folder[0] != '\0') continue;
+    rootHasBooks = true;
+    out += "<div class='tree-book'><span class='tree-mark'>&#8627;</span><a href='#book-card-" + String(i) + "'>";
+    out += htmlEscape(String(g_library.books[i].name));
+    out += "</a><span class='muted'>" + String((int)g_library.books[i].size) + D_WEB_BOOK_BYTES_LABEL "</span></div>";
   }
-  out += "</div>";
+  if (!rootHasBooks) out += "<div class='tree-empty'>No books in the library root.</div>";
+  out += "</div></div>";
+
+  for (int folderIndex = 0; folderIndex < g_library.folderCount; folderIndex++) {
+    String folder = String(g_library.folders[folderIndex]);
+    if (folder.indexOf('/') >= 0) continue;  // legacy nested paths are not recreated
+    out += "<div class='tree-folder'><div class='tree-folder-header'><div class='tree-label'><span class='tree-mark'>&#128193;</span><span>";
+    out += htmlEscape(folderLeafLabel(folder));
+    out += "</span></div><form method='POST' action='/rmdir' style='margin:0'><input type='hidden' name='folder' value='";
+    out += htmlEscape(folder);
+    out += "'><button type='submit' class='btn danger' onclick=\"return confirm('" D_WEB_CONFIRM_DELETE_FOLDER "')\">" D_WEB_DELETE_BUTTON "</button></form></div><div class='tree-children'>";
+    bool folderHasBooks = false;
+    String prefix = folder + "/";
+    for (int i = 0; i < g_library.bookCount; i++) {
+      String bookFolder = String(g_library.books[i].folder);
+      if (!(bookFolder == folder || bookFolder.startsWith(prefix))) continue;
+      folderHasBooks = true;
+      out += "<div class='tree-book'><span class='tree-mark'>&#8627;</span><a href='#book-card-" + String(i) + "'>";
+      out += htmlEscape(String(g_library.books[i].name));
+      out += "</a><span class='muted'>" + String((int)g_library.books[i].size) + D_WEB_BOOK_BYTES_LABEL "</span></div>";
+    }
+    if (!folderHasBooks) out += "<div class='tree-empty'>Empty folder</div>";
+    out += "</div></div>";
+  }
+  if (g_library.folderCount == 0 && !rootHasBooks) {
+    out += "<p class='muted'>" D_WEB_NO_FOLDERS "</p>";
+  }
+  out += "</div></div>";
 
   out += "<div class='card'><h2>" D_WEB_LIBRARY_BOOKS_HEADING "</h2>";
   if (g_library.bookCount   >= MAX_BOOKS)   out += "<p style='color:#b91c1c;font-weight:600'>" D_WEB_LIBRARY_FULL_WARN "</p>";
@@ -178,41 +215,57 @@ static void handleFiles() {
       int savedPage = savedPageForBookPath(filePath) + 1;
       if (savedPage < 1) savedPage = 1;
 
-      out += "<li class='book-item'><div class='book-row'><div class='book-main'><h3 class='book-title'>";
-      out += htmlEscape(String(g_library.books[i].name));
-      out += "</h3><div class='meta'>";
+      String bookName = String(g_library.books[i].name);
+      String currentFolder = String(g_library.books[i].folder);
+      const size_t titlePrefixBytes = currentFolder.length() == 0
+                                   ? sizeof("/books/") - 1
+                                   : sizeof("/books/") - 1 + currentFolder.length() + 1;
+      const size_t titleLeafBytes = (sizeof(g_library.books[i].path) - 1 > titlePrefixBytes)
+                                  ? sizeof(g_library.books[i].path) - 1 - titlePrefixBytes : 0;
+      const size_t titlePathLimit = titleLeafBytes > 4 ? titleLeafBytes - 4 : 1;
+      const size_t titleLimit = titlePathLimit < (size_t)MAX_BOOK_TITLE_BYTES
+                              ? titlePathLimit : (size_t)MAX_BOOK_TITLE_BYTES;
+      out += "<li id='book-card-" + String(i) + "' class='book-item'><div class='book-title-line'><div class='book-main'>";
+      out += "<div id='bookTitleView" + String(i) + "' class='book-title-view'><h3 class='book-title'>";
+      out += htmlEscape(bookName);
+      out += "</h3><button type='button' class='icon-btn' aria-label='Rename book' title='Rename book' onclick=\"editBookTitle(" + String(i) + ")\">&#9998;</button></div>";
+      out += "<form id='bookTitleEdit" + String(i) + "' method='POST' action='/rename' class='stack' accept-charset='UTF-8' hidden>";
+      out += "<input type='hidden' name='id' value='" + String(i) + "'>";
+      out += "<input id='bookName" + String(i) + "' type='text' name='name' value='" + htmlEscape(bookName) + "' maxlength='" + String(titleLimit) + "' required autocomplete='off' autocapitalize='off' spellcheck='false' oninput=\"document.getElementById('bookNameCount" + String(i) + "').textContent=this.value.length\">";
+      out += "<div class='hint'><span id='bookNameCount" + String(i) + "'>" + String(bookName.length()) + "</span>/" + String(titleLimit) + D_WEB_BOOK_NAME_COUNTER ".<br>" D_WEB_BOOK_NAME_LIMIT_HINT "</div>";
+      out += "<div class='actions small'><button type='submit'>Save</button><button type='button' class='btn secondary' onclick=\"cancelBookTitle(" + String(i) + ")\">Cancel</button></div></form></div>";
+      out += "</div><div class='meta'>";
       out += String((int)g_library.books[i].size);
-      out += D_WEB_BOOK_BYTES_LABEL D_WEB_BOOK_FOLDER_LABEL;
+      out += D_WEB_BOOK_BYTES_LABEL " (";
+      out += String((float)g_library.books[i].size / 1000.0f, 1);
+      out += D_WEB_BOOK_KB_LABEL ")" D_WEB_BOOK_FOLDER_LABEL;
       out += htmlEscape(folderLabel);
       out += D_WEB_BOOK_CURRENT_PAGE;
       out += String(savedPage);
       out += "</div>";
 
-      out += "<form method='POST' action='/jumppage' class='stack small' accept-charset='UTF-8' style='margin-top:10px'>";
-      out += "<input type='hidden' name='id' value='" + String(i) + "'>";
-      out += "<div class='row' style='align-items:end;gap:10px'><div style='flex:1'><input type='text' name='page' value='" + String(savedPage) + "' inputmode='numeric' placeholder='" D_WEB_PAGE_PLACEHOLDER "'></div><div><button type='submit'>" D_WEB_JUMP_BUTTON "</button></div></div>";
-      out += "<div class='muted'>" D_WEB_JUMP_HINT "<br><span class='muted'>" D_WEB_JUMP_HINT2 "</span></div></form>";
-
-      out += "<div class='actions small' style='margin-top:8px'><a class='btn secondary small' href='/read?id=" + String(i) + "' style='padding:6px 10px;font-size:13px'>" D_WEB_READ_AND_FIND_LINK "</a></div>";
-
-      out += "<form method='POST' action='/move' class='stack small' accept-charset='UTF-8' style='margin-top:10px'>";
-      out += "<input type='hidden' name='id' value='" + String(i) + "'>";
-      out += "<input type='text' name='folder' value='" + htmlEscape(String(g_library.books[i].folder)) + "' placeholder='" D_WEB_MOVE_PLACEHOLDER "' maxlength='64'>";
-      out += "<div class='actions'><button type='submit'>" D_WEB_MOVE_BUTTON "</button><span class='muted'>" D_WEB_MOVE_HINT "</span></div></form>";
-      out += "<form method='POST' action='/rename' class='stack small' accept-charset='UTF-8' style='margin-top:10px'>";
-      out += "<input type='hidden' name='id' value='" + String(i) + "'>";
-      out += "<input type='text' name='name' value='" + htmlEscape(stripTxtExt(lastPathComponent(filePath))) + "' placeholder='" D_WEB_RENAME_PLACEHOLDER "' maxlength='79' required autocomplete='off' autocapitalize='off' spellcheck='false'>";
-      out += "<div class='actions'><button type='submit'>" D_WEB_RENAME_BUTTON "</button><span class='muted'>" D_WEB_RENAME_HINT "</span></div></form></div>";
-      out += "<div class='book-tools'>";
-      out += "<a class='btn secondary' href='/download-book?id=" + String(i) + "' download>" D_WEB_DOWNLOAD_BUTTON "</a>";
+      out += "<div class='book-actions'><div class='book-actions-left'>";
+      out += "<a class='btn' href='/read?id=" + String(i) + "'>" D_WEB_READ_AND_FIND_LINK "</a>";
+      out += "<form method='POST' action='/move' class='book-folder-form' accept-charset='UTF-8'>";
+      out += "<input type='hidden' name='id' value='" + String(i) + "'><select name='folder' aria-label='Move book to folder'>";
+      out += "<option value=''" + (currentFolder.length() == 0 ? String(" selected") : String("")) + ">Library</option>";
+      for (int folderIndex = 0; folderIndex < g_library.folderCount; folderIndex++) {
+        String folder = String(g_library.folders[folderIndex]);
+        if (folder.indexOf('/') >= 0) continue;
+        out += "<option value='" + htmlEscape(folder) + "'" + (currentFolder == folder ? String(" selected") : String("")) + ">";
+        out += htmlEscape(folderLeafLabel(folder));
+        out += "</option>";
+      }
+      out += "</select><button type='submit' class='btn secondary'>Move</button></form></div>";
+      out += "<div class='book-actions-right'><a class='btn secondary' href='/download-book?id=" + String(i) + "' download>" D_WEB_DOWNLOAD_BUTTON "</a>";
       out += "<form method='POST' action='/del' style='margin:0'><input type='hidden' name='id' value='" + String(i) + "'>";
-      out += "<button type='submit' class='btn secondary' onclick=\"return confirm('" D_WEB_CONFIRM_DELETE_FILE "')\">" D_WEB_DELETE_BUTTON "</button></form>";
-      out += "</div></div></li>";
+      out += "<button type='submit' class='btn danger' onclick=\"return confirm('" D_WEB_CONFIRM_DELETE_FILE "')\">" D_WEB_DELETE_BUTTON "</button></form></div></div></li>";
     }
     out += "</ul>";
   }
 
   out += "</div>";
+  out += "<script>function editBookTitle(i){var v=document.getElementById('bookTitleView'+i),f=document.getElementById('bookTitleEdit'+i),n=document.getElementById('bookName'+i);if(v&&f){v.hidden=true;f.hidden=false;if(n){n.focus();n.select();}}}function cancelBookTitle(i){var v=document.getElementById('bookTitleView'+i),f=document.getElementById('bookTitleEdit'+i);if(v&&f){f.hidden=true;v.hidden=false;}}</script>";
 
   out += webPageEnd();
   server.send(200, "text/html; charset=utf-8", out);
@@ -252,6 +305,14 @@ static void handleCreateFolder() {
     server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_FOLDER);
     return;
   }
+  if (folder.indexOf('/') >= 0) {
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_FOLDER);
+    return;
+  }
+  if (folder.length() > MAX_FOLDER_NAME_BYTES) {
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_FOLDER);
+    return;
+  }
   if (g_library.folderCount >= MAX_FOLDERS) {
     server.send(409, "text/plain; charset=utf-8", D_WEB_ERR_FOLDER_LIMIT);
     return;
@@ -279,13 +340,17 @@ static void handleDeleteFolder() {
     server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_FOLDER);
     return;
   }
+  if (folder.indexOf('/') >= 0) {
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_FOLDER);
+    return;
+  }
 
   String fullPath = "/books/" + folder;
   if (!FS.exists(fullPath)) {
     server.send(404, "text/plain; charset=utf-8", D_WEB_ERR_FOLDER_NOT_FOUND);
     return;
   }
-  if (!isDirEmpty(fullPath)) {
+  if (catalogContainsFolderBook(folder) || !isDirEmpty(fullPath)) {
     server.send(409, "text/plain; charset=utf-8", D_WEB_ERR_FOLDER_NOT_EMPTY);
     return;
   }
@@ -313,6 +378,10 @@ static void handleMoveBook() {
 
   String oldPath = String(g_library.books[id].path);
   String folder = sanitizeFolderInput(server.arg("folder"));
+  if (folder.indexOf('/') >= 0) {
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_FOLDER);
+    return;
+  }
   String destDir = (folder.length() == 0) ? String("/books") : String("/books/") + folder;
   String newPath = destDir + "/" + lastPathComponent(oldPath);
   if (newPath.length() >= sizeof(g_library.books[id].path)) {
@@ -337,6 +406,14 @@ static void handleMoveBook() {
 
   // Library entry already cleared g_bookview; no book is "current" here.
   if (!FS.rename(oldPath, newPath)) {
+    server.send(500, "text/plain; charset=utf-8", D_WEB_ERR_MOVE_FAILED);
+    return;
+  }
+
+  // Do not report success unless the filesystem reflects the requested move.
+  // This also protects the folder-delete guard from a stale catalog entry.
+  if (FS.exists(oldPath) || !FS.exists(newPath)) {
+    if (FS.exists(newPath) && !FS.exists(oldPath)) FS.rename(newPath, oldPath);
     server.send(500, "text/plain; charset=utf-8", D_WEB_ERR_MOVE_FAILED);
     return;
   }
@@ -370,7 +447,15 @@ static void handleRenameBook() {
                                                     : sizeof("/books/") - 1 + folder.length() + 1);
   const size_t maxLeafBytes = (sizeof(g_library.books[id].path) - 1 > prefixBytes)
                               ? sizeof(g_library.books[id].path) - 1 - prefixBytes : 0;
-  String leaf = sanitizeUploadedFilename(server.arg("name"), maxLeafBytes);
+  const size_t pathTitleBytes = maxLeafBytes > 4 ? maxLeafBytes - 4 : 0;
+  const size_t maxTitleBytes = pathTitleBytes < (size_t)MAX_BOOK_TITLE_BYTES
+                             ? pathTitleBytes : (size_t)MAX_BOOK_TITLE_BYTES;
+  String requestedName = server.arg("name");
+  if (requestedName.length() == 0 || requestedName.length() > maxTitleBytes) {
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_NAME);
+    return;
+  }
+  String leaf = sanitizeUploadedFilename(requestedName, maxLeafBytes);
   String newPath = (folder.length() == 0 ? String("/books/") : String("/books/") + folder + "/") + leaf;
   if (newPath.length() >= sizeof(g_library.books[id].path)) {
     server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_NAME);

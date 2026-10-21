@@ -25,6 +25,43 @@ static bool s_forceNextFull = false;
 
 void forceNextRenderFull() { s_forceNextFull = true; }
 
+// Fixed reader footer. This is intentionally independent from the removed
+// reader menu: the page number and progress indicator are part of the reading
+// view itself, not an optional settings/status menu.
+static void drawReaderFooter(uint32_t startOffset) {
+  if (!SHOW_PROGRESS_BAR && !SHOW_PAGE_NUMBER) return;
+
+  size_t total = g_bookview.book.size();
+  if (total == 0) total = 1;
+
+  int pageTextW = 0;
+  if (SHOW_PAGE_NUMBER) {
+    Font::useUiTiny();
+    char page[20];
+    snprintf(page, sizeof(page), "%d", g_bookview.cursor.pageIndex + 1);
+    pageTextW = u8g2.getUTF8Width(page);
+    u8g2.setCursor(SCREEN_W - MARGIN_X - pageTextW, SCREEN_H - 1);
+    u8g2.print(page);
+    Font::useBody();
+  }
+
+  if (SHOW_PROGRESS_BAR) {
+    const int rightPadding = SHOW_PAGE_NUMBER ? pageTextW + 8 : 0;
+    int width = (SCREEN_W - 2 * MARGIN_X) - rightPadding;
+    if (width < 40) width = 40;
+
+    const int top = SCREEN_H - 7;
+    int filled = (int)((startOffset * (uint32_t)width) / (uint32_t)total);
+    if (filled < 0) filled = 0;
+    if (filled > width) filled = width;
+
+    gfx.drawRect(MARGIN_X, top, width, 4, 1);
+    if (filled > 0) {
+      gfx.fillRect(MARGIN_X + 1, top + 1, max(0, filled - 2), 2, 1);
+    }
+  }
+}
+
 // Auto-save throttle bookkeeping. Private to this translation unit — only
 // the save-progress functions and `resetSaveThrottle` touch it, and only
 // the reader calls them on its hot path (preview never auto-saves).
@@ -257,7 +294,7 @@ void renderCurrentPage() {
   }
 
   if (Toast::isActive()) Toast::draw();
-  (void)start;
+  drawReaderFooter(start);
 
   display.update();
 }

@@ -14,7 +14,7 @@ extern const uint8_t x509_crt_imported_bundle_bin_start[] asm("_binary_x509_crt_
 extern const uint8_t x509_crt_imported_bundle_bin_end[]   asm("_binary_x509_crt_bundle_end");
 
 static constexpr const char* kOtaBaseUrl =
-    "https://paginotto.invalid/ota/";
+    "https://emanuelezanoni.github.io/paginotto-ereader/";
 
 // How long to wait for the next data chunk before aborting the download.
 static constexpr uint32_t kDownloadStallMs = 30000;
@@ -76,6 +76,7 @@ OtaCheckResult OTA::checkAvailable(const String& channel) {
     delete client;
     return result;
   }
+  result.reachable = true;
 
   // Stream-parse directly — avoids allocating the full body as a String.
   WiFiClient* stream = http.getStreamPtr();
@@ -96,7 +97,13 @@ OtaCheckResult OTA::checkAvailable(const String& channel) {
   if (!ver || ver[0] == '\0') return result;
 
   result.remoteVersion   = ver;
-  result.updateAvailable = result.remoteVersion != String(FW_VERSION);
+  const char* commit = doc["commit"];
+  if (commit && commit[0] != '\0') result.remoteCommit = commit;
+  if (channel == "dev" && result.remoteCommit.length() > 0) {
+    result.updateAvailable = result.remoteCommit != String(BUILD_GIT_HASH);
+  } else {
+    result.updateAvailable = result.remoteVersion != String(FW_VERSION);
+  }
   return result;
 }
 

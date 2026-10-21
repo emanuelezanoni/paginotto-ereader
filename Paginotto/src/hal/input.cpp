@@ -10,6 +10,7 @@
 // to consume the press (clear pressArmed_) and zero clickCount_.
 static bool applyHoldKindTo(ButtonState& s, HoldGestureKind k) {
   switch (k) {
+    case HoldSingle:   s.hold_ = true; return true;
     case HoldClickHold: s.clickHoldClick_ = true; return true;
     case HoldNone:
     default:            return false;
@@ -302,7 +303,10 @@ void ButtonState::poll() {
       if (pressArmed_) {
         uint32_t dur = (uint32_t)(edgeTime - pressStart_);
         if (dur >= CLICK_HOLD_MS) {
-          if (clickCount_ <= 1) {
+          if (clickCount_ == 0) {
+            hold_ = true;
+            clickCount_ = 0;
+          } else if (clickCount_ == 1) {
             clickHoldClick_ = true;
             clickCount_ = 0;
           }
@@ -317,7 +321,7 @@ void ButtonState::poll() {
     }
   }
 
-  // ClickHold emits at threshold, while held. Its release is consumed.
+  // Hold gestures emit at threshold, while held. Their release is consumed.
   if (stablePressed_ && pressArmed_) {
     uint32_t held = (uint32_t)(millis() - pressStart_);
     HoldGestureKind k = classifyHoldInProgress(held, clickCount_);

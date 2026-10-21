@@ -114,7 +114,8 @@ jobs:
         run: |
           python scripts/assemble_site.py \
             --channel "${{ steps.meta.outputs.channel }}" \
-            --version "${{ steps.meta.outputs.version }}"
+            --version "${{ steps.meta.outputs.version }}" \
+            --commit "${GITHUB_SHA::7}"
 
       - name: Publish to gh-pages
         uses: peaceiris/actions-gh-pages@v4

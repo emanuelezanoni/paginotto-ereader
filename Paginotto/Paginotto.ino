@@ -160,7 +160,9 @@ void setup() {
 
   {
     uint64_t chipId = ESP.getEfuseMac();
-    snprintf(AP_SSID, sizeof(AP_SSID), "PAGINOTTO-%06llX", chipId & 0xFFFFFFULL);
+    char defaultApSsid[24];
+    snprintf(defaultApSsid, sizeof(defaultApSsid), "PAGINOTTO-%06llX", chipId & 0xFFFFFFULL);
+    if (!prefs.getString("ap_ssid", "").length()) prefs.putString("ap_ssid", defaultApSsid);
   }
 
   Font::loadSettings();
@@ -240,7 +242,6 @@ void loop() {
         s_lockedWakePressConsumed = false;
         Lock::disengage();
         markUserActivity();
-        Toast::show(D_TOAST_UNLOCKED);
         // Full refresh to clear screensaver ghosting on unlock.
         // forceNextRenderFull() overrides the reader's per-page fast-mode
         // decision so renderCurrentPage() uses fastmodeOff regardless of

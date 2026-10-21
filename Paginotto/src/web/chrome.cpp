@@ -5,6 +5,7 @@
 #include "src/state.h"            // server, FS
 #include "src/storage/fs_util.h"  // fs*BytesSafe
 #include "src/storage/library.h"  // g_library
+#include "src/web/upload.h"       // notifyUploadActivity
 
 // ============================================================================
 //  Stylesheet — served as /style.css. Browsers cache for an hour, so visiting
@@ -15,7 +16,7 @@
 // ============================================================================
 static const char kStyleCss[] PROGMEM =
   ":root{--bg:#f3efe7;--card:#fff;--line:#ddd4c7;--line-soft:#ece5d9;--text:#1f2328;--muted:#667085;--link:#3c5a7a;"
-  "--ok:#216e39;--okbg:#e7f6ec;--warn:#8a5a00;--warnbg:#fff4d6;--danger:#6e2a2a;"
+  "--ok:#216e39;--okbg:#e7f6ec;--warn:#8a5a00;--warnbg:#fff4d6;--danger:#b42318;"
   "--pill-bg:#f6f2ea;--pill-fg:#6b6358;--pre-bg:#fcfaf7;--stat-bg:#fcfaf7;"
   "--bar-bg:#ece5d9;--bar-bd:#e0d7ca;--bar-fill:#3c5a7a;"
   "--ban-ok-bd:#cfe9d7;--ban-warn-bd:#ecd9a3;"
@@ -25,16 +26,19 @@ static const char kStyleCss[] PROGMEM =
   "body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,sans-serif}"
   ".wrap{max-width:820px;margin:0 auto;padding:18px}"
   ".wide{max-width:1020px}"
-  ".top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px;flex-wrap:wrap}"
+  ".top{display:flex;align-items:flex-start;gap:12px;margin-bottom:10px}"
   ".top a,.link{color:var(--link);text-decoration:none}"
   ".brand{font-size:13px;font-weight:750;letter-spacing:.08em;text-transform:uppercase;color:var(--link);margin-bottom:2px}"
   ".top a:hover,.link:hover{text-decoration:underline}"
-  ".top-side{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;justify-content:flex-end}"
+  ".top-side{display:flex;flex:1;flex-wrap:wrap;gap:10px 14px;align-items:center;justify-content:flex-end}"
   ".muted{color:var(--muted);font-size:13px}"
   ".card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 15px;margin:0 0 14px;box-shadow:0 1px 0 rgba(0,0,0,.03)}"
   ".grid{display:grid;gap:12px}"
   ".actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:14px}"
-  ".nav{display:flex;flex-wrap:wrap;gap:10px 14px;font-size:14px;align-items:center}"
+  ".nav{display:flex;align-items:center;width:100%;font-size:14px}"
+  ".nav-bar{width:100%;margin:0 0 18px}"
+  ".nav-pages{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center}"
+  ".exit-link{margin-left:auto;white-space:nowrap}"
   ".nav a{color:var(--link);text-decoration:none}"
   ".list{list-style:none;padding:0;margin:0}"
   ".list li{padding:11px 0;border-top:1px solid var(--line-soft)}"
@@ -42,6 +46,28 @@ static const char kStyleCss[] PROGMEM =
   ".book-list{display:grid;gap:14px}"
   ".book-list li.book-item{padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--stat-bg)}"
   ".book-list li.book-item:first-child{padding-top:16px;border-top:1px solid var(--line)}"
+  ".book-item{display:flex;flex-direction:column;min-height:150px}"
+  ".book-title-line,.book-title-view{display:flex;align-items:flex-start;gap:8px;justify-content:space-between}"
+  ".book-title-view h3{min-width:0;flex:1}"
+  ".book-title,.book-title-view h3,.card h2{overflow-wrap:anywhere;word-break:break-word}"
+  ".icon-btn{padding:5px 8px;background:transparent;color:var(--link);font-size:18px;line-height:1;border:1px solid var(--line);flex:none}"
+  ".book-actions{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-top:auto;padding-top:14px;border-top:1px solid var(--line-soft)}"
+  ".book-actions-left,.book-actions-right{display:flex;align-items:center;flex-wrap:wrap;gap:8px}"
+  ".book-folder-form{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:0}"
+  ".book-folder-form select{width:auto;min-width:130px}"
+  ".library-tree{display:grid;gap:10px;margin-top:12px}"
+  ".tree-root,.tree-folder{border:1px solid var(--line-soft);border-radius:12px;background:var(--stat-bg)}"
+  ".tree-root-header,.tree-folder-header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 12px}"
+  ".tree-label{display:flex;align-items:center;gap:8px;min-width:0;font-weight:700}"
+  ".tree-label span:last-child{min-width:0;overflow-wrap:anywhere;word-break:break-word}"
+  ".tree-mark{color:var(--link);font-weight:800;flex:none}"
+  ".tree-children{padding:0 12px 10px 30px}"
+  ".tree-book{display:flex;align-items:baseline;justify-content:flex-start;gap:10px;padding:6px 0;border-top:1px solid var(--line-soft)}"
+  ".tree-book .muted{margin-left:auto}"
+  ".tree-book a{min-width:0;color:var(--link);overflow-wrap:anywhere;word-break:break-word;text-decoration:none}"
+  ".tree-book a:hover{text-decoration:underline}"
+  ".tree-empty{padding:6px 0;color:var(--muted);font-size:13px}"
+  ".tree-create{padding:0 0 14px;margin:0 0 12px;border-bottom:1px solid var(--line-soft)}"
   ".row{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}"
   ".book-row{display:flex;gap:16px;align-items:flex-start}"
   ".book-main{min-width:0;flex:1}"
@@ -50,12 +76,12 @@ static const char kStyleCss[] PROGMEM =
   ".meta{color:var(--muted);font-size:13px}"
   ".pill{display:inline-block;background:var(--pill-bg);color:var(--pill-fg);border-radius:999px;padding:3px 8px;font-size:12px}"
   ".pre{white-space:pre-wrap;line-height:1.45;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--pre-bg)}"
-  ".danger{background:var(--danger)}"
+  ".btn.danger,.btn-icon.danger{background:var(--danger);color:#fff}"
   ".banner-ok{background:var(--okbg);color:var(--ok);border:1px solid var(--ban-ok-bd);border-radius:12px;padding:12px 13px;margin-bottom:14px}"
   ".banner-warn{background:var(--warnbg);color:var(--warn);border:1px solid var(--ban-warn-bd);border-radius:12px;padding:12px 13px;margin-bottom:14px}"
   ".stats{display:grid;gap:10px;grid-template-columns:repeat(2,minmax(0,1fr));margin-top:12px}"
   ".stat{padding:11px 12px;border:1px solid var(--line-soft);border-radius:12px;background:var(--stat-bg)}"
-  ".stat b{display:block;font-size:17px;line-height:1.2;margin-top:2px}"
+  ".stat b{display:block;font-size:17px;line-height:1.2;margin-top:2px;overflow-wrap:anywhere;word-break:break-word}"
   ".bar{height:10px;border-radius:999px;background:var(--bar-bg);overflow:hidden;border:1px solid var(--bar-bd);margin-top:12px}"
   ".bar > span{display:block;height:100%;background:var(--bar-fill)}"
   ".stack{display:grid;gap:8px}"
@@ -65,17 +91,20 @@ static const char kStyleCss[] PROGMEM =
   ".status{padding:10px 12px;border-radius:10px;font-size:14px;margin:10px 0 0}"
   ".status.ok{background:var(--okbg);color:var(--ok)}"
   ".status.idle{background:var(--pill-bg);color:var(--pill-fg)}"
+  ".wifi-scan-list{display:grid;gap:8px;margin-top:10px}"
+  ".wifi-scan-item{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid var(--line-soft);border-radius:10px;background:var(--stat-bg)}"
   "button,.btn{display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:10px;background:var(--btn-bg);color:var(--btn-fg);padding:10px 14px;font:600 14px system-ui,sans-serif;text-decoration:none;cursor:pointer}"
   ".btn.secondary{background:var(--btn-sec-bg);color:var(--btn-sec-fg);border:1px solid var(--btn-sec-bd)}"
   "input[type=text],input[type=number],input[type=file],input[type=search],select,textarea{width:100%;box-sizing:border-box;border:1px solid var(--inp-bd);border-radius:10px;background:var(--inp-bg);color:var(--text);padding:10px;font:inherit}"
   "input[type=checkbox],input[type=radio]{accent-color:var(--link)}"
   ".nav a.active{font-weight:700;color:var(--text);text-decoration:underline;text-underline-offset:3px}"
+  "[hidden]{display:none!important}"
   "h1,h2,h3,p{margin:0}"
   "h1,h2,h3{margin-bottom:6px}"
   "p + p{margin-top:10px}"
   "@media(min-width:760px){.stats{grid-template-columns:repeat(4,minmax(0,1fr))}}"
   "@media(min-width:620px){.grid.cols-2{grid-template-columns:1fr 1fr}}"
-  "@media(max-width:640px){.row,.top,.book-row{flex-direction:column}.book-tools{align-self:stretch;flex-direction:row;flex-wrap:wrap}.top-side{justify-content:flex-start}.wrap{padding:14px}}"
+  "@media(max-width:640px){.row,.book-row{flex-direction:column}.book-tools{align-self:stretch;flex-direction:row;flex-wrap:wrap}.book-actions{align-items:stretch;flex-direction:column}.book-actions-left,.book-actions-right{width:100%}.book-actions-right{justify-content:flex-end}.book-folder-form{flex:1}.book-folder-form select{flex:1}.wrap{padding:14px}}"
   ;
 
 static void handleStyleCss() {
@@ -92,6 +121,7 @@ void registerChromeRoutes() {
 // ============================================================================
 String webPageStart(const String& title, const String& subtitle,
                     const String& navHtml, bool wide) {
+  notifyUploadActivity();
   String out;
   out.reserve(1400);
   out = "<!doctype html><html><head><meta charset='utf-8'>"
@@ -106,13 +136,12 @@ String webPageStart(const String& title, const String& subtitle,
   out += title;
   out += "</h1><div class='muted'>";
   out += subtitle;
-  out += "</div></div><div class='top-side'>";
+  out += "</div></div></div>";
   if (navHtml.length() > 0) {
-    out += "<div class='nav'>";
+    out += "<div class='nav-bar'><div class='nav'>";
     out += navHtml;
-    out += "</div>";
+    out += "</div></div>";
   }
-  out += "</div></div>";
   return out;
 }
 
@@ -120,15 +149,15 @@ String webPageEnd() {
   return String("</div></body></html>");
 }
 
-String webNav(const char* active) {
-  const char* keys[] = {"books", "screensavers", "settings"};
+String webNav(const char* active, bool showExit) {
+  const char* keys[] = {"books", "screensavers", "settings", "wifi"};
   const char* labels[] = {
-    D_WEB_NAV_BOOKS, D_WEB_NAV_SCREENSAVER, D_WEB_NAV_SETTINGS
+    D_WEB_NAV_BOOKS, D_WEB_NAV_SCREENSAVER, D_WEB_NAV_SETTINGS, "Wi-Fi"
   };
-  const char* urls[] = {"/books", "/screensavers", "/settings"};
+  const char* urls[] = {"/books", "/screensavers", "/settings", "/wifi"};
 
-  String out;
-  for (int i = 0; i < 3; i++) {
+  String out = "<span class='nav-pages'>";
+  for (int i = 0; i < 4; i++) {
     out += "<a href='";
     out += urls[i];
     out += "'";
@@ -137,6 +166,8 @@ String webNav(const char* active) {
     out += labels[i];
     out += "</a>";
   }
+  out += "</span>";
+  if (showExit) out += "<a class='btn secondary small exit-link' href='/exit' onclick=\"return !window.paginottoDirty || confirm('There may be unsaved changes or an active operation. Exit anyway?')\">Exit WebUI</a>";
   return out;
 }
 
