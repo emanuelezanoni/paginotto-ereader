@@ -118,7 +118,6 @@ void UploadScreen::draw() {
     Font::useBody(); u8g2.setCursor(MARGIN_X, SCREEN_H - 6);
     if (connectionFailed_ && (int32_t)(connectionFailedUntilMs_ - millis()) > 0) u8g2.print(D_UPLOAD_CONN_FAILED);
     else if (scanState_ == ScanState::NoSavedNetworks) u8g2.print(D_UPLOAD_NO_CONFIGURED);
-    else if (firmwareMode_ && !visibleCount_ && scanState_ != ScanState::NoSavedNetworks) u8g2.print(D_UPLOAD_WAITING_NETWORK);
     else if (scanState_ == ScanState::Searching) u8g2.print(D_UPLOAD_SEARCHING_CONFIGURED);
     else if (scanState_ == ScanState::TimedOut) u8g2.print(D_UPLOAD_SCAN_TIMED_OUT);
     else if (visibleCount_) u8g2.print(D_UPLOAD_SCAN_COMPLETE);
