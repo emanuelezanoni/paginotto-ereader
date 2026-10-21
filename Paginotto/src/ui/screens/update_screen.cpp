@@ -279,8 +279,10 @@ void UpdateScreen::draw() {
     return;
   }
   if (phase_ == Phase::Checking) {
+    Font::useBold();
     u8g2.setCursor(MARGIN_X, y);
     u8g2.print(D_UPDATE_CHECKING);
+    Font::useBody();
     display.update();
     return;
   }
