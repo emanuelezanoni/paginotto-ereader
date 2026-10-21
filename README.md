@@ -10,7 +10,7 @@ GitHub-based installer/OTA deployment pipeline.
 
 ## Project origin and attribution
 
-Paginotto is an independent derivative of the Pala One firmware
+Paginotto began from the Pala One firmware
 (https://github.com/PaulLagier/pala-one-firmware), originally created by
 **Paul Lagier**. The original import and provenance are documented in
 UPSTREAM.md, including the imported upstream commit and the upstream Git
@@ -26,9 +26,7 @@ Since the import, Paginotto has been substantially redesigned and extended:
 - GitHub Pages installer and dual-channel OTA updates;
 - many storage, reliability and display-flow changes specific to Paginotto.
 
-The upstream project remains the origin of the inherited code and deserves
-its original attribution. Paginotto-specific work is maintained by Emanuele
-Zanoni and contributors to this repository.
+Paginotto is maintained as its own project by Emanuele Zanoni.
 
 ## Install (no toolchain needed)
 
@@ -51,7 +49,7 @@ There are currently two supported Heltec Wireless Paper versions:
 
 The board version is usually printed on the back of the PCB.
 
-Pick your board's revision in the build step below — either by uncommenting the matching `#define` at the top of `Paginotto/Paginotto.ino` (Arduino IDE), or by selecting the matching env (PlatformIO).
+Pick your board's revision by selecting the matching PlatformIO environment.
 
 ## Wi-Fi provisioning (Improv)
 
@@ -94,32 +92,9 @@ The firmware ships with one built-in string table in `Paginotto/src/lang/strings
 
 Glyph coverage: Latin Extended (`á é í ó ú ñ Ñ ¿ ¡ ü Ü`) is provided by `u8g2_font_helv*_te` for body, bold, app-large and toast roles. The small bitmap fonts used for the battery percentage and page-number indicator stay on ASCII-only `_tf` tables — they only render digits / `%`, and any translation routed through them would render missing-glyph boxes. Web responses declare `charset=utf-8`.
 
-## Device lock
-
-The device can be locked to stop accidental input (page turns, navigation) while it rests in a bag or pocket. The locked state is persisted to NVS (`cfg_locked`), so a device that fully powers down comes back locked.
-
-Locking is a remappable button action. In the web UI under **Settings → Buttons** you can bind click-hold to *None* or *Lock device*. Out-of-box default:
-
-- **Click-hold** → Lock device
-
-Unlocking uses click-hold and shows an "Unlocked" toast. While locked, sleep screen shows a small padlock badge in top-left corner.
-
----
-
-## Contributing
-
-If you improve the firmware, add features or fix bugs, feel free to open a pull request.
-Please clearly mention:
-- which board version(s) you tested on (V1.1, V1.2, or both)
-- what was changed
-- how it was tested
-
-
 ## Building the firmware
 
-The same sources build under either toolchain.
-
-### PlatformIO (recommended)
+### PlatformIO
 
 1. Install [PlatformIO Core](https://platformio.org/install/cli) (CLI) or the PlatformIO IDE extension for VS Code.
 2. From the repo root:
@@ -136,21 +111,6 @@ Both envs share libraries and partition table via `platformio.ini`. The PIO buil
 
 - `FW_VERSION` from `git describe --tags --always --dirty` (e.g. `v2.1`, `v2.1-3-gabc1234`, `…-dirty`)
 - `BUILD_GIT_HASH` from the current short SHA
-
-### Arduino IDE 2 (outdated)
-
-1. Install the **esp32 by Espressif Systems** board package (Boards Manager) and select the **Heltec WiFi LoRa 32 V3** board.
-2. Install these libraries via Library Manager (or by URL):
-   - [`heltec-eink-modules`](https://github.com/todd-herbert/heltec-eink-modules) (todd-herbert fork)
-   - **Adafruit GFX Library** (Adafruit)
-   - **U8g2_for_Adafruit_GFX** (olikraus)
-   - [`Improv-WiFi-Library`](https://github.com/jnthas/Improv-WiFi-Library) (jnthas) — serial Wi-Fi provisioning; PlatformIO installs it automatically, Arduino IDE users add it by URL
-3. Open `Paginotto/Paginotto.ino`. Uncomment exactly one of `BOARD_V1_1` / `BOARD_V1_2` at the top.
-4. Tools → Partition Scheme → **Custom** (the sketch ships its own `partitions.csv`).
-5. Verify / Upload.
-
-Arduino IDE / host-test builds skip the script and fall back to `"dev"` and `"unknown"` respectively — those toolchains are for developer iteration; releases go through the PIO + tagged-CI flow where the real values get injected.
-
 
 ### Web Installer site (channels & CI)
 
@@ -204,7 +164,7 @@ Paginotto/
 └── src/                 # Firmware modules
     ├── config.h         # Compile-time constants
     ├── state.{h,cpp}    # Globals (display, WiFi server, prefs)
-    ├── pure/            # Pure C++, no Arduino headers — host-testable
+    ├── pure/            # Pure C++ — host-testable
     ├── hal/             # Hardware adapters (display, battery, input)
     ├── storage/         # KV store + on-disk persistence
     ├── ui/              # Screens, fonts, sleep, toasts, widgets
@@ -217,13 +177,7 @@ install/                 # ESP Web Tools installer page (deployed to GitHub Page
 archive/                 # Past firmware revisions, kept for reference
 ```
 
-The intent of the layering is **pure → storage → hal → ui**: pure modules never include `Arduino.h`, so they compile into the host test build verbatim. Storage adds an on-disk persistence shim behind `KeyValueStore`, hal isolates the hardware, and the UI sits on top.
-
-### Include style
-
-Firmware sources include each other by the full path from the sketch root, e.g. `#include "src/hal/display.h"`, not the shorter `#include "hal/display.h"`.
-
-This is to stay compatible with Arduino IDE. The IDE recursively compiles files inside the `src/` subfolder of a sketch, **but does not add `src/` to the compiler's include path** — only the sketch folder root is on it. So `#include "config.h"` from a file at sketch root fails (the file actually lives at `src/config.h`), whereas `#include "src/config.h"` resolves correctly. PlatformIO is happy either way; we picked the Arduino-IDE-compatible form so the same `#include` lines work in both build systems with no extra `-I` flags.
+The intent of the layering is **pure → storage → hal → ui**: pure modules avoid hardware-specific headers, so they compile into the host test build verbatim. Storage adds an on-disk persistence shim behind `KeyValueStore`, hal isolates the hardware, and the UI sits on top.
 
 ## Host-side tests
 
@@ -239,7 +193,6 @@ See [test/README.md](test/README.md) for prerequisites (CMake + a C++17 compiler
 - Bionic reading mode
 - Reading progress saving
 - In-book text search (web UI)
-- Device lock (see [Device lock](#device-lock))
 - Remappable button gestures
 - Custom screensaver image
 - Adjustable idle sleep timeout
@@ -248,34 +201,14 @@ See [test/README.md](test/README.md) for prerequisites (CMake + a C++17 compiler
 - Deep sleep mode
 - USB-C charging
 - Lightweight portable design
-- Firmware source available for inspection and modification subject to the attribution terms above
+- Firmware source available for inspection and modification
 
 
-## Community & Modifications
+## License and use
 
-Community improvements, forks and firmware modifications are welcome.
-If you build your own version or improve the project, feel free to share it with the community.
+Paginotto is a public, independent repository. You may use it, fork it, and
+modify it in your own repository. Changes and alternative versions should be
+maintained in the corresponding fork or upstream repository.
 
-## License and copyright
-
-This repository does not currently declare a new standard open-source license.
-The inherited upstream code and its original terms remain attributable to Paul
-Lagier; see UPSTREAM.md. A permissive license cannot be added to the complete
-derivative without explicit permission from the upstream copyright holder.
-
-The firmware in this repository is provided for personal and educational use.
-
-Please do not:
-- reupload paid project files
-- redistribute complete download packages
-- resell the project files
-- commercially redistribute modified versions of paid assets
-
-The design, branding, documentation and paid project assets remain copyright © Paul Lagier.
-
----
-
-Paginotto-specific code, documentation and design changes are maintained by
-Emanuele Zanoni and contributors, subject to the same attribution boundary.
-Do not treat this repository as a grant to redistribute upstream or paid
-project assets.
+The project does not currently include a standard license file; its original
+provenance is documented in [UPSTREAM.md](UPSTREAM.md).

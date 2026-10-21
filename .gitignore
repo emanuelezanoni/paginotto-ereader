@@ -9,7 +9,6 @@
 .vscode/launch.json
 .vscode/ipch/
 
-# Arduino IDE caches
 build/
 *.elf
 *.bin

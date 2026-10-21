@@ -2,54 +2,18 @@
 //  Paginotto — firmware entry point.
 //
 //  The real firmware lives under src/ (hal/, pure/, storage/, ui/, web/).
-//  This file exists for two reasons:
-//
-//    1. Arduino IDE requires a .ino with the same name as the sketch folder.
-//    2. It provides a single place for Arduino IDE users to pick the board
-//       revision. PlatformIO users pick the env in platformio.ini instead
-//       and can leave the BOARD_V1_x defines below alone.
+//  This file provides the firmware entry point and board configuration used
+//  by PlatformIO.
 //
 //  Build options:
 //
-//    - PlatformIO (recommended):
+//    - PlatformIO:
 //        pio run -e wireless-paper-v1_2 -t upload   # V1.2 panel
 //        pio run -e wireless-paper-v1_1 -t upload   # V1.1 panel
-//
-//    - Arduino IDE 2:
-//        1. Install the Heltec ESP32 board package (heltec_wifi_lora_32_V3).
-//        2. Install libraries: heltec-eink-modules (todd-herbert fork),
-//           Adafruit GFX, U8g2_for_Adafruit_GFX.
-//        3. Uncomment exactly one of BOARD_V1_1 / BOARD_V1_2 below.
-//        4. Compile and upload.
 // ============================================================================
 
-// ── Board selection: uncomment the line that matches your hardware ──────────
-// #define BOARD_V1_1
-// #define BOARD_V1_2
-// ────────────────────────────────────────────────────────────────────────────
-
-// When built with PlatformIO, WIRELESS_PAPER + DISPLAY_V1_x come from
-// build_flags and the BOARD_V1_x macros above stay commented out. When
-// built with Arduino IDE, the macros above drive the same defines so the
-// rest of the firmware sees one consistent set of feature flags.
-#if defined(BOARD_V1_1)
-  #ifndef WIRELESS_PAPER
-    #define WIRELESS_PAPER
-  #endif
-  #ifndef DISPLAY_V1_1
-    #define DISPLAY_V1_1
-  #endif
-#elif defined(BOARD_V1_2)
-  #ifndef WIRELESS_PAPER
-    #define WIRELESS_PAPER
-  #endif
-  #ifndef DISPLAY_V1_2
-    #define DISPLAY_V1_2
-  #endif
-#endif
-
 #if !defined(DISPLAY_V1_1) && !defined(DISPLAY_V1_2)
-  #error "Board not selected. Arduino IDE: uncomment BOARD_V1_1 or BOARD_V1_2 in Paginotto.ino. PlatformIO: build with -e wireless-paper-v1_1 or -e wireless-paper-v1_2."
+  #error "Board not selected. Build with PlatformIO using -e wireless-paper-v1_1 or -e wireless-paper-v1_2."
 #endif
 
 #include <Arduino.h>

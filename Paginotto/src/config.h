@@ -22,10 +22,8 @@
 
 // FW_VERSION and BUILD_GIT_HASH are injected by scripts/build_info.py from
 // `git describe --tags --always --dirty` and the short SHA respectively, at
-// PlatformIO build time. Host-test and Arduino IDE builds skip that script,
-// so provide fallbacks so the preprocessor never sees an undefined macro.
-// The Arduino IDE path is for developer iteration — releases go through the
-// PIO + tagged-CI flow, where the real values get injected.
+// PlatformIO build time. Host-test builds skip that script, so provide
+// fallbacks so the preprocessor never sees an undefined macro.
 #ifndef FW_VERSION
 #define FW_VERSION "dev"
 #endif

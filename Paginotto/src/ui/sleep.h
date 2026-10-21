@@ -28,7 +28,7 @@ uint32_t idleTimeoutMs();     // for the main loop's sleep deadline check
 bool noScreensaver();
 void setNoScreensaver(bool val);
 
-// Lock-on-sleep mode. When true: Sleep::enter() engages the device lock
+// Sleep-state handling for the display and input lifecycle.
 // before entering deep sleep, so every sleep acts like a manual lock.
 bool lockOnSleep();
 void setLockOnSleep(bool val);
