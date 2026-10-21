@@ -1,6 +1,6 @@
 {
   "name": "Paginotto (V1.2 display)",
-  "version": "6ef5dd9",
+  "version": "6804ff9",
   "new_install_skip_erase": true,
   "builds": [
     {
@@ -25,5 +25,5 @@
       ]
     }
   ],
-  "commit": "6ef5dd9"
+  "commit": "6804ff9"
 }
