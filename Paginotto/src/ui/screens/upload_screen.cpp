@@ -61,7 +61,7 @@ static void drawConnectionQr(const String& url, int topY) {
 void UploadScreen::draw() {
   prepareMenuFrame();
 
-  int y = drawSectionHeader(D_UPLOAD_HEADER);
+  int y = drawSectionHeader(firmwareMode_ ? D_UPDATE_HEADER : D_UPLOAD_HEADER);
 
   if (phase_ == Phase::ConnectingSta) {
     Font::useBold(); u8g2.setCursor(MARGIN_X, y); u8g2.print(D_UPLOAD_CONNECTING); y += 20;

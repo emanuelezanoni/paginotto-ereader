@@ -320,54 +320,30 @@ void UpdateScreen::draw() {
   // interactive elements here are the two update channels.
   String stableLabel = "Stable";
   if (!stableReachable_) stableLabel += " (unavailable)";
-  else if (stableAvailable_) stableLabel += " (update available)";
+  else if (stableAvailable_) {
+    stableLabel += " -> ";
+    stableLabel += stableVersion_;
+  }
   else stableLabel += " (up to date)";
   drawMenuRow(y, stableLabel, focusItem_ == 0);
   y += 14;
 
   String devLabel = "Dev";
   if (!devReachable_) devLabel += " (unavailable)";
-  else if (devAvailable_) devLabel += " (update available)";
+  else if (devAvailable_) {
+    devLabel += " -> ";
+    devLabel += devCommit_;
+  }
   else devLabel += " (up to date)";
   drawMenuRow(y, devLabel, focusItem_ == 1);
   y += 18;
 
-  // Status lines — stable and dev are checked together.
+  // Only connection/download errors remain below the two channel rows. The
+  // channel rows themselves already contain their current status/version.
   Font::useBody();
   if (phase_ == Phase::ServerFail) {
     u8g2.setCursor(MARGIN_X, y);
     u8g2.print(D_UPDATE_SERVER_FAIL);
-    y += 14;
-  } else if (phase_ == Phase::UpdateAvailable || phase_ == Phase::UpToDate) {
-    u8g2.setCursor(MARGIN_X, y);
-    if (!stableReachable_) {
-      u8g2.print("Stable: unavailable");
-    } else if (stableAvailable_) {
-      u8g2.print(D_UPDATE_STABLE_AVAILABLE);
-      u8g2.print(FW_VERSION);
-      u8g2.print(" -> ");
-      u8g2.print(stableVersion_.c_str());
-    } else {
-      u8g2.print(D_UPDATE_STABLE_CURRENT);
-      u8g2.print(" (");
-      u8g2.print(stableVersion_.length() ? stableVersion_.c_str() : FW_VERSION);
-      u8g2.print(")");
-    }
-    y += 14;
-    u8g2.setCursor(MARGIN_X, y);
-    if (!devReachable_) {
-      u8g2.print("Dev: unavailable");
-    } else if (devAvailable_) {
-      u8g2.print("Dev: ");
-      u8g2.print(BUILD_GIT_HASH);
-      u8g2.print(" -> ");
-      u8g2.print(devCommit_.c_str());
-    } else {
-      u8g2.print(D_UPDATE_DEV_CURRENT);
-      u8g2.print(" (");
-      u8g2.print(devCommit_.length() ? devCommit_.c_str() : BUILD_GIT_HASH);
-      u8g2.print(")");
-    }
     y += 14;
   } else if (phase_ == Phase::DownloadFailed) {
     u8g2.setCursor(MARGIN_X, y);
