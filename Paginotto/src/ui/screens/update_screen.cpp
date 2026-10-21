@@ -160,7 +160,6 @@ void UpdateScreen::onEnter() {
     connectedHandoff_ = false;
     wifiStarted_ = true;
     phase_ = Phase::Idle;
-    draw();
     checkForUpdates();
     return;
   }
@@ -208,7 +207,6 @@ void UpdateScreen::onIdleTick() {
   WifiStaResult r = wifiStaPoll(net_);
   if (r == WifiStaResult::Connected) {
     phase_ = Phase::Idle;
-    draw();
     checkForUpdates();
     return;
   }
