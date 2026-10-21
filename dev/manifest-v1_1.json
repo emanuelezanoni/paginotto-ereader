@@ -1,29 +1,7 @@
 {
-  "name": "Paginotto (V1.1 display)",
-  "version": "98200bf",
-  "new_install_skip_erase": true,
-  "builds": [
-    {
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "bootloader.bin",
-          "offset": 0
-        },
-        {
-          "path": "partitions.bin",
-          "offset": 32768
-        },
-        {
-          "path": "boot_app0.bin",
-          "offset": 57344
-        },
-        {
-          "path": "firmware-v1_1.bin",
-          "offset": 65536
-        }
-      ]
-    }
-  ],
-  "commit": "98200bf"
+  "name": "Paginotto (V1_1 display)",
+  "channel": "dev",
+  "version": "7d9bcdb",
+  "commit": "7d9bcdb",
+  "firmware": "firmware-v1_1.bin"
 }
