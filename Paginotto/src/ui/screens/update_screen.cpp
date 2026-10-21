@@ -42,6 +42,11 @@ void UpdateScreen::setProgress(int pct) {
   if (pct % 10 == 0 || pct == 100) draw();
 }
 
+void UpdateScreen::beginWithConnectedWifi(const WifiSession& session) {
+  handoffSession_ = session;
+  connectedHandoff_ = true;
+}
+
 // ----------------------------------------------------------------------------
 //  Exit
 // ----------------------------------------------------------------------------
@@ -149,12 +154,47 @@ void UpdateScreen::onEnter() {
   progress_      = 0;
   wifiStarted_   = false;
 
+  if (connectedHandoff_) {
+    net_ = handoffSession_;
+    handoffSession_ = WifiSession{};
+    connectedHandoff_ = false;
+    wifiStarted_ = true;
+    phase_ = Phase::Idle;
+    draw();
+    checkForUpdates();
+    return;
+  }
+
   if (!WifiCreds::has()) {
     phase_ = Phase::NoCreds;
   } else {
     WifiProvisioning::notifyUploadSession(true);
     beginWifiScan();
   }
+  draw();
+}
+
+void UpdateScreen::checkForUpdates() {
+  phase_ = Phase::Checking;
+  draw();
+  stableAvailable_ = false;
+  devAvailable_ = false;
+  stableReachable_ = false;
+  devReachable_ = false;
+  if (OTA::isUpdateServerReachable()) {
+    OtaCheckResult stable = OTA::checkAvailable("stable");
+    OtaCheckResult dev = OTA::checkAvailable("dev");
+    stableReachable_ = stable.reachable;
+    devReachable_ = dev.reachable;
+    stableAvailable_ = stable.updateAvailable;
+    devAvailable_ = dev.updateAvailable;
+    stableVersion_ = stable.remoteVersion;
+    devCommit_ = dev.remoteCommit;
+  }
+  if (!stableReachable_ && !devReachable_) phase_ = Phase::ServerFail;
+  else if (stableAvailable_ || devAvailable_) phase_ = Phase::UpdateAvailable;
+  else phase_ = Phase::UpToDate;
+  clearButtonQueue();
   draw();
 }
 
@@ -323,21 +363,33 @@ void UpdateScreen::draw() {
     y += 14;
   } else if (phase_ == Phase::UpdateAvailable || phase_ == Phase::UpToDate) {
     u8g2.setCursor(MARGIN_X, y);
-    if (stableAvailable_) {
+    if (!stableReachable_) {
+      u8g2.print("Stable: unavailable");
+    } else if (stableAvailable_) {
       u8g2.print(D_UPDATE_STABLE_AVAILABLE);
       u8g2.print(FW_VERSION);
       u8g2.print(" -> ");
       u8g2.print(stableVersion_.c_str());
     } else {
       u8g2.print(D_UPDATE_STABLE_CURRENT);
+      u8g2.print(" (");
+      u8g2.print(stableVersion_.length() ? stableVersion_.c_str() : FW_VERSION);
+      u8g2.print(")");
     }
     y += 14;
     u8g2.setCursor(MARGIN_X, y);
-    if (devAvailable_) {
-      u8g2.print(D_UPDATE_DEV_AVAILABLE);
+    if (!devReachable_) {
+      u8g2.print("Dev: unavailable");
+    } else if (devAvailable_) {
+      u8g2.print("Dev: ");
+      u8g2.print(BUILD_GIT_HASH);
+      u8g2.print(" -> ");
       u8g2.print(devCommit_.c_str());
     } else {
       u8g2.print(D_UPDATE_DEV_CURRENT);
+      u8g2.print(" (");
+      u8g2.print(devCommit_.length() ? devCommit_.c_str() : BUILD_GIT_HASH);
+      u8g2.print(")");
     }
     y += 14;
   } else if (phase_ == Phase::DownloadFailed) {
@@ -410,64 +462,43 @@ void UpdateScreen::onButton(const ButtonEvent& e) {
     if (focusItem_ == 0) {
       stableChan_ = true;
       saveChannel();
-      draw();
+      if (stableAvailable_) installSelectedUpdate();
+      else draw();
 
     } else if (focusItem_ == 1) {
       stableChan_ = false;
       saveChannel();
-      draw();
+      if (devAvailable_) installSelectedUpdate();
+      else draw();
 
     } else if (focusItem_ == 2) {
       // Check both channels so the screen can show the two release tracks.
-      phase_ = Phase::Checking;
-      draw();
-      stableAvailable_ = false;
-      devAvailable_ = false;
-      stableReachable_ = false;
-      devReachable_ = false;
-      if (OTA::isUpdateServerReachable()) {
-        OtaCheckResult stable = OTA::checkAvailable("stable");
-        OtaCheckResult dev = OTA::checkAvailable("dev");
-        stableReachable_ = stable.reachable;
-        devReachable_ = dev.reachable;
-        stableAvailable_ = stable.updateAvailable;
-        devAvailable_ = dev.updateAvailable;
-        stableVersion_ = stable.remoteVersion;
-        devCommit_ = dev.remoteCommit;
-      }
-      if (!stableReachable_ && !devReachable_) {
-        phase_ = Phase::ServerFail;
-      } else if (stableAvailable_ || devAvailable_) {
-        phase_ = Phase::UpdateAvailable;
-      } else {
-        phase_ = Phase::UpToDate;
-      }
-      clearButtonQueue();
-      draw();
+      checkForUpdates();
 
     } else if (focusItem_ == 3) {
       if (!(stableChan_ ? stableAvailable_ : devAvailable_)) return;
-      // Install: download + flash
-      progress_ = 0;
-      phase_    = Phase::Downloading;
-      draw();
-      OtaDownloadResult r = OTA::download(stableChan_ ? "stable" : "dev",
-                                          onDownloadProgress);
-      clearButtonQueue();
-      if (r.success) {
-        // Flash complete — tear down WiFi and drop CPU to 80 MHz before
-        // showing the reboot prompt. Sleep is now allowed again.
-        if (wifiStarted_) {
-          wifiEnd();
-          WifiProvisioning::notifyUploadSession(false);
-          wifiStarted_ = false;
-        }
-        phase_ = Phase::RebootPrompt;
-      } else {
-        phase_ = Phase::DownloadFailed;
-      }
-      draw();
+      installSelectedUpdate();
     }
     return;
   }
+}
+
+void UpdateScreen::installSelectedUpdate() {
+  progress_ = 0;
+  phase_ = Phase::Downloading;
+  draw();
+  OtaDownloadResult r = OTA::download(stableChan_ ? "stable" : "dev",
+                                      onDownloadProgress);
+  clearButtonQueue();
+  if (r.success) {
+    if (wifiStarted_) {
+      wifiEnd();
+      WifiProvisioning::notifyUploadSession(false);
+      wifiStarted_ = false;
+    }
+    phase_ = Phase::RebootPrompt;
+  } else {
+    phase_ = Phase::DownloadFailed;
+  }
+  draw();
 }

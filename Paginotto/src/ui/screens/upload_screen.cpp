@@ -13,6 +13,7 @@
 #include "src/storage/wifi_creds.h"
 #include "src/ui/font.h"
 #include "src/ui/screens/library_screen.h"
+#include "src/ui/screens/update_screen.h"
 #include "src/ui/widgets.h"
 #include "src/web/upload.h"       // resetBookUpload() / resetSleepUpload()
 
@@ -173,6 +174,12 @@ void UploadScreen::enterReady() {
   phase_     = Phase::Ready;
   sessionActive_ = true;
   startedMs_ = millis();
+  if (firmwareMode_) {
+    sessionActive_ = false;
+    g_updateScreen.beginWithConnectedWifi(net_);
+    nextScreen = &g_updateScreen;
+    return;
+  }
   server.begin();
   draw();
 }

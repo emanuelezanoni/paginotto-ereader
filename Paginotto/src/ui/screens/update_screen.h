@@ -22,6 +22,10 @@ public:
   // Redraws at every 10 % to limit e-ink refresh overhead.
   void setProgress(int pct);
 
+  // Takes ownership of an already connected station session. Used by the
+  // proven Wi-Fi picker so Firmware Update never scans or reconnects twice.
+  void beginWithConnectedWifi(const WifiSession& session);
+
 private:
   enum class Phase {
     NoCreds,          // no stored Wi-Fi credentials — prompt to use the WebUI
@@ -44,6 +48,8 @@ private:
   WifiSession net_;
   bool        stableChan_    = true;
   bool        wifiStarted_   = false;  // true only between wifiStaBegin() and wifiEnd()
+  bool        connectedHandoff_ = false;
+  WifiSession handoffSession_;
   int         focusItem_     = 0;  // 0=Stable 1=Dev 2=Check 3=Install
   uint8_t     visible_[WifiCreds::kMaxNetworks] = {};
   uint8_t     visibleCount_ = 0;
@@ -65,6 +71,8 @@ private:
   void pollWifiScan();
   void cancelWifiScan();
   void startSelectedWifi();
+  void checkForUpdates();
+  void installSelectedUpdate();
   void exitToLibrary();
 };
 
