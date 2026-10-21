@@ -6,6 +6,13 @@ Wireless Paper display.
 Paginotto is a compact TXT reader with an e-ink UI, local storage, a browser
 WebUI and wireless firmware updates. The firmware is built with PlatformIO.
 
+Paginotto started from the Pala One firmware project by **Paul Lagier**. Since
+the initial import, it has become a substantially different project: the code
+was heavily debloated, the UI and reader interaction model were redesigned,
+the storage and library systems were reworked, and a new WebUI, folder-based
+navigation and GitHub Pages OTA pipeline were developed for the Paginotto
+device.
+
 ## Project status
 
 The repository supports two board variants:
@@ -30,10 +37,6 @@ matching PlatformIO environment when building or uploading firmware.
 - Custom screensaver upload, preview, deletion and rotation modes
 - Configurable sleep and deep-sleep behaviour
 - OTA firmware updates through GitHub Pages
-
-The codebase was heavily debloated after the initial import: unused features,
-unneeded dependencies and legacy paths were removed before the Paginotto UI,
-storage model, WebUI and OTA systems were developed.
 
 ## Wi-Fi and WebUI
 
