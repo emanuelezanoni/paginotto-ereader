@@ -66,13 +66,19 @@ void UpdateScreen::beginWifiScan() {
   }
   phase_ = Phase::SelectingWifi;
   scanStartedMs_ = millis();
-  scanInProgress_ = true;
-  WiFi.mode(WIFI_STA);
+  // Keep the radio in the same mode used by the working WebUI scanner.
+  // Starting a STA-only scan here could tear down the active provisioning
+  // interface and leave the ESP32 Wi-Fi driver in an inconsistent state.
+  WiFi.mode(WIFI_AP_STA);
+  WiFi.scanDelete();
   WiFi.scanNetworks(true, true);
+  scanInProgress_ = true;
 }
 
 void UpdateScreen::cancelWifiScan() {
-  if (scanInProgress_) WiFi.scanDelete();
+  if (scanInProgress_) {
+    WiFi.scanDelete();
+  }
   scanInProgress_ = false;
 }
 
@@ -87,7 +93,8 @@ void UpdateScreen::pollWifiScan() {
   if (found == -1) return;
   if (found < 0) {
     WiFi.scanDelete();
-    WiFi.scanNetworks(true, true);
+    scanInProgress_ = false;
+    draw();
     return;
   }
   for (uint8_t saved = 0; saved < WifiCreds::count(); saved++) {
@@ -105,7 +112,7 @@ void UpdateScreen::pollWifiScan() {
     }
   }
   WiFi.scanDelete();
-  WiFi.scanNetworks(true, true);
+  scanInProgress_ = false;
   draw();
 }
 
