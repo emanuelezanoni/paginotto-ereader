@@ -297,7 +297,10 @@ void LibraryScreen::onButton(const ButtonEvent& e) {
   }
 
   if (sel.type == LIB_ENTRY_UPDATE) {
-    nextScreen = &g_updateScreen;
+    // Use the exact same Wi-Fi screen as Web UI/upload for the first OTA
+    // integration pass. The update-specific picker is intentionally bypassed
+    // until this known-good path has been validated on hardware.
+    nextScreen = &g_uploadScreen;
     return;
   }
 
