@@ -6,7 +6,7 @@ TXT reader built around the Heltec Wireless Paper.
 The goal of the project was to create a simple, distraction-free reading device that feels minimal, portable and easy to build while still looking and behaving more like a real product than a typical DIY electronics project.
 
 This repository contains the firmware, device UI, WebUI, storage layer and the
-GitHub-based installer/OTA deployment pipeline.
+GitHub-based OTA deployment pipeline.
 
 ## Project origin and attribution
 
@@ -25,23 +25,10 @@ Since the import, Paginotto has been substantially redesigned and extended:
 - redesigned WebUI for books, folders, editing, search and settings;
 - one-level folders with device-side folder navigation;
 - streaming text editing with automatic repagination;
-- GitHub Pages installer and dual-channel OTA updates;
+- GitHub Pages dual-channel OTA updates;
 - many storage, reliability and display-flow changes specific to Paginotto.
 
 Paginotto is maintained as its own project by Emanuele Zanoni.
-
-## Install (no toolchain needed)
-
-The web installer is published through GitHub Pages at:
-
-https://emanuelezanoni.github.io/paginotto-ereader/
-
-The easiest way to flash a board is via the web installer. Plug your Heltec Wireless Paper into a desktop computer running Chrome, Edge, or Opera, then open the installer page and pick a channel:
-
-- **Stable** — latest tagged release (`vX.Y.Z`).
-- **Development** — latest build from `dev`; new features, may break.
-
-Each channel page lists both display revisions (V1.1 / V1.2). Pick the one that matches your board and click **Install**. The installer keeps existing reading progress and uploaded books across re-flashes.
 
 ## Board Versions
 
@@ -55,7 +42,7 @@ Pick your board's revision by selecting the matching PlatformIO environment.
 
 ## Wi-Fi provisioning (Improv)
 
-Besides the SoftAP captive portal, the firmware supports **Improv Serial** Wi-Fi provisioning ([improv-wifi.com](https://www.improv-wifi.com)) over the USB-CDC port, using the [`jnthas/Improv-WiFi-Library`](https://github.com/jnthas/Improv-WiFi-Library). When the board is plugged into a computer, a browser can hand it Wi-Fi credentials directly; the Paginotto installer will handle the post-flash redirect once deployed.
+Besides the SoftAP captive portal, the firmware supports **Improv Serial** Wi-Fi provisioning ([improv-wifi.com](https://www.improv-wifi.com)) over the USB-CDC port, using the [`jnthas/Improv-WiFi-Library`](https://github.com/jnthas/Improv-WiFi-Library).
 
 Saved credentials let the device join your network in **Station mode**. The
 Firmware Update screen only uses saved networks visible nearby and never
@@ -114,11 +101,10 @@ Both envs share libraries and partition table via `platformio.ini`. The PIO buil
 - `FW_VERSION` from `git describe --tags --always --dirty` (e.g. `v2.1`, `v2.1-3-gabc1234`, `…-dirty`)
 - `BUILD_GIT_HASH` from the current short SHA
 
-### Web Installer site (channels & CI)
+### OTA publishing (channels & CI)
 
-The web installer is published to the gh-pages branch by
-the workflow at .github/workflows/deploy-installer.yml. Two channels live
-side-by-side and never overwrite each other:
+Firmware-only OTA bundles are published to the `gh-pages` branch by
+`.github/workflows/publish-ota.yml`. Two channels live side-by-side:
 
 | Trigger                       | Channel  | URL path     | `DEBUG_BUILD` | Manifest version |
 |-------------------------------|----------|--------------|---------------|------------------|
@@ -126,36 +112,11 @@ side-by-side and never overwrite each other:
 | tag `v*`                      | `stable` | `/stable/`   | `0` (clean UI) | `vX.Y.Z` |
 | `workflow_dispatch`           | choose   | matches      | depends on channel | `dev-<sha>` / `manual-<sha>` |
 
-Merges to `main` do **not** auto-publish. Tagging is the explicit release event, so `/stable/` never carries an arbitrary mid-release snapshot and the install dialog always shows a clean version name. To cut a release: merge to `main`, then `git tag vX.Y.Z && git push origin vX.Y.Z`.
+Merges to `main` do **not** auto-publish. Tagging is the explicit release event, so `/stable/` never carries an arbitrary mid-release snapshot. To cut a release: merge to `main`, then `git tag vX.Y.Z && git push origin vX.Y.Z`.
 
-Every run rebuilds the channel it owns and publishes only the corresponding `gh-pages/<channel>/` subdirectory (the workflow uses `keep_files: true`, so the other channel's directory is preserved). A small landing page at the gh-pages root links to both — it is republished on every run with identical content, so the cross-write is safe. The Improv post-provisioning `connected.html` also lives at the gh-pages root (its content is channel-agnostic and the URL is baked into the firmware).
-
-Source HTML/manifests live in `install/` on the normal branches. The `gh-pages` branch is fully generated; do not edit it by hand.
-
-
-#### Local development
-
-To iterate on the installer page (HTML, Improv Serial provisioning flow, manifest tweaks) without CI:
-
-1. Build both board environments at least once so the firmware binaries exist:
-   ```
-   pio run -e wireless-paper-v1_1
-   pio run -e wireless-paper-v1_2
-   ```
-2. Assemble the bundle. Two layouts are supported:
-   ```
-   python scripts/assemble_site.py                       # flat layout in site/
-   python scripts/assemble_site.py --channel dev         # site/index.html + site/dev/
-   ```
-3. Serve it. Web Serial works on `localhost` without HTTPS:
-   ```
-   python -m http.server 8000 --directory site
-   ```
-4. Open <http://localhost:8000> in Chrome, Edge, or Opera. With `--channel`, the landing page is served; without, the installer is served directly.
-
-Optional flags: --version <string>, --commit <short-sha> and --out <dir>.
-The channel-aware layout produced locally is bit-identical to what the
-workflow uploads to gh-pages.
+Every run publishes only firmware binaries and manifests under the relevant
+`gh-pages/<channel>/` subdirectory. The `Firmware Update` screen on the device
+reads these files directly over HTTPS; there is no browser flashing workflow.
 
 ## Codebase layout
 
@@ -175,7 +136,6 @@ Paginotto/
 docs/                    # Architecture notes + refactor journal
 scripts/                 # PlatformIO pre-build helpers
 test/                    # Host-side CMake unit tests for pure/ + storage/
-install/                 # ESP Web Tools installer page (deployed to GitHub Pages by CI)
 archive/                 # Past firmware revisions, kept for reference
 ```
 

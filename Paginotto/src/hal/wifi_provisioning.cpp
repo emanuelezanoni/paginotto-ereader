@@ -48,8 +48,8 @@ static constexpr uint32_t kHostActivityMs = 5 * 60 * 1000;
 //     browser is plainly reading bytes (CDC link is up, logs are flowing).
 //
 //   * lastHostByteMs being recent means the host sent us a byte recently.
-//     A polling tool (ESP Web Tools, Improv probe loops, a terminal with a
-//     user typing) keeps this fresh; a wall charger or unplugged cable
+//     An Improv probe loop or a terminal with a user typing keeps this fresh;
+//     a wall charger or unplugged cable
 //     never bumps it.
 //
 // Trusting either signal individually catches the failure mode of the other.
@@ -77,7 +77,7 @@ void begin() {
       "Paginotto",
       FW_VERSION,
       "Paginotto",
-      "https://emanuelezanoni.github.io/paginotto-ereader/connected.html");
+      "http://paginotto.local/");
 
   // The library handles WiFi.begin() itself; we only persist creds once the
   // association succeeds. If the association fails the library reports the

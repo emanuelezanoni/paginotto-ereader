@@ -24,7 +24,7 @@ public:
 
 private:
   enum class Phase {
-    NoCreds,          // no stored Wi-Fi credentials — prompt to use web installer
+    NoCreds,          // no stored Wi-Fi credentials — prompt to use the WebUI
     SelectingWifi,    // choose one of the saved networks visible nearby
     Connecting,       // STA association in flight
     ConnFailed,       // association error
