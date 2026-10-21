@@ -189,11 +189,9 @@ void UpdateScreen::draw() {
   if (phase_ == Phase::ServerFail) {
     u8g2.setCursor(MARGIN_X, y);
     u8g2.print(D_UPDATE_SERVER_FAIL);
-    y += 14;
   } else if (phase_ == Phase::DownloadFailed) {
     u8g2.setCursor(MARGIN_X, y);
     u8g2.print(D_UPDATE_DOWNLOAD_FAILED);
-    y += 14;
   }
 
   display.update();
