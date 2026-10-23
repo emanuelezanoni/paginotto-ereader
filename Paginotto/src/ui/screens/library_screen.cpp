@@ -222,10 +222,11 @@ void LibraryScreen::draw() {
   }
 
   drawScrollableList(y, s_entryCount, s_cursor,
-    [&](int idx, int rowY, bool selected, int budget) {
-      const bool spacer = beginsSystemSection(idx) && budget >= 2;
-      if (spacer) rowY += menuLineH();
-      else if (beginsSystemSection(idx)) {
+    [&](int idx, int rowY, bool selected, int) {
+      // Keep the section separator inside the normal row budget. Consuming
+      // an extra row here made the last system item (Firmware update) render
+      // below the panel when the library contained several books.
+      if (beginsSystemSection(idx)) {
         gfx.drawFastHLine(UI_LIST_LEFT, rowY - (menuLineH() / 2),
                           SCREEN_W - UI_LIST_LEFT - MARGIN_X, 1);
       }
@@ -236,7 +237,7 @@ void LibraryScreen::draw() {
         drawMenuRow(rowY, entryLabel(s_entries[idx]), selected,
                     rowIndent(s_entries[idx]));
       }
-      return spacer ? 2 : 1;
+      return 1;
     });
 
   display.update();

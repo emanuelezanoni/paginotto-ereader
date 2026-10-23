@@ -44,6 +44,11 @@ void notifyUploadActivity() { s_lastActivityMs = millis(); }
 
 uint32_t uploadLastActivityMs() { return s_lastActivityMs; }
 
+static void handleWebUiKeepalive() {
+  notifyUploadActivity();
+  server.send(204, "text/plain", "");
+}
+
 void resetBookUpload() {
   if (s_book.tmpFile) s_book.tmpFile.close();
   s_book = BookUpload{};
@@ -350,4 +355,5 @@ static void handleUploadSleepStream() {
 void registerUploadRoutes() {
   server.on("/upload",       HTTP_POST, handleUploadDone,      handleUploadBookStream);
   server.on("/upload-sleep", HTTP_POST, handleUploadSleepDone, handleUploadSleepStream);
+  server.on("/keepalive",    HTTP_GET,  handleWebUiKeepalive);
 }
