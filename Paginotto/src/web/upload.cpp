@@ -5,6 +5,7 @@
 #include "src/pure/paths.h"
 #include "src/pure/text_util.h"
 #include "src/storage/fs_util.h"
+#include "src/storage/book_metadata.h"
 #include "src/storage/library.h"
 #include "src/web/chrome.h"
 
@@ -18,6 +19,7 @@ struct BookUpload {
   String tmpPath;
   String pendingUtf8Tail;
   String finalName;
+  String finalPath;
   bool   ok = false;
   String error;
   size_t maxBytes = 0;
@@ -39,6 +41,17 @@ BookUpload  s_book;
 SleepUpload s_sleep;
 uint32_t s_lastActivityMs = 0;
 }  // namespace
+
+static String uploadReviewPage();
+
+static int pendingBookId() {
+  if (!s_book.finalPath.length()) return -1;
+  loadBooks();
+  for (int i = 0; i < g_library.bookCount; i++) {
+    if (String(g_library.books[i].path) == s_book.finalPath) return i;
+  }
+  return -1;
+}
 
 void notifyUploadActivity() { s_lastActivityMs = millis(); }
 
@@ -81,46 +94,126 @@ static void handleUploadDone() {
 
   loadBooks();   // refresh after the stream handler appended the new book
 
-  String finalPath = "/books/" + s_book.finalName;
-  int newBookId = -1;
-  for (int i = 0; i < g_library.bookCount; i++) {
-    if (String(g_library.books[i].path) == finalPath) {
-      newBookId = i;
-      break;
-    }
-  }
+  s_book.finalPath = "/books/" + s_book.finalName;
+  String page = uploadReviewPage();
+  server.send(200, "text/html; charset=utf-8", page);
+}
+
+static String uploadReviewPage() {
+  int id = pendingBookId();
+  if (id < 0) return successPage("Upload", "Books", "Upload could not be found.",
+                                 "<div class='card'><a class='btn' href='/books'>Back to books</a></div>", "books");
+
+  String folder = String(g_library.books[id].folder);
+  String leaf = lastPathComponent(s_book.finalPath);
+  const size_t prefixBytes = folder.length() == 0
+                           ? sizeof("/books/") - 1
+                           : sizeof("/books/") - 1 + folder.length() + 1;
+  const size_t leafBytes = sizeof(g_library.books[id].path) - 1 > prefixBytes
+                         ? sizeof(g_library.books[id].path) - 1 - prefixBytes : 4;
+  const size_t titleLimit = leafBytes > 4 && leafBytes - 4 < (size_t)MAX_BOOK_TITLE_BYTES
+                          ? leafBytes - 4 : (size_t)MAX_BOOK_TITLE_BYTES;
   size_t storedSize = 0;
-  File stored = FS.open(finalPath, "r");
-  if (stored) {
-    storedSize = stored.size();
-    stored.close();
-  }
+  File stored = FS.open(s_book.finalPath, "r");
+  if (stored) { storedSize = stored.size(); stored.close(); }
 
   String inner;
-  inner.reserve(1200);
-  inner += "<div class='card'><h2>" D_WEB_UPLOAD_COMPLETE_HEADING "</h2><p class='muted'>" D_WEB_UPLOAD_COMPLETE_DESC "</p>";
-  inner += "<div class='stats'>";
-  inner += "<div class='stat'><span class='muted'>" D_WEB_UPLOAD_BOOK_LABEL  "</span><b>" + htmlEscape(s_book.finalName) + "</b></div>";
-  inner += "<div class='stat'><span class='muted'>" D_WEB_UPLOAD_STORED_SIZE "</span><b>" + humanBytes(storedSize)         + "</b></div>";
-  inner += "</div>";
-  if (newBookId >= 0) {
-    inner += "<h3 style='margin-top:18px'>Manage uploaded book</h3>"
-             "<form method='POST' action='/rename' class='stack' style='margin-top:10px'>"
-             "<input type='hidden' name='id' value='" + String(newBookId) + "'>"
-             "<label for='uploadedBookName'>File name</label>"
-             "<input id='uploadedBookName' type='text' name='name' value='" + htmlEscape(s_book.finalName) + "' maxlength='" + String(MAX_BOOK_TITLE_BYTES) + "' required autocomplete='off' spellcheck='false'>"
-             "<div class='actions'><button type='submit'>Rename file</button>"
-             "<a class='btn secondary' href='/read?id=" + String(newBookId) + "'>Edit text</a></div></form>";
+  inner.reserve(2400);
+  inner += "<div class='card review-card'><div class='review-head'><div class='review-check'>&#10003;</div><div><h2>Book uploaded</h2><p class='muted'>Review the book before saving the final changes.</p></div></div>";
+  inner += "<div class='review-summary'><span class='pill'>TXT</span><strong>" + htmlEscape(leaf) + "</strong><span class='muted'>" + humanBytes(storedSize) + "</span></div>";
+  inner += "<form method='POST' action='/upload-finalize' class='stack review-form' accept-charset='UTF-8'>"
+           "<input type='hidden' name='id' value='" + String(id) + "'>"
+           "<label for='uploadedBookName'>File name</label>"
+           "<input id='uploadedBookName' type='text' name='name' value='" + htmlEscape(leaf) + "' maxlength='" + String(titleLimit) + "' required autocomplete='off' autocapitalize='off' spellcheck='false' oninput=\"document.getElementById('uploadedBookNameCount').textContent=this.value.length\">"
+           "<div class='hint'><span id='uploadedBookNameCount'>" + String(leaf.length()) + "</span>/" + String(titleLimit) + " characters. The .txt extension is kept automatically.</div>"
+           "<label for='uploadedBookFolder'>Folder</label><select id='uploadedBookFolder' name='folder'><option value=''>Library root</option>";
+  for (int folderIndex = 0; folderIndex < g_library.folderCount; folderIndex++) {
+    String option = String(g_library.folders[folderIndex]);
+    if (option.indexOf('/') >= 0) continue;
+    inner += "<option value='" + htmlEscape(option) + "'>" + htmlEscape(folderLeafLabel(option)) + "</option>";
   }
-  inner += "<div class='actions' style='margin-top:18px'>" + webBackLink("/books", D_WEB_BACK_TO_BOOKS) + "<a class='btn' href='/books'>" D_WEB_UPLOAD_ANOTHER "</a></div></div>";
+  inner += "</select><div class='hint'>Choose the destination folder before confirming.</div>"
+           "<div class='actions review-actions'><button type='submit'>Done</button>"
+           "<button type='submit' class='btn secondary' formaction='/upload-cancel' formnovalidate onclick=\"return confirm('Cancel and delete this uploaded book?')\">Cancel</button>"
+           "<a class='btn secondary' href='/read?id=" + String(id) + "&return=/upload-review'>Edit text</a></div></form></div>";
+  return successPage("Book uploaded", "Review and save", "Upload complete", inner, "books");
+}
 
-  String page = successPage(
-    D_WEB_UPLOAD_COMPLETE_HEADING,
-    D_WEB_UPLOAD_BOOK_SAVED,
-    D_WEB_UPLOAD_FINISHED,
-    inner
-  );
-  server.send(200, "text/html; charset=utf-8", page);
+static void handleUploadReview() {
+  notifyUploadActivity();
+  if (!s_book.ok) {
+    server.sendHeader("Location", "/books");
+    server.send(302, "text/plain", "");
+    return;
+  }
+  server.send(200, "text/html; charset=utf-8", uploadReviewPage());
+}
+
+static bool uploadFolderExists(const String& folder) {
+  if (folder.length() == 0) return true;
+  for (int i = 0; i < g_library.folderCount; i++) {
+    if (String(g_library.folders[i]) == folder) return true;
+  }
+  return false;
+}
+
+static void handleUploadFinalize() {
+  notifyUploadActivity();
+  int id = pendingBookId();
+  if (!s_book.ok || id < 0 || !server.hasArg("name") || !server.hasArg("folder")) {
+    server.send(400, "text/plain; charset=utf-8", "invalid upload review");
+    return;
+  }
+  String folder = sanitizeFolderInput(server.arg("folder"));
+  if (!uploadFolderExists(folder) || folder.indexOf('/') >= 0) {
+    server.send(400, "text/plain; charset=utf-8", "invalid folder");
+    return;
+  }
+  size_t prefixBytes = folder.length() == 0 ? sizeof("/books/") - 1
+                                           : sizeof("/books/") - 1 + folder.length() + 1;
+  size_t maxLeafBytes = sizeof(g_library.books[id].path) - 1 > prefixBytes
+                      ? sizeof(g_library.books[id].path) - 1 - prefixBytes : 0;
+  size_t maxTitleBytes = maxLeafBytes > 4 ? maxLeafBytes - 4 : 0;
+  String requested = server.arg("name");
+  if (requested.length() == 0 || requested.length() > maxTitleBytes
+      || requested.length() > MAX_BOOK_TITLE_BYTES) {
+    server.send(400, "text/plain; charset=utf-8", "file name is too long or empty");
+    return;
+  }
+  String leaf = sanitizeUploadedFilename(requested, maxLeafBytes);
+  String oldPath = s_book.finalPath;
+  String newPath = (folder.length() == 0 ? String("/books/") : String("/books/") + folder + "/") + leaf;
+  if (newPath.length() >= sizeof(g_library.books[id].path)) {
+    server.send(400, "text/plain; charset=utf-8", "file name is too long");
+    return;
+  }
+  if (newPath != oldPath) {
+    if (FS.exists(newPath)) {
+      server.send(409, "text/plain; charset=utf-8", D_WEB_ERR_DEST_EXISTS);
+      return;
+    }
+    String destDir = folder.length() == 0 ? String("/books") : String("/books/") + folder;
+    if (!ensureDirRecursive(destDir) || !FS.rename(oldPath, newPath)) {
+      server.send(500, "text/plain; charset=utf-8", "could not save book changes");
+      return;
+    }
+    migrateBookMetadata(oldPath, newPath);
+  }
+  s_book.finalPath = newPath;
+  s_book.finalName = leaf;
+  loadBooks();
+  resetBookUpload();
+  server.sendHeader("Location", "/books");
+  server.send(302, "text/plain", "");
+}
+
+static void handleUploadCancel() {
+  notifyUploadActivity();
+  if (s_book.ok && s_book.finalPath.length() && FS.exists(s_book.finalPath)) FS.remove(s_book.finalPath);
+  resetBookUpload();
+  loadBooks();
+  server.sendHeader("Location", "/books");
+  server.send(302, "text/plain", "");
 }
 
 static void handleUploadBookStream() {
@@ -131,6 +224,7 @@ static void handleUploadBookStream() {
     s_book.ok = false;
     s_book.error = "";
     s_book.finalName = "";
+    s_book.finalPath = "";
     s_book.pendingUtf8Tail = "";
     s_book.tmpPath = "";
     s_book.compactLastWasSpace = false;
@@ -356,4 +450,7 @@ void registerUploadRoutes() {
   server.on("/upload",       HTTP_POST, handleUploadDone,      handleUploadBookStream);
   server.on("/upload-sleep", HTTP_POST, handleUploadSleepDone, handleUploadSleepStream);
   server.on("/keepalive",    HTTP_GET,  handleWebUiKeepalive);
+  server.on("/upload-review", HTTP_GET, handleUploadReview);
+  server.on("/upload-finalize", HTTP_POST, handleUploadFinalize);
+  server.on("/upload-cancel", HTTP_POST, handleUploadCancel);
 }

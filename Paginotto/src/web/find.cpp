@@ -189,10 +189,15 @@ static void handleEditBookDone() {
     s_edit.bookmarkStatus = remapBookmarkAfterEdit(
         s_edit.bookPath, key, s_edit.bookmarkAnchor, s_edit.bookmarkAnchorAt);
   }
-  String location = String("/read?id=")
-                  + String(server.hasArg("id") ? server.arg("id") : "0");
-  if (s_edit.bookmarkStatus > 0) location += "&bookmark=restored";
-  else if (s_edit.bookmarkStatus < 0) location += "&bookmark=reset";
+  String location;
+  if (server.hasArg("return") && server.arg("return") == "/upload-review") {
+    location = "/upload-review";
+  } else {
+    location = String("/read?id=")
+             + String(server.hasArg("id") ? server.arg("id") : "0");
+    if (s_edit.bookmarkStatus > 0) location += "&bookmark=restored";
+    else if (s_edit.bookmarkStatus < 0) location += "&bookmark=reset";
+  }
   server.sendHeader("Location", location);
   server.send(302, "text/plain", "");
 }
@@ -367,7 +372,7 @@ static const char kReadScript[] PROGMEM =
   "elEdit.addEventListener('click',function(){setEdit(true);});"
   "elCancel.addEventListener('click',function(){setEdit(false);window.paginottoDirty=false;});"
   "elEditor.addEventListener('input',function(){window.paginottoDirty=true;});"
-  "elSave.addEventListener('click',function(){if(!confirm('WARNING: this replaces the book on the device immediately. There is no device backup. Download the current TXT first if needed. Continue?'))return;var fd=new FormData();fd.append('file',new Blob([elEditor.value],{type:'text/plain;charset=utf-8'}),'edited-book.txt');elSave.disabled=true;elSave.textContent='Saving...';fetch('/edit-book?id='+encodeURIComponent(bookId),{method:'POST',body:fd}).then(function(r){if(!r.ok)return r.text().then(function(t){throw Error(t||('HTTP '+r.status));});window.location.href=r.url;}).catch(function(e){elJumpStat.textContent='Save failed: '+(e&&e.message?e.message:'error');elSave.disabled=false;elSave.textContent='Save & repaginate';});});"
+  "elSave.addEventListener('click',function(){if(!confirm('WARNING: this replaces the book on the device immediately. There is no device backup. Download the current TXT first if needed. Continue?'))return;var fd=new FormData();fd.append('file',new Blob([elEditor.value],{type:'text/plain;charset=utf-8'}),'edited-book.txt');elSave.disabled=true;elSave.textContent='Saving...';var returnTo=new URLSearchParams(window.location.search).get('return');var target='/edit-book?id='+encodeURIComponent(bookId)+(returnTo==='/upload-review'?'&return=%2Fupload-review':'');fetch(target,{method:'POST',body:fd}).then(function(r){if(!r.ok)return r.text().then(function(t){throw Error(t||('HTTP '+r.status));});window.location.href=r.url;}).catch(function(e){elJumpStat.textContent='Save failed: '+(e&&e.message?e.message:'error');elSave.disabled=false;elSave.textContent='Save & repaginate';});});"
   "elJump.addEventListener('click',function(){if(curHit<0){elJumpStat.textContent='Find something first.';return;}"
   "var hitStart=hits[curHit].start,off=utf8Len(rawText.slice(0,hitStart));var anchorStart=Math.max(0,hitStart-64),anchorEnd=Math.min(rawText.length,hitStart+128),anchor=rawText.slice(anchorStart,anchorEnd),anchorAt=utf8Len(rawText.slice(anchorStart,hitStart));var fd=new FormData();fd.append('id',String(bookId));fd.append('offset',String(off));fd.append('anchor',anchor);fd.append('anchorAt',String(anchorAt));"
   "elJumpStat.textContent='Saving...';elJump.disabled=true;"
