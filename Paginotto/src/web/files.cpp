@@ -66,10 +66,10 @@ static void handleDownloadBook() {
 // small chunks, which also avoids the browser's cross-origin CORS restriction.
 static constexpr uint32_t kRemoteBookMaxBytes = 64UL * 1024UL * 1024UL;
 static constexpr uint16_t kRemoteBookTimeoutMs = 5000U;
-// A remote HTTPS stream can legitimately pause for longer than the WebUI
-// keepalive interval on a weak Wi-Fi link. Keep waiting for data instead of
-// turning a temporary pause into a truncated EPUB.
-static constexpr uint32_t kRemoteBookStallMs = 120000UL;
+// Keep the synchronous proxy responsive. A failed attempt is retried by the
+// browser; holding the WebServer loop for two minutes makes the whole WebUI
+// appear dead when the remote socket is actually gone.
+static constexpr uint32_t kRemoteBookStallMs = 30000UL;
 
 static void configureRemoteBookClient(WiFiClientSecure& client) {
   // This endpoint accepts arbitrary user-supplied download hosts. The
@@ -536,6 +536,7 @@ static void handleFiles() {
   out += "<script>function editBookTitle(i){var v=document.getElementById('bookTitleView'+i),f=document.getElementById('bookTitleEdit'+i),n=document.getElementById('bookName'+i);if(v&&f){v.hidden=true;f.hidden=false;if(n){n.focus();n.select();}}}function cancelBookTitle(i){var v=document.getElementById('bookTitleView'+i),f=document.getElementById('bookTitleEdit'+i);if(v&&f){f.hidden=true;v.hidden=false;}}</script>";
 
   out += webPageEnd();
+  server.sendHeader("Cache-Control", "no-store, no-cache, must-revalidate");
   server.send(200, "text/html; charset=utf-8", out);
 }
 
