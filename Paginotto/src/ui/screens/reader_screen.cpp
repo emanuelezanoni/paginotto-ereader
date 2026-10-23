@@ -1,4 +1,5 @@
 #include "src/ui/screens/reader_screen.h"
+#include "src/diagnostics/log.h"
 
 #include "src/hal/display.h"
 #include "src/hal/input.h"
@@ -29,14 +30,17 @@ static void performReaderAction(ButtonAction action) {
 }
 
 void ReaderScreen::onEnter() {
+  Diagnostics::checkpoint("reader.screen.enter");
   draw();
 }
 
 void ReaderScreen::draw() {
+  Diagnostics::trace("reader.screen.draw");
   renderCurrentPage();
 }
 
 void ReaderScreen::onButton(const ButtonEvent& e) {
+  Diagnostics::trace("reader.screen.button");
   if (e.kind == ButtonEvent::Triple) {
     // Catch any progress / pagination since the last throttled save before
     // we lose the active book.
@@ -70,6 +74,7 @@ void ReaderScreen::onButton(const ButtonEvent& e) {
 }
 
 void ReaderScreen::onSleep() {
+  Diagnostics::checkpoint("reader.screen.sleep");
   // Strong invariant: reader screen is never active without an open book.
   persistReaderState();
   armResumeOnWake();        // captures path before resetBookView() drops it

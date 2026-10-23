@@ -2,23 +2,17 @@
 
 #include "src/state.h"
 #include "src/web/chrome.h"
+#include "src/diagnostics/log.h"
 
 namespace {
 
-constexpr uint8_t kSlots = 12;
+constexpr uint8_t kPersistentSlots = 24;
 
 String diagnosticsText() {
-  String out;
-  uint8_t count = prefs.getUChar("count", 0);
-  uint8_t next = prefs.getUChar("next", 0) % kSlots;
-  uint8_t first = (count < kSlots) ? 0 : next;
-  for (uint8_t i = 0; i < count; i++) {
-    uint8_t slot = (uint8_t)((first + i) % kSlots);
-    char key[8];
-    snprintf(key, sizeof(key), "l%u", slot);
-    String line = prefs.getString(key, "");
-    if (line.length()) out += line + "\n";
-  }
+  String out = "=== PERSISTENT LOG ===\n";
+  out += Diagnostics::persistentText();
+  out += "\n=== CURRENT SESSION TRACE ===\n";
+  out += Diagnostics::runtimeText();
   return out;
 }
 
@@ -26,8 +20,9 @@ void handleDiagnostics() {
   String out = webPageStart(
       "Diagnostics", "Persistent warnings and error records.", webNav("diagnostics"));
   out += "<div class='card'><h2>Device diagnostics</h2>"
-         "<p class='muted'>The device keeps the latest 12 diagnostic records. "
-         "Records contain timing, reset/error stage, free heap and Wi-Fi status; "
+      "<p class='muted'>The device keeps the latest 24 persistent records and "
+         "a larger current-session trace in RAM. Records contain timing, "
+         "reset/error stage, free heap and Wi-Fi status; "
          "credentials and download URLs are not stored.</p>"
          "<div class='actions'><a class='btn secondary' href='/diagnostics.txt'>Download log</a>"
          "<form method='POST' action='/diagnostics/clear' style='display:inline'>"
@@ -44,7 +39,7 @@ void handleDiagnosticsText() {
 }
 
 void handleDiagnosticsClear() {
-  for (uint8_t i = 0; i < kSlots; i++) {
+  for (uint8_t i = 0; i < kPersistentSlots; i++) {
     char key[8];
     snprintf(key, sizeof(key), "l%u", i);
     prefs.remove(key);
@@ -52,6 +47,8 @@ void handleDiagnosticsClear() {
   prefs.remove("next");
   prefs.remove("count");
   prefs.remove("boot_count");
+  prefs.remove("phase");
+  Diagnostics::clearRuntime();
   server.sendHeader("Location", "/diagnostics");
   server.send(303, "text/plain", "");
 }

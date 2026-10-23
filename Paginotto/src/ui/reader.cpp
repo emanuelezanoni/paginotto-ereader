@@ -1,4 +1,5 @@
 #include "src/ui/reader.h"
+#include "src/diagnostics/log.h"
 
 #include "src/hal/display.h"
 #include "src/pure/hashing.h"
@@ -81,19 +82,23 @@ static void resetSaveThrottle() {
 //  the file-closed-with-path-still-set intermediate state.
 // ============================================================================
 bool OpenBook::open(const String& path) {
+  Diagnostics::trace("reader.book.open.begin");
   close();
   File f = FS.open(path, "r");
   if (!f || f.isDirectory()) {
+    Diagnostics::warning("reader.book.open.failed");
     if (f) f.close();
     return false;
   }
   file_ = f;
   path_ = path;
   key_  = prefKeyForBook(path);
+  Diagnostics::trace("reader.book.open.ok");
   return true;
 }
 
 void OpenBook::close() {
+  if (file_) Diagnostics::trace("reader.book.close");
   if (file_) file_.close();
   path_ = "";
   key_  = "";
@@ -196,14 +201,21 @@ int findPageForOffset(uint32_t targetOffset) {
 //  Reader operations
 // ============================================================================
 bool openBookByIndex(int idx) {
+  Diagnostics::checkpoint("reader.open.begin");
   // Invariant: callers reset the view before calling here. `OpenBook::open`
   // is also atomic about the file-handle swap, so a stale handle would be
   // overwritten cleanly even if the invariant were violated.
   const char* p = bookPath(idx);
-  if (!p) return false;
+  if (!p) {
+    Diagnostics::warning("reader.open.invalid_index");
+    return false;
+  }
 
   String path(p);
-  if (!g_bookview.book.open(path)) return false;
+  if (!g_bookview.book.open(path)) {
+    Diagnostics::error("reader.open.file_failed");
+    return false;
+  }
 
   g_bookview.pages.count = 1;
   g_bookview.pages.offsets[0] = 0;
@@ -230,6 +242,7 @@ bool openBookByIndex(int idx) {
   }
   g_bookview.cursor.pageTurnsSinceFull = 0;
   resetSaveThrottle();
+  Diagnostics::checkpoint("reader.open.ready");
   return true;
 }
 
@@ -242,9 +255,16 @@ bool openBookByIndex(int idx) {
 // the actual draw in renderCurrentPage is read-only on view state
 // (modulo pageTurnsSinceFull, which is render-side bookkeeping).
 static bool prepareForRender() {
-  if (g_bookview.book.size() == 0) return false;
+  Diagnostics::trace("reader.render.prepare");
+  if (g_bookview.book.size() == 0) {
+    Diagnostics::warning("reader.render.empty");
+    return false;
+  }
   ensureOffsetsUpTo(g_bookview.cursor.pageIndex);
-  if (g_bookview.pages.count <= 0) return false;
+  if (g_bookview.pages.count <= 0) {
+    Diagnostics::error("reader.render.no_pages");
+    return false;
+  }
 
   if (g_bookview.cursor.pageIndex < 0) g_bookview.cursor.pageIndex = 0;
   if (g_bookview.cursor.pageIndex >= g_bookview.pages.count)
@@ -260,6 +280,7 @@ static bool prepareForRender() {
 }
 
 void renderCurrentPage() {
+  Diagnostics::trace("reader.render.begin");
   // Strong invariant: if we got here, a book is open. The reader screen
   // is never active otherwise.
   if (!prepareForRender()) {
@@ -295,19 +316,31 @@ void renderCurrentPage() {
   drawReaderFooter(start);
 
   display.update();
+  Diagnostics::trace("reader.render.end");
 }
 
 bool tryRestoreReadingSession() {
+  Diagnostics::trace("reader.restore.begin");
   // Single-shot: read wake intent, then clear it. From this point on
   // (during this runtime session) wake state is empty unless the reader
   // re-arms it on its way into deep sleep.
   String wp = prefs.getString("wake_path", "");
   clearResumeOnWake();
-  if (wp.length() == 0) return false;
+  if (wp.length() == 0) {
+    Diagnostics::trace("reader.restore.none");
+    return false;
+  }
 
   int idx = bookIndexForPath(wp);
-  if (idx < 0) return false;
-  if (!openBookByIndex(idx)) return false;
+  if (idx < 0) {
+    Diagnostics::warning("reader.restore.invalid_book");
+    return false;
+  }
+  if (!openBookByIndex(idx)) {
+    Diagnostics::error("reader.restore.open_failed");
+    return false;
+  }
+  Diagnostics::trace("reader.restore.ok");
   return true;
 }
 
@@ -316,17 +349,25 @@ bool tryRestoreReadingSession() {
 //  real change; the caller decides what to save and render.
 // ============================================================================
 bool advancePage() {
+  Diagnostics::trace("reader.page.next");
   int targetPage = g_bookview.cursor.pageIndex + 1;
   ensureOffsetsUpTo(targetPage);
   // Couldn't extend to the requested page (EOF / MAX_PAGES) — don't move.
-  if (targetPage >= g_bookview.pages.count) return false;
+  if (targetPage >= g_bookview.pages.count) {
+    Diagnostics::trace("reader.page.next_eof");
+    return false;
+  }
   g_bookview.cursor.pageIndex = targetPage;
   g_bookview.cursor.pageTurnsSinceFull++;
   return true;
 }
 
 bool retreatPage() {
-  if (g_bookview.cursor.pageIndex <= 0) return false;
+  Diagnostics::trace("reader.page.previous");
+  if (g_bookview.cursor.pageIndex <= 0) {
+    Diagnostics::trace("reader.page.first");
+    return false;
+  }
   g_bookview.cursor.pageIndex--;
   g_bookview.cursor.pageTurnsSinceFull++;
   return true;
@@ -336,6 +377,7 @@ bool retreatPage() {
 //  Full view reset — used when leaving the reader entirely.
 // ============================================================================
 void resetBookView() {
+  Diagnostics::checkpoint("reader.reset");
   g_bookview.book.close();
   g_bookview.cursor = ReaderCursor{};
   g_bookview.pages  = PageOffsetTable{};
@@ -350,6 +392,8 @@ void resetBookView() {
 // ============================================================================
 void saveProgress() {
   if (!g_bookview.book.isOpen()) return;
+
+  Diagnostics::trace("reader.progress.save");
 
   PreferencesStore kv(prefs);
   // Canonical: the byte offset where the user currently is. Invariant
@@ -378,8 +422,10 @@ void saveProgressThrottled() {
 // Mid-session uses `saveProgressThrottled` for cheaper, more frequent writes.
 void persistReaderState() {
   if (!g_bookview.book.isOpen()) return;
+  Diagnostics::checkpoint("reader.persist.begin");
   saveProgress();
   savePageOffsetCacheForBook(g_bookview.book.path(), g_bookview.book.size(),
                              Font::layoutForCache(),
                              g_bookview.pages);
+  Diagnostics::checkpoint("reader.persist.done");
 }
