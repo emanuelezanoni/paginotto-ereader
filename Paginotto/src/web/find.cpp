@@ -396,6 +396,7 @@ static const char kReadScript[] PROGMEM =
   "});"
   "fetch('/readbook-text?id='+encodeURIComponent(bookId)).then(function(r){return r.text();}).then(function(t){"
   "rawText=t;normCache=null;render(false);elStat.textContent='Loaded '+rawText.length+' chars. Enter a phrase to find.';elLoading.hidden=true;elReady.hidden=false;"
+  "if(document.getElementById('bvData').dataset.editOnly==='1')setEdit(true);"
   "}).catch(function(){elLoading.textContent='Could not load book text.';});"
   "})();</script>";
 
@@ -403,13 +404,15 @@ static void handleReadView() {
   int id = requireBookId();
   if (id < 0) return;
 
+  const bool editOnly = server.uri() == "/edit-text";
+
   String path = String(g_library.books[id].path);
   int savedPage = savedPageForBookPath(path) + 1;
   if (savedPage < 1) savedPage = 1;
 
   String out = webPageStart(
-    D_WEB_READ_TITLE,
-    D_WEB_READ_SUBTITLE,
+    editOnly ? String("Edit text") : String(D_WEB_READ_TITLE),
+    editOnly ? String("Edit the text of this book.") : String(D_WEB_READ_SUBTITLE),
     webNav("books")
   );
   if (server.arg("bookmark") == "restored") {
@@ -461,7 +464,7 @@ static void handleReadView() {
   out += "</div>";
   out += "<h2 id='bvEditingTitle' hidden>Editing book text</h2>";
 
-  out += "<div id='bvData' data-id='" + String(id) + "'></div>";
+  out += "<div id='bvData' data-id='" + String(id) + "' data-edit-only='" + String(editOnly ? "1" : "0") + "'></div>";
   out += "<div id='bvText' class='bv-text'></div>";
   out += "<textarea id='bvEditor' class='bv-editor' hidden spellcheck='false'></textarea>";
   out += "<div id='bvEditWarning' class='banner-warn' hidden>" D_WEB_READ_EDIT_WARNING " <a class='link' href='/download-book?id=" + String(id) + "' download>" D_WEB_READ_DOWNLOAD_BACKUP "</a></div>";
@@ -476,6 +479,7 @@ static void handleReadView() {
 
 void registerFindRoutes() {
   server.on("/read",          HTTP_GET,  handleReadView);
+  server.on("/edit-text",     HTTP_GET,  handleReadView);
   server.on("/readbook-text", HTTP_GET,  handleReadbookText);
   server.on("/jumpoffset",    HTTP_POST, handleJumpOffset);
   server.on("/edit-book",     HTTP_POST, handleEditBookDone, handleEditBookStream);

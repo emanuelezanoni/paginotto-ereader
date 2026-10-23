@@ -27,6 +27,8 @@ static const char kStyleCss[] PROGMEM =
   ".wrap{max-width:820px;margin:0 auto;padding:18px}"
   ".wide{max-width:1020px}"
   ".top{display:flex;align-items:flex-start;gap:12px;margin-bottom:10px}"
+  ".top-title{min-width:0}"
+  ".title-exit{margin-left:auto;white-space:nowrap;flex:none}"
   ".top a,.link{color:var(--link);text-decoration:none}"
   ".brand{font-size:13px;font-weight:750;letter-spacing:.08em;text-transform:uppercase;color:var(--link);margin-bottom:2px}"
   ".top a:hover,.link:hover{text-decoration:underline}"
@@ -139,11 +141,15 @@ String webPageStart(const String& title, const String& subtitle,
   out += title;
   out += "</title></head><body><div class='wrap";
   if (wide) out += " wide";
-  out += "'><div class='top'><div><div class='brand'>Paginotto</div><h1>";
+  out += "'><div class='top'><div class='top-title'><div class='brand'>Paginotto</div><h1>";
   out += title;
   out += "</h1><div class='muted'>";
   out += subtitle;
-  out += "</div></div></div>";
+  out += "</div></div>";
+  if (navHtml.length() > 0) {
+    out += "<a class='btn secondary small title-exit' href='/exit' onclick=\"return !window.paginottoDirty || confirm('There may be unsaved changes or an active operation. Exit anyway?')\">Exit WebUI</a>";
+  }
+  out += "</div>";
   if (navHtml.length() > 0) {
     out += "<div class='nav-bar'><div class='nav'>";
     out += navHtml;

@@ -21,7 +21,7 @@ String webPageStart(const String& title, const String& subtitle,
 String webPageEnd();
 
 // Shared navigation with the current page marked as active.
-String webNav(const char* active, bool showExit = true);
+String webNav(const char* active, bool showExit = false);
 
 // Consistent parent-page navigation for secondary HTML views.
 String webBackLink(const char* href, const char* label);

@@ -106,6 +106,7 @@ static String uploadReviewPage() {
 
   String folder = String(g_library.books[id].folder);
   String leaf = lastPathComponent(s_book.finalPath);
+  String displayName = stripTxtExt(leaf);
   const size_t prefixBytes = folder.length() == 0
                            ? sizeof("/books/") - 1
                            : sizeof("/books/") - 1 + folder.length() + 1;
@@ -120,22 +121,27 @@ static String uploadReviewPage() {
   String inner;
   inner.reserve(2400);
   inner += "<div class='card review-card'><div class='review-head'><div class='review-check'>&#10003;</div><div><h2>Book uploaded</h2><p class='muted'>Review the book before saving the final changes.</p></div></div>";
-  inner += "<div class='review-summary'><span class='pill'>TXT</span><strong>" + htmlEscape(leaf) + "</strong><span class='muted'>" + humanBytes(storedSize) + "</span></div>";
+  inner += "<div class='review-summary'><span class='pill'>TXT</span><strong>" + htmlEscape(displayName) + "</strong><span class='muted'>" + humanBytes(storedSize) + "</span></div>";
   inner += "<form method='POST' action='/upload-finalize' class='stack review-form' accept-charset='UTF-8'>"
            "<input type='hidden' name='id' value='" + String(id) + "'>"
            "<label for='uploadedBookName'>File name</label>"
-           "<input id='uploadedBookName' type='text' name='name' value='" + htmlEscape(leaf) + "' maxlength='" + String(titleLimit) + "' required autocomplete='off' autocapitalize='off' spellcheck='false' oninput=\"document.getElementById('uploadedBookNameCount').textContent=this.value.length\">"
-           "<div class='hint'><span id='uploadedBookNameCount'>" + String(leaf.length()) + "</span>/" + String(titleLimit) + " characters. The .txt extension is kept automatically.</div>"
-           "<label for='uploadedBookFolder'>Folder</label><select id='uploadedBookFolder' name='folder'><option value=''>Library root</option>";
+           "<input id='uploadedBookName' type='text' name='name' value='" + htmlEscape(displayName) + "' maxlength='" + String(titleLimit) + "' required autocomplete='off' autocapitalize='off' spellcheck='false' oninput=\"document.getElementById('uploadedBookNameCount').textContent=this.value.length\">"
+           "<div class='hint'><span id='uploadedBookNameCount'>" + String(displayName.length()) + "</span>/" + String(titleLimit) + " characters. The .txt extension is added automatically.</div>"
+           "<label for='uploadedBookFolder'>Folder</label><select id='uploadedBookFolder' name='folder'><option value=''" +
+           (folder.length() == 0 ? String(" selected") : String()) +
+           ">Library root</option>";
   for (int folderIndex = 0; folderIndex < g_library.folderCount; folderIndex++) {
     String option = String(g_library.folders[folderIndex]);
     if (option.indexOf('/') >= 0) continue;
-    inner += "<option value='" + htmlEscape(option) + "'>" + htmlEscape(folderLeafLabel(option)) + "</option>";
+    inner += "<option value='" + htmlEscape(option) + "'" +
+             (option == folder ? String(" selected") : String()) + ">" +
+             htmlEscape(folderLeafLabel(option)) + "</option>";
   }
   inner += "</select><div class='hint'>Choose the destination folder before confirming.</div>"
-           "<div class='actions review-actions'><button type='submit'>Done</button>"
+           "<div class='actions review-actions'><button type='submit' name='stay' value='1' class='btn secondary'>Rename</button>"
+           "<button type='submit'>Done</button>"
            "<button type='submit' class='btn secondary' formaction='/upload-cancel' formnovalidate onclick=\"return confirm('Cancel and delete this uploaded book?')\">Cancel</button>"
-           "<a class='btn secondary' href='/read?id=" + String(id) + "&return=/upload-review'>Edit text</a></div></form></div>";
+           "<a class='btn secondary' href='/edit-text?id=" + String(id) + "&return=/upload-review'>Edit text</a></div></form></div>";
   return successPage("Book uploaded", "Review and save", "Upload complete", inner, "books");
 }
 
@@ -202,6 +208,11 @@ static void handleUploadFinalize() {
   s_book.finalPath = newPath;
   s_book.finalName = leaf;
   loadBooks();
+  if (server.hasArg("stay")) {
+    server.sendHeader("Location", "/upload-review");
+    server.send(302, "text/plain", "");
+    return;
+  }
   resetBookUpload();
   server.sendHeader("Location", "/books");
   server.send(302, "text/plain", "");
