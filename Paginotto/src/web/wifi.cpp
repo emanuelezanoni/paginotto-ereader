@@ -2,6 +2,7 @@
 
 #include <WiFi.h>
 
+#include "src/hal/wifi.h"
 #include "src/state.h"
 #include "src/storage/wifi_creds.h"
 #include "src/web/chrome.h"
@@ -9,6 +10,13 @@
 
 static bool validSsid(const String& value) { return value.length() > 0 && value.length() <= 32; }
 static bool validPass(const String& value) { return value.length() == 0 || (value.length() >= 8 && value.length() <= 63); }
+static bool canAddNetwork(const String& ssid) {
+  if (WifiCreds::count() < WifiCreds::kMaxNetworks) return true;
+  for (uint8_t i = 0; i < WifiCreds::count(); i++) {
+    if (WifiCreds::network(i).ssid == ssid) return true;
+  }
+  return false;
+}
 static constexpr uint32_t kWebScanTimeoutMs = 60000;
 static bool s_scanActive = false;
 static uint32_t s_scanStartedMs = 0;
@@ -102,7 +110,7 @@ static void handleWifi() {
          "<div class='hint'>8–63 characters. Changing network settings may disconnect this browser.</div>"
          "<div class='actions'><button type='submit'>Save hotspot</button></div></form></div>";
 
-  out += "<div class='card'><h2>Saved networks</h2><p class='muted'>Credentials save only after device connects successfully. Passwords stay masked.</p>";
+  out += "<div class='card'><h2>Saved networks</h2><p class='muted'>Tested networks are saved after a successful connection; manually added networks are saved immediately. Passwords stay masked.</p>";
   uint8_t n = WifiCreds::count();
   if (!n) out += "<p class='status idle'>No saved networks.</p>";
   else {
@@ -128,6 +136,12 @@ static void handleWifi() {
          "else if(d.state==='timeout'){st.textContent='Search timed out. No network selected.';st.className='status idle';}"
          "else{st.textContent='Network scan failed. Try again.';st.className='status idle';}"
          "}catch(e){st.textContent='Network scan unavailable. Try again.';st.className='status idle';}}poll();})();</script></div>";
+  out += "<div class='card'><h2>Add network manually</h2>"
+         "<p class='muted'>Use this for hidden networks or a phone hotspot. The connection is not tested now.</p>"
+         "<form method='POST' action='/wifi/add-manual' class='stack' style='margin-top:12px'>"
+         "<div><label for='manual-ssid'>Network name (SSID)</label><input id='manual-ssid' name='ssid' maxlength='32' required></div>"
+         "<div><label for='manual-pass'>Network password</label><input id='manual-pass' type='password' name='pass' maxlength='63'></div>"
+         "<div class='actions'><button type='submit'>Save network</button></div></form></div>";
   out += webPageEnd();
   server.send(200, "text/html; charset=utf-8", out);
 }
@@ -144,21 +158,34 @@ static void handleAdd() {
   String ssid = server.arg("ssid"); ssid.trim();
   String pass = server.arg("pass");
   if (!validSsid(ssid) || !validPass(pass)) { redirect("Invalid network name or password."); return; }
-  if (WifiCreds::count() >= WifiCreds::kMaxNetworks) {
-    bool exists = false; for (uint8_t i = 0; i < WifiCreds::count(); i++) if (WifiCreds::network(i).ssid == ssid) exists = true;
-    if (!exists) { redirect("Saved network limit reached. Remove one first."); return; }
+  if (!canAddNetwork(ssid)) { redirect("Saved network limit reached. Remove one first."); return; }
+
+  // Keep SoftAP alive while the shared station test runs. Credentials are
+  // written only after the attempt succeeds.
+  WifiStaResult result = wifiStaTest(ssid, pass);
+  if (result == WifiStaResult::NoSsidAvailable) {
+    redirect("Network not found. Credentials were not saved."); return;
   }
-  // Keep SoftAP alive while STA verifies. Handler blocks briefly, then returns
-  // status to same browser; no credential reaches NVS before WL_CONNECTED.
-  WiFi.mode(WIFI_AP_STA);
-  WiFi.begin(ssid.c_str(), pass.c_str());
-  uint32_t start = millis();
-  while (WiFi.status() != WL_CONNECTED && (uint32_t)(millis() - start) < 10000) delay(50);
-  bool connected = WiFi.status() == WL_CONNECTED;
-  WiFi.disconnect(false, false);
-  if (!connected) { redirect("Network test failed. Credentials were not saved."); return; }
+  if (result == WifiStaResult::AuthenticationFailed) {
+    redirect("Password rejected or connection refused. Credentials were not saved."); return;
+  }
+  if (result == WifiStaResult::TimedOut) {
+    redirect("Connection timed out. Credentials were not saved."); return;
+  }
+  if (result != WifiStaResult::Connected) {
+    redirect("Network test failed. Credentials were not saved."); return;
+  }
   WifiCreds::add(ssid, pass);
   redirect("Network connected and saved.");
+}
+
+static void handleAddManual() {
+  String ssid = server.arg("ssid"); ssid.trim();
+  String pass = server.arg("pass");
+  if (!validSsid(ssid) || !validPass(pass)) { redirect("Invalid network name or password."); return; }
+  if (!canAddNetwork(ssid)) { redirect("Saved network limit reached. Remove one first."); return; }
+  if (!WifiCreds::add(ssid, pass)) { redirect("Could not save network."); return; }
+  redirect("Network saved. Test it from the device.");
 }
 
 static void handleRemove() {
@@ -173,5 +200,6 @@ void registerWifiRoutes() {
   server.on("/wifi/scan", HTTP_GET, handleWifiScan);
   server.on("/wifi/hotspot", HTTP_POST, handleHotspot);
   server.on("/wifi/add", HTTP_POST, handleAdd);
+  server.on("/wifi/add-manual", HTTP_POST, handleAddManual);
   server.on("/wifi/remove", HTTP_POST, handleRemove);
 }

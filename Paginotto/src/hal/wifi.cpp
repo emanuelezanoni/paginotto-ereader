@@ -19,14 +19,14 @@ bool wifiStaBegin() {
   return wifiStaBegin(WifiCreds::ssid(), WifiCreds::pass());
 }
 
-bool wifiStaBegin(const String& ssid, const String& pass) {
+bool wifiStaBegin(const String& ssid, const String& pass, bool keepAccessPoint) {
   if (!ssid.length()) return false;
 
   setCpuFrequencyMhz(240);
 
   s_staSsid = ssid;
 
-  WiFi.mode(WIFI_STA);
+  WiFi.mode(keepAccessPoint ? WIFI_AP_STA : WIFI_STA);
   WiFi.begin(s_staSsid.c_str(), pass.c_str());
   return true;
 }
@@ -45,17 +45,38 @@ WifiStaResult wifiStaPoll(WifiSession& out) {
       return WifiStaResult::Connected;
     }
     case WL_NO_SSID_AVAIL:
+      return WifiStaResult::NoSsidAvailable;
     case WL_CONNECT_FAILED:
+      return WifiStaResult::AuthenticationFailed;
     case WL_CONNECTION_LOST:
-      return WifiStaResult::Failed;
+      return WifiStaResult::ConnectionLost;
     default:
       return WifiStaResult::Connecting;
   }
 }
 
-void wifiStaAbort() {
-  WiFi.disconnect(true, true);
-  WiFi.mode(WIFI_OFF);
+WifiStaResult wifiStaTest(const String& ssid, const String& pass, uint32_t timeoutMs) {
+  if (!wifiStaBegin(ssid, pass, true)) return WifiStaResult::Failed;
+
+  WifiSession session;
+  const uint32_t startedMs = millis();
+  const uint32_t failureGraceMs = 1500;
+  WifiStaResult result = WifiStaResult::Connecting;
+  while ((uint32_t)(millis() - startedMs) < timeoutMs) {
+    result = wifiStaPoll(session);
+    if (result == WifiStaResult::Connected) break;
+    if (result != WifiStaResult::Connecting &&
+        (uint32_t)(millis() - startedMs) >= failureGraceMs) break;
+    delay(50);
+  }
+  if (result == WifiStaResult::Connecting) result = WifiStaResult::TimedOut;
+  wifiStaAbort(true);
+  return result;
+}
+
+void wifiStaAbort(bool keepAccessPoint) {
+  WiFi.disconnect(!keepAccessPoint, !keepAccessPoint);
+  if (!keepAccessPoint) WiFi.mode(WIFI_OFF);
   s_staSsid = "";
   // CPU clock stays at 240 MHz — the typical next call is
   // wifiBeginAccessPoint() which needs it anyway. wifiEnd() drops it.

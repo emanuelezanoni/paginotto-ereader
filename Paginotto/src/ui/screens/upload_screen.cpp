@@ -113,7 +113,11 @@ void UploadScreen::draw() {
         return 1;
       });
     Font::useBody(); u8g2.setCursor(MARGIN_X, SCREEN_H - 6);
-    if (connectionFailed_ && (int32_t)(connectionFailedUntilMs_ - millis()) > 0) u8g2.print(D_UPLOAD_CONN_FAILED);
+    if (connectionFailed_ && (int32_t)(connectionFailedUntilMs_ - millis()) > 0) {
+      if (connectionFailure_ == WifiStaResult::NoSsidAvailable) u8g2.print(D_UPLOAD_NETWORK_NOT_FOUND);
+      else if (connectionFailure_ == WifiStaResult::AuthenticationFailed) u8g2.print(D_UPLOAD_PASSWORD_REJECTED);
+      else u8g2.print(D_UPLOAD_CONN_FAILED);
+    }
     else if (scanner_.state() == WifiNetworkScanState::NoSavedNetworks) u8g2.print(D_UPLOAD_NO_CONFIGURED);
     else if (scanner_.state() == WifiNetworkScanState::Searching) u8g2.print(D_UPLOAD_SEARCHING_CONFIGURED);
     else if (scanner_.state() == WifiNetworkScanState::TimedOut) u8g2.print(D_UPLOAD_SCAN_TIMED_OUT);
@@ -218,15 +222,16 @@ void UploadScreen::startSelectedStation() {
   draw();
 }
 
-void UploadScreen::returnToSelection(bool failed) {
+void UploadScreen::returnToSelection(WifiStaResult result) {
   wifiStaAbort();
   server.stop();
   sessionActive_ = false;
   net_ = WifiSession{};
   net_.mode = WifiMode::AccessPoint;
   phase_ = Phase::Ready;
-  connectionFailed_ = failed;
-  connectionFailedUntilMs_ = failed ? millis() + 5000UL : 0;
+  connectionFailed_ = result != WifiStaResult::Connected;
+  connectionFailure_ = result;
+  connectionFailedUntilMs_ = connectionFailed_ ? millis() + 5000UL : 0;
   beginConfiguredScan();
   draw();
 }
@@ -280,6 +285,7 @@ void UploadScreen::onButton(const ButtonEvent& e) {
       if (!itemCount) return;
       selectedItem_ = (selectedItem_ + 1) % itemCount;
       connectionFailed_ = false;
+      connectionFailure_ = WifiStaResult::Failed;
       connectionFailedUntilMs_ = 0;
       draw();
       return;
@@ -317,9 +323,10 @@ void UploadScreen::onIdleTick() {
       return;
     }
     const uint32_t elapsed = millis() - staStartedMs_;
-    if ((r == WifiStaResult::Failed && elapsed >= kStaFailureGraceMs) ||
-        elapsed > kStaTimeoutMs) {
-      returnToSelection(true);
+    if ((r != WifiStaResult::Connecting && r != WifiStaResult::Connected &&
+         elapsed >= kStaFailureGraceMs) || elapsed > kStaTimeoutMs) {
+      if (r == WifiStaResult::Connecting) r = WifiStaResult::TimedOut;
+      returnToSelection(r);
       return;
     }
     return;   // still associating — server isn't up yet

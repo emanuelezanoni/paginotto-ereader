@@ -34,6 +34,8 @@
 #define D_UPLOAD_NONE_VISIBLE       "No saved networks visible"
 #define D_UPLOAD_WAITING_NETWORK    "No networks found yet - please wait"
 #define D_UPLOAD_CONN_FAILED        "Connection failed. Resuming search..."
+#define D_UPLOAD_NETWORK_NOT_FOUND  "Network not found. Resuming search..."
+#define D_UPLOAD_PASSWORD_REJECTED  "Password rejected. Resuming search..."
 #define D_UPLOAD_HOTSPOT_OPTION     "Use hotspot (no Wi-Fi)"
 #define D_UPLOAD_SCAN_TIMED_OUT     "Search timed out"
 

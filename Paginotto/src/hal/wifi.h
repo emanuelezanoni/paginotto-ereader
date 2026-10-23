@@ -39,25 +39,35 @@ struct WifiSession {
 enum class WifiStaResult {
   Connecting,   // still associating — keep polling
   Connected,    // associated; `out` is filled, stop polling
-  Failed,       // hard error from the stack (no SSID, bad password, etc.)
+  NoSsidAvailable,
+  AuthenticationFailed,
+  ConnectionLost,
+  TimedOut,
+  Failed,       // other hard error from the stack
 };
 
 // Kick off an STA association attempt against the stored credentials.
 // Returns false if no creds are saved (caller should go straight to AP).
 // Non-blocking; bumps CPU to 240 MHz.
 bool          wifiStaBegin();
-bool          wifiStaBegin(const String& ssid, const String& pass);
+bool          wifiStaBegin(const String& ssid, const String& pass, bool keepAccessPoint = false);
 
 // Poll the in-flight STA attempt. On Connected, `out` is filled with the
-// session and the caller takes ownership. On Failed, the caller should
-// call wifiStaAbort() and fall back to AP. The caller decides when to
-// give up on Connecting (typical: 5s timeout).
+// session and the caller takes ownership. Any other terminal result should
+// be followed by wifiStaAbort(). The caller decides when to give up on
+// Connecting (typical: 5–10s timeout).
 WifiStaResult wifiStaPoll(WifiSession& out);
 
-// Tear down an in-flight STA attempt. Cheaper than wifiEnd() because no
-// full session was ever brought up; leaves the CPU clock alone since the
-// caller typically calls wifiBeginAccessPoint() next.
-void          wifiStaAbort();
+// Blocking adapter for browser-side credential tests. The AP remains active
+// while the station attempt runs, so the browser can receive the result.
+WifiStaResult wifiStaTest(const String& ssid, const String& pass,
+                          uint32_t timeoutMs = 10000);
+
+// Tear down an in-flight STA attempt. With keepAccessPoint=true, the current
+// SoftAP remains available to a browser while the station attempt is cleared.
+// Otherwise this also turns Wi-Fi off; the caller typically starts a SoftAP
+// next.
+void          wifiStaAbort(bool keepAccessPoint = false);
 
 // Bring up SoftAP. Always succeeds. Bumps CPU to 240 MHz if not already.
 WifiSession   wifiBeginAccessPoint();

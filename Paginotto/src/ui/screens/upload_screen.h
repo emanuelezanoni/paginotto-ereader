@@ -28,6 +28,7 @@ private:
   uint8_t selectedItem_ = 0;         // 0=hotspot, 1..=scanner entries
   WifiNetworkScanner scanner_;
   bool connectionFailed_ = false;
+  WifiStaResult connectionFailure_ = WifiStaResult::Failed;
   uint32_t connectionFailedUntilMs_ = 0;
   bool sessionActive_ = false;
   bool firmwareMode_ = false;
@@ -38,7 +39,7 @@ private:
   void enterReady();
   void beginConfiguredScan();
   void startSelectedStation();
-  void returnToSelection(bool failed);
+  void returnToSelection(WifiStaResult result);
   void useHotspot();
   void stopSessionToLibrary();
   void beginGoodbye();
