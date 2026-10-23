@@ -309,9 +309,10 @@ static bool catalogContainsFolderBook(const String& folder) {
 static const char kEpubUploadScript[] = R"EPUBJS(
 <script>
 (()=>{
-const form=document.getElementById('bookUpload'),input=document.getElementById('bookFile'),urlInput=document.getElementById('bookUrl'),urlButton=document.getElementById('bookUrlButton'),status=document.getElementById('bookUploadStatus'),button=document.getElementById('bookUploadButton');
+const form=document.getElementById('bookUpload'),input=document.getElementById('bookFile'),urlInput=document.getElementById('bookUrl'),urlButton=document.getElementById('bookUrlButton'),uploadStatus=document.getElementById('bookUploadStatus'),downloadStatus=document.getElementById('bookDownloadStatus'),downloadProgress=document.getElementById('bookDownloadProgress'),button=document.getElementById('bookUploadButton');
 let converted=null,choice=0;
-const fail=m=>{converted=null;status.textContent='EPUB conversion failed: '+m;button.disabled=true;};
+const fail=(m,target=uploadStatus)=>{converted=null;target.textContent='EPUB conversion failed: '+m;button.disabled=true;};
+const showSelected=file=>{try{const dt=new DataTransfer();dt.items.add(file);input.files=dt.files;}catch(_){/* visual status remains the fallback */}};
 const u16=(a,o)=>a[o]|a[o+1]<<8, u32=(a,o)=>(u16(a,o)|u16(a,o+2)<<16)>>>0;
 const name=(a,o,n)=>new TextDecoder('utf-8').decode(a.subarray(o,o+n));
 const badXml=d=>d.getElementsByTagName('parsererror').length!==0;
@@ -352,10 +353,11 @@ async function convert(file){
  if(!sections.length)throw Error('no readable XHTML/HTML spine content');const text=sections.join('\n\n').replace(/\n{3,}/g,'\n\n');if(!text)throw Error('empty EPUB');
  const filename=(file.name.replace(/\.epub$/i,'')||'book')+'.txt';return new File([text],filename,{type:'text/plain;charset=utf-8'});
 }
- const prepare=async(file,selected)=>{status.textContent='Converting EPUB…';button.disabled=true;try{const result=await convert(file);if(selected!==choice)return;converted=result;status.textContent='Ready: '+converted.name+' ('+converted.size.toLocaleString()+' bytes)';button.disabled=false;}catch(e){if(selected===choice)fail(e&&e.message?e.message:'invalid EPUB');}};
- input.addEventListener('change',async()=>{const file=input.files[0],selected=++choice;converted=null;button.disabled=false;if(!file){status.textContent='';return;}if(!/\.epub$/i.test(file.name)){status.textContent='';return;}await prepare(file,selected);});
-urlButton.addEventListener('click',async()=>{const raw=urlInput.value.trim(),selected=++choice;converted=null;button.disabled=true;urlButton.disabled=true;if(!/^https?:\/\//i.test(raw)){if(selected===choice)fail('enter a valid HTTP(S) EPUB URL');urlButton.disabled=false;return;}status.textContent='Downloading EPUB…';try{const response=await fetch('/download-url',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'url='+encodeURIComponent(raw)});if(!response.ok){const message=await response.text();throw Error(message||('download failed (HTTP '+response.status+')'));}const blob=await response.blob();const url=new URL(raw),part=decodeURIComponent(url.pathname.split('/').pop()||'book.epub');const filename=/\.epub$/i.test(part)?part:part+'.epub';await prepare(new File([blob],filename,{type:blob.type||'application/epub+zip'}),selected);}catch(e){if(selected===choice)fail(e&&e.message?e.message:'download failed');}finally{urlButton.disabled=false;}});
-form.addEventListener('submit',async e=>{if(!converted)return;e.preventDefault();button.disabled=true;status.textContent='Uploading '+converted.name+'…';try{const fd=new FormData();fd.append('file',converted,converted.name);const r=await fetch('/upload',{method:'POST',body:fd});const body=await r.text();if(!r.ok)throw Error(body||('HTTP '+r.status));document.open();document.write(body);document.close();}catch(err){status.textContent='Upload failed: '+(err&&err.message?err.message:'error');button.disabled=false;}});
+ const prepare=async(file,selected,fromOnline)=>{if(fromOnline)downloadStatus.textContent='Converting EPUB…';else uploadStatus.textContent='Converting EPUB…';button.disabled=true;try{const result=await convert(file);if(selected!==choice)return;converted=result;showSelected(converted);uploadStatus.textContent='Selected file: '+converted.name+' ('+converted.size.toLocaleString()+' bytes)';if(fromOnline)downloadStatus.textContent='Download complete. EPUB converted and ready to upload.';button.disabled=false;}catch(e){if(selected===choice)fail(e&&e.message?e.message:'invalid EPUB',fromOnline?downloadStatus:uploadStatus);}};
+ input.addEventListener('change',async()=>{const file=input.files[0],selected=++choice;converted=null;button.disabled=false;if(!file){uploadStatus.textContent='';return;}if(!/\.epub$/i.test(file.name)){uploadStatus.textContent='Selected file: '+file.name;return;}await prepare(file,selected,false);});
+ const readDownload=async response=>{const total=Number(response.headers.get('Content-Length'))||0,reader=response.body&&response.body.getReader();if(!reader){const blob=await response.blob();downloadProgress.hidden=true;return blob;}let loaded=0,chunks=[];downloadProgress.hidden=false;downloadProgress.max=total||1;downloadProgress.value=0;for(;;){const part=await reader.read();if(part.done)break;chunks.push(part.value);loaded+=part.value.byteLength;if(total){downloadProgress.value=loaded;downloadStatus.textContent='Downloading EPUB… '+Math.round(loaded*100/total)+'%';}else downloadStatus.textContent='Downloading EPUB… '+loaded.toLocaleString()+' bytes';}downloadProgress.value=total||1;return new Blob(chunks,{type:response.headers.get('Content-Type')||'application/epub+zip'});};
+ urlButton.addEventListener('click',async()=>{const raw=urlInput.value.trim(),selected=++choice;converted=null;button.disabled=true;urlButton.disabled=true;downloadProgress.hidden=true;if(!/^https?:\/\//i.test(raw)){if(selected===choice)fail('enter a valid HTTP(S) EPUB URL',downloadStatus);urlButton.disabled=false;return;}downloadStatus.textContent='Connecting to remote download…';try{const response=await fetch('/download-url',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'url='+encodeURIComponent(raw)});if(!response.ok){const message=await response.text();throw Error(message||('download failed (HTTP '+response.status+')'));}const blob=await readDownload(response);const url=new URL(raw),part=decodeURIComponent(url.pathname.split('/').pop()||'book.epub');const filename=/\.epub$/i.test(part)?part:part+'.epub';await prepare(new File([blob],filename,{type:'application/epub+zip'}),selected,true);}catch(e){if(selected===choice)fail(e&&e.message?e.message:'download failed',downloadStatus);}finally{urlButton.disabled=false;}});
+ form.addEventListener('submit',async e=>{if(!converted)return;e.preventDefault();button.disabled=true;uploadStatus.textContent='Uploading '+converted.name+'…';try{const fd=new FormData();fd.append('file',converted,converted.name);const r=await fetch('/upload',{method:'POST',body:fd});const body=await r.text();if(!r.ok)throw Error(body||('HTTP '+r.status));document.open();document.write(body);document.close();}catch(err){uploadStatus.textContent='Upload failed: '+(err&&err.message?err.message:'error');button.disabled=false;}});
 })();
 </script>
 )EPUBJS";
@@ -378,8 +380,7 @@ static void handleFiles() {
     "<input id='bookFile' type='file' name='file' accept='.txt,text/plain,.epub,application/epub+zip'>"
     "<p id='bookUploadStatus' class='muted' aria-live='polite'></p>"
     "<div class='actions'><button id='bookUploadButton' type='submit'>" D_WEB_UPLOAD_BOOK_BUTTON "</button></div>"
-    "</form>";
-  out += "</div>";
+    "</form></div>";
 
   out += "<div class='card'><h2>" D_WEB_ONLINE_BOOKS_HEADING "</h2>"
          "<p class='muted'>" D_WEB_ONLINE_BOOKS_DESC "</p>";
@@ -391,6 +392,8 @@ static void handleFiles() {
   }
   out += "<label for='bookUrl'>" D_WEB_EPUB_URL_LABEL "</label>"
          "<input id='bookUrl' type='url' inputmode='url' size='80' style='width:100%' placeholder='" D_WEB_EPUB_URL_PLACEHOLDER "' autocomplete='url' spellcheck='false'>"
+         "<p id='bookDownloadStatus' class='muted' aria-live='polite'></p>"
+         "<progress id='bookDownloadProgress' max='1' value='0' hidden style='width:100%;margin-top:8px'></progress>"
          "<div class='actions'><button id='bookUrlButton' type='button'";
   if (WiFi.status() != WL_CONNECTED) {
     out += " disabled";
@@ -399,8 +402,7 @@ static void handleFiles() {
   if (WiFi.status() != WL_CONNECTED) {
     out += "<p class='muted'>" D_WEB_ONLINE_BOOKS_WIFI_REQUIRED "</p>";
   }
-  out +=
-         "</div>";
+  out += "</div>";
 
   out += kEpubUploadScript;
 

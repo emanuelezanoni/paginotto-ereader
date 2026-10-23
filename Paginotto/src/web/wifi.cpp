@@ -110,8 +110,7 @@ static void handleWifi() {
          "<div class='hint'>8–63 characters. Changing network settings may disconnect this browser.</div>"
          "<div class='actions'><button type='submit'>Save hotspot</button></div></form></div>";
 
-  out += "<div class='card'><h2>Wi-Fi networks</h2><p class='muted'>Manage saved networks, connect to a nearby network, or add a hidden network manually. Passwords stay masked.</p>"
-         "<h3>Saved networks</h3>";
+  out += "<div class='card'><h2>Saved networks</h2><p class='muted'>Networks tested successfully or added manually are stored here. Passwords stay masked.</p>";
   uint8_t n = WifiCreds::count();
   if (!n) out += "<p class='status idle'>No saved networks.</p>";
   else {
@@ -123,7 +122,7 @@ static void handleWifi() {
     }
     out += "</ul>";
   }
-  out += "<h3>Nearby networks</h3>"
+  out += "</div><div class='card'><h2>Nearby networks</h2>"
          "<form method='POST' action='/wifi/add' class='stack' style='margin-top:12px'>"
          "<div><label for='ssid'>Network name (SSID)</label><select id='ssid' name='ssid'><option value=''>Loading nearby networks…</option></select></div>"
          "<div id='wifi-scan-status' class='status idle'>Searching for nearby networks…</div>"
@@ -137,8 +136,8 @@ static void handleWifi() {
          "else if(d.state==='complete'){st.textContent=d.networks.length?'Networks found.':'No nearby networks found.';st.className='status '+(d.networks.length?'ok':'idle');}"
          "else if(d.state==='timeout'){st.textContent='Search timed out. No network selected.';st.className='status idle';}"
          "else{st.textContent='Network scan failed. Try again.';st.className='status idle';}"
-         "}catch(e){st.textContent='Network scan unavailable. Try again.';st.className='status idle';}}poll();})();</script>"
-         "<h3>Add manually</h3>"
+         "}catch(e){st.textContent='Network scan unavailable. Try again.';st.className='status idle';}}poll();})();</script></div>"
+         "<div class='card'><h2>Add network manually</h2>"
          "<p class='muted'>Use this for hidden networks or a phone hotspot. The connection is not tested now.</p>"
          "<form method='POST' action='/wifi/add-manual' class='stack' style='margin-top:12px'>"
          "<div><label for='manual-ssid'>Network name (SSID)</label><input id='manual-ssid' name='ssid' maxlength='32' required></div>"

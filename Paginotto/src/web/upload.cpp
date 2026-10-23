@@ -77,6 +77,13 @@ static void handleUploadDone() {
   loadBooks();   // refresh after the stream handler appended the new book
 
   String finalPath = "/books/" + s_book.finalName;
+  int newBookId = -1;
+  for (int i = 0; i < g_library.bookCount; i++) {
+    if (String(g_library.books[i].path) == finalPath) {
+      newBookId = i;
+      break;
+    }
+  }
   size_t storedSize = 0;
   File stored = FS.open(finalPath, "r");
   if (stored) {
@@ -90,7 +97,17 @@ static void handleUploadDone() {
   inner += "<div class='stats'>";
   inner += "<div class='stat'><span class='muted'>" D_WEB_UPLOAD_BOOK_LABEL  "</span><b>" + htmlEscape(s_book.finalName) + "</b></div>";
   inner += "<div class='stat'><span class='muted'>" D_WEB_UPLOAD_STORED_SIZE "</span><b>" + humanBytes(storedSize)         + "</b></div>";
-  inner += "</div><div class='actions'>" + webBackLink("/books", D_WEB_BACK_TO_BOOKS) + "<a class='btn' href='/books'>" D_WEB_UPLOAD_ANOTHER "</a></div></div>";
+  inner += "</div>";
+  if (newBookId >= 0) {
+    inner += "<h3 style='margin-top:18px'>Manage uploaded book</h3>"
+             "<form method='POST' action='/rename' class='stack' style='margin-top:10px'>"
+             "<input type='hidden' name='id' value='" + String(newBookId) + "'>"
+             "<label for='uploadedBookName'>File name</label>"
+             "<input id='uploadedBookName' type='text' name='name' value='" + htmlEscape(s_book.finalName) + "' maxlength='" + String(MAX_BOOK_TITLE_BYTES) + "' required autocomplete='off' spellcheck='false'>"
+             "<div class='actions'><button type='submit'>Rename file</button>"
+             "<a class='btn secondary' href='/read?id=" + String(newBookId) + "'>Edit text</a></div></form>";
+  }
+  inner += "<div class='actions' style='margin-top:18px'>" + webBackLink("/books", D_WEB_BACK_TO_BOOKS) + "<a class='btn' href='/books'>" D_WEB_UPLOAD_ANOTHER "</a></div></div>";
 
   String page = successPage(
     D_WEB_UPLOAD_COMPLETE_HEADING,
