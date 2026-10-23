@@ -65,7 +65,7 @@ static void handleDownloadBook() {
 // by the already-connected station interface and forwarded to the browser in
 // small chunks, which also avoids the browser's cross-origin CORS restriction.
 static constexpr uint32_t kRemoteBookMaxBytes = 64UL * 1024UL * 1024UL;
-static constexpr uint16_t kRemoteBookTimeoutMs = 60000U;
+static constexpr uint16_t kRemoteBookTimeoutMs = 5000U;
 static constexpr uint32_t kRemoteBookStallMs = 30000UL;
 
 extern const uint8_t x509_crt_imported_bundle_bin_start[] asm("_binary_x509_crt_bundle_start");
@@ -135,6 +135,11 @@ static void handleRemoteBookDownload() {
   server.send(200, contentType, "");
 
   WiFiClient browser = server.client();
+  // Never let a slow remote server block the loop task for the full HTTP
+  // timeout. The proxy reads only bytes already available and yields between
+  // attempts so the Wi-Fi stack and watchdog continue to be serviced.
+  source->setTimeout(1000);
+  browser.setTimeout(1000);
   uint8_t buffer[4096];
   uint32_t total = 0;
   uint32_t lastData = millis();
@@ -149,7 +154,7 @@ static void handleRemoteBookDownload() {
 
     size_t wanted = available < sizeof(buffer) ? available : sizeof(buffer);
     if (remaining >= 0 && wanted > (size_t)remaining) wanted = (size_t)remaining;
-    int n = source->readBytes(buffer, wanted);
+    int n = source->read(buffer, wanted);
     if (n <= 0 || browser.write(buffer, (size_t)n) != (size_t)n) {
       break;
     }
@@ -157,6 +162,7 @@ static void handleRemoteBookDownload() {
     if (remaining >= 0) remaining -= n;
     if (total > kRemoteBookMaxBytes) break;
     lastData = millis();
+    yield();
   }
 
   http.end();
