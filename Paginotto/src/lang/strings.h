@@ -102,6 +102,7 @@
 #define D_WEB_EPUB_URL_PLACEHOLDER  "https://example.org/book.epub"
 #define D_WEB_IMPORT_EPUB_BUTTON    "Download and import"
 #define D_WEB_ONLINE_LIBRARY_MISSING "The online library link is not configured yet."
+#define D_WEB_ONLINE_BOOKS_WIFI_REQUIRED "Online import requires an Internet Wi-Fi connection; it is unavailable in hotspot-only mode."
 #define D_WEB_NOTES_HEADING         "Notes"
 #define D_WEB_NOTES_DESC            "Uploaded books are normalized and compacted before saving, so a source TXT can be larger than the final stored file. The reader is optimized for UTF-8 plain text."
 

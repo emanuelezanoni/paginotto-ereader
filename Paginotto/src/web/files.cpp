@@ -78,6 +78,12 @@ static void configureRemoteBookClient(WiFiClientSecure& client) {
 }
 
 static void handleRemoteBookDownload() {
+  if (WiFi.status() != WL_CONNECTED) {
+    server.send(503, "text/plain; charset=utf-8",
+                "Online EPUB import requires an Internet Wi-Fi connection; hotspot-only mode is unavailable");
+    return;
+  }
+
   if (!server.hasArg("url")) {
     server.send(400, "text/plain; charset=utf-8", "Missing download URL");
     return;
@@ -274,7 +280,15 @@ static void handleFiles() {
   }
   out += "<label for='bookUrl'>" D_WEB_EPUB_URL_LABEL "</label>"
          "<input id='bookUrl' type='url' inputmode='url' size='80' style='width:100%' placeholder='" D_WEB_EPUB_URL_PLACEHOLDER "' autocomplete='url' spellcheck='false'>"
-         "<div class='actions'><button id='bookUrlButton' type='button'>" D_WEB_IMPORT_EPUB_BUTTON "</button></div>"
+         "<div class='actions'><button id='bookUrlButton' type='button'";
+  if (WiFi.status() != WL_CONNECTED) {
+    out += " disabled";
+  }
+  out += ">" D_WEB_IMPORT_EPUB_BUTTON "</button></div>";
+  if (WiFi.status() != WL_CONNECTED) {
+    out += "<p class='muted'>" D_WEB_ONLINE_BOOKS_WIFI_REQUIRED "</p>";
+  }
+  out +=
          "</div>";
 
   out += kEpubUploadScript;
