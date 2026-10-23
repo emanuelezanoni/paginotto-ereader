@@ -5,6 +5,7 @@
 #include <stdint.h>
 
 static constexpr uint32_t kOffsetUnset = 0xFFFFFFFFu;
+static constexpr size_t kBookmarkAnchorMaxBytes = 192;
 
 // ============================================================================
 //  Testable KV-store-backed API (host-compatible)
@@ -22,6 +23,10 @@ int      loadSavedPage(KeyValueStore& kv, const String& bookKey);
 void     saveSavedPage(KeyValueStore& kv, const String& bookKey, int pageIndex);
 uint32_t loadSavedOffset(KeyValueStore& kv, const String& bookKey);
 void     saveSavedOffset(KeyValueStore& kv, const String& bookKey, uint32_t byteOffset);
+String   loadSavedAnchor(KeyValueStore& kv, const String& bookKey);
+uint32_t loadSavedAnchorAt(KeyValueStore& kv, const String& bookKey);
+void     saveSavedAnchor(KeyValueStore& kv, const String& bookKey,
+                         const String& anchor, uint32_t anchorAt);
 
 // Remove all progress metadata for one book.
 bool clearBookMetadata(KeyValueStore& kv, const String& bookKey);

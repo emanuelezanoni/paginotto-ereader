@@ -24,9 +24,32 @@ void saveSavedOffset(KeyValueStore& kv, const String& bookKey, uint32_t byteOffs
   kv.putInt((bookKey + "_off").c_str(), (int)byteOffset);
 }
 
+String loadSavedAnchor(KeyValueStore& kv, const String& bookKey) {
+  return kv.getString((bookKey + "_anc").c_str(), String());
+}
+
+uint32_t loadSavedAnchorAt(KeyValueStore& kv, const String& bookKey) {
+  int value = kv.getInt((bookKey + "_anc_at").c_str(), -1);
+  return value < 0 ? 0U : (uint32_t)value;
+}
+
+void saveSavedAnchor(KeyValueStore& kv, const String& bookKey,
+                     const String& anchor, uint32_t anchorAt) {
+  if (anchor.length() == 0 || anchorAt >= anchor.length()
+      || anchor.length() > kBookmarkAnchorMaxBytes) {
+    kv.remove((bookKey + "_anc").c_str());
+    kv.remove((bookKey + "_anc_at").c_str());
+    return;
+  }
+  kv.putString((bookKey + "_anc").c_str(), anchor);
+  kv.putInt((bookKey + "_anc_at").c_str(), (int)anchorAt);
+}
+
 bool clearBookMetadata(KeyValueStore& kv, const String& bookKey) {
   kv.remove((bookKey + "_p").c_str());
   kv.remove((bookKey + "_off").c_str());
+  kv.remove((bookKey + "_anc").c_str());
+  kv.remove((bookKey + "_anc_at").c_str());
   return true;
 }
 
@@ -41,6 +64,13 @@ void renameBookMetadata(KeyValueStore& kv, const String& oldKey, const String& n
   if (off >= 0) {
     kv.putInt((newKey + "_off").c_str(), off);
     kv.remove((oldKey + "_off").c_str());
+  }
+
+  String anchor = loadSavedAnchor(kv, oldKey);
+  if (anchor.length() > 0) {
+    saveSavedAnchor(kv, newKey, anchor, loadSavedAnchorAt(kv, oldKey));
+    kv.remove((oldKey + "_anc").c_str());
+    kv.remove((oldKey + "_anc_at").c_str());
   }
 
 }

@@ -76,6 +76,38 @@ static void resetSaveThrottle() {
   s_save = SaveThrottle{};
 }
 
+static String bookmarkAnchor(File& file, uint32_t offset, uint32_t& anchorAt) {
+  const size_t fileSize = file.size();
+  if (!file || fileSize == 0) {
+    anchorAt = 0;
+    return String();
+  }
+
+  const size_t before = 64;
+  const size_t after = 128;
+  const size_t start = offset > before ? (size_t)offset - before : 0;
+  const size_t offsetSize = (size_t)offset;
+  const size_t end = offsetSize >= fileSize || fileSize - offsetSize < after
+                   ? fileSize : offsetSize + after;
+
+  const size_t oldPosition = file.position();
+  if (!file.seek(start)) {
+    anchorAt = 0;
+    return String();
+  }
+
+  String anchor;
+  anchor.reserve(end - start);
+  while (file.position() < end && file.available()) {
+    int value = file.read();
+    if (value < 0) break;
+    anchor += (char)value;
+  }
+  file.seek(oldPosition);
+  anchorAt = (uint32_t)((size_t)offset - start);
+  return anchor;
+}
+
 // ============================================================================
 //  OpenBook — file + path + key managed together. Strong invariant:
 //  `isOpen()` ⇔ `path()` is non-empty. Public callers never observe
@@ -400,8 +432,11 @@ void saveProgress() {
   PreferencesStore kv(prefs);
   // Canonical: the byte offset where the user currently is. Invariant
   // under font/layout changes.
-  saveSavedOffset(kv, g_bookview.book.key(),
-                  g_bookview.pages.offsets[g_bookview.cursor.pageIndex]);
+  const uint32_t offset = g_bookview.pages.offsets[g_bookview.cursor.pageIndex];
+  saveSavedOffset(kv, g_bookview.book.key(), offset);
+  uint32_t anchorAt = 0;
+  saveSavedAnchor(kv, g_bookview.book.key(),
+                  bookmarkAnchor(g_bookview.book.file(), offset, anchorAt), anchorAt);
   // Hint: the page number at the current layout. Used by the web file
   // list for display and as a legacy fallback for openBookByIndex when
   // no offset has been saved yet.

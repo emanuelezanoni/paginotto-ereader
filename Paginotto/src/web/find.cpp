@@ -20,6 +20,10 @@ struct EditUploadState {
   String tmpPath;
   String bookPath;
   String error;
+  String bookmarkAnchor;
+  uint32_t bookmarkAnchorAt = 0;
+  bool hadBookmark = false;
+  int bookmarkStatus = 0;
   bool ok = false;
 };
 EditUploadState s_edit;
@@ -42,6 +46,65 @@ int requireBookId(const char* arg = "id") {
 }
 
 }  // namespace
+
+// Re-anchor a saved byte offset after a complete text replacement. The
+// anchor includes context before and after the bookmark, so an exact unique
+// match is considerably safer than guessing from a page number.
+static int remapBookmarkAfterEdit(const String& path, const String& key,
+                                  const String& anchor, uint32_t anchorAt) {
+  if (anchor.length() == 0 || anchorAt >= anchor.length()
+      || anchor.length() > kBookmarkAnchorMaxBytes) {
+    PreferencesStore kv(prefs);
+    saveSavedOffset(kv, key, 0);
+    saveSavedPage(kv, key, 0);
+    saveSavedAnchor(kv, key, String(), 0);
+    return -1;
+  }
+
+  File file = FS.open(path, "r");
+  if (!file) return -1;
+
+  const size_t length = anchor.length();
+  static uint8_t ring[kBookmarkAnchorMaxBytes];
+  size_t seen = 0;
+  size_t matches = 0;
+  size_t matchStart = 0;
+  while (file.available()) {
+    int value = file.read();
+    if (value < 0) break;
+    ring[seen % length] = (uint8_t)value;
+    seen++;
+    if (seen < length) continue;
+
+    const size_t start = (seen - length) % length;
+    bool equal = true;
+    for (size_t i = 0; i < length; i++) {
+      if (ring[(start + i) % length] != (uint8_t)anchor[i]) {
+        equal = false;
+        break;
+      }
+    }
+    if (equal) {
+      matches++;
+      matchStart = seen - length;
+      if (matches > 1) break;
+    }
+  }
+  file.close();
+
+  PreferencesStore kv(prefs);
+  if (matches != 1) {
+    saveSavedOffset(kv, key, 0);
+    saveSavedPage(kv, key, 0);
+    saveSavedAnchor(kv, key, String(), 0);
+    return -1;
+  }
+
+  saveSavedOffset(kv, key, (uint32_t)(matchStart + anchorAt));
+  saveSavedPage(kv, key, 0);
+  saveSavedAnchor(kv, key, anchor, anchorAt);
+  return 1;
+}
 
 // ============================================================================
 //  GET /readbook-text?id=N — stream the raw book bytes.
@@ -83,6 +146,11 @@ static void handleEditBookStream() {
     int id = server.hasArg("id") ? server.arg("id").toInt() : -1;
     if (id < 0 || id >= g_library.bookCount) { s_edit.error = "bad id"; return; }
     s_edit.bookPath = String(g_library.books[id].path);
+    PreferencesStore kv(prefs);
+    const String key = prefKeyForBook(s_edit.bookPath);
+    s_edit.hadBookmark = loadSavedOffset(kv, key) != kOffsetUnset;
+    s_edit.bookmarkAnchor = loadSavedAnchor(kv, key);
+    s_edit.bookmarkAnchorAt = loadSavedAnchorAt(kv, key);
     s_edit.tmpPath = s_edit.bookPath + ".edit.tmp";
     if (FS.exists(s_edit.tmpPath)) FS.remove(s_edit.tmpPath);
     s_edit.tmp = FS.open(s_edit.tmpPath, "w");
@@ -116,7 +184,16 @@ static void handleEditBookDone() {
   }
   deletePageCacheForBook(s_edit.bookPath);
   loadBooks();
-  server.sendHeader("Location", String("/read?id=") + String(server.hasArg("id") ? server.arg("id") : "0"));
+  if (s_edit.hadBookmark) {
+    const String key = prefKeyForBook(s_edit.bookPath);
+    s_edit.bookmarkStatus = remapBookmarkAfterEdit(
+        s_edit.bookPath, key, s_edit.bookmarkAnchor, s_edit.bookmarkAnchorAt);
+  }
+  String location = String("/read?id=")
+                  + String(server.hasArg("id") ? server.arg("id") : "0");
+  if (s_edit.bookmarkStatus > 0) location += "&bookmark=restored";
+  else if (s_edit.bookmarkStatus < 0) location += "&bookmark=reset";
+  server.sendHeader("Location", location);
   server.send(302, "text/plain", "");
 }
 
@@ -151,6 +228,10 @@ static void handleJumpOffset() {
 
   PreferencesStore kv(prefs);
   saveSavedOffset(kv, key, (uint32_t)requested);
+  if (server.hasArg("anchor") && server.hasArg("anchorAt")) {
+    uint32_t anchorAt = (uint32_t)server.arg("anchorAt").toInt();
+    saveSavedAnchor(kv, key, server.arg("anchor"), anchorAt);
+  }
 
   // If the reader is currently active on this book, update the in-memory
   // cursor + save the matching page number so the device sees the jump on
@@ -286,9 +367,9 @@ static const char kReadScript[] PROGMEM =
   "elEdit.addEventListener('click',function(){setEdit(true);});"
   "elCancel.addEventListener('click',function(){setEdit(false);window.paginottoDirty=false;});"
   "elEditor.addEventListener('input',function(){window.paginottoDirty=true;});"
-  "elSave.addEventListener('click',function(){if(!confirm('WARNING: this replaces the book on the device immediately. There is no device backup. Download the current TXT first if needed. Continue?'))return;var fd=new FormData();fd.append('file',new Blob([elEditor.value],{type:'text/plain;charset=utf-8'}),'edited-book.txt');elSave.disabled=true;elSave.textContent='Saving...';fetch('/edit-book?id='+encodeURIComponent(bookId),{method:'POST',body:fd}).then(function(r){if(!r.ok)return r.text().then(function(t){throw Error(t||('HTTP '+r.status));});window.location.reload();}).catch(function(e){elJumpStat.textContent='Save failed: '+(e&&e.message?e.message:'error');elSave.disabled=false;elSave.textContent='Save & repaginate';});});"
+  "elSave.addEventListener('click',function(){if(!confirm('WARNING: this replaces the book on the device immediately. There is no device backup. Download the current TXT first if needed. Continue?'))return;var fd=new FormData();fd.append('file',new Blob([elEditor.value],{type:'text/plain;charset=utf-8'}),'edited-book.txt');elSave.disabled=true;elSave.textContent='Saving...';fetch('/edit-book?id='+encodeURIComponent(bookId),{method:'POST',body:fd}).then(function(r){if(!r.ok)return r.text().then(function(t){throw Error(t||('HTTP '+r.status));});window.location.href=r.url;}).catch(function(e){elJumpStat.textContent='Save failed: '+(e&&e.message?e.message:'error');elSave.disabled=false;elSave.textContent='Save & repaginate';});});"
   "elJump.addEventListener('click',function(){if(curHit<0){elJumpStat.textContent='Find something first.';return;}"
-  "var off=utf8Len(rawText.slice(0,hits[curHit].start));var fd=new FormData();fd.append('id',String(bookId));fd.append('offset',String(off));"
+  "var hitStart=hits[curHit].start,off=utf8Len(rawText.slice(0,hitStart));var anchorStart=Math.max(0,hitStart-64),anchorEnd=Math.min(rawText.length,hitStart+128),anchor=rawText.slice(anchorStart,anchorEnd),anchorAt=utf8Len(rawText.slice(anchorStart,hitStart));var fd=new FormData();fd.append('id',String(bookId));fd.append('offset',String(off));fd.append('anchor',anchor);fd.append('anchorAt',String(anchorAt));"
   "elJumpStat.textContent='Saving...';elJump.disabled=true;"
   "fetch('/jumpoffset',{method:'POST',body:fd,redirect:'follow'}).then(function(r){"
   "elJumpStat.textContent=r.ok?('Saved. Open the book on the device to jump to byte '+off+'.'):('Save failed: HTTP '+r.status);"
@@ -313,6 +394,11 @@ static void handleReadView() {
     D_WEB_READ_SUBTITLE,
     webNav("books")
   );
+  if (server.arg("bookmark") == "restored") {
+    out += "<div class='banner-ok'>Reading position restored after text edit.</div>";
+  } else if (server.arg("bookmark") == "reset") {
+    out += "<div class='banner-warn'>The previous reading position could not be matched after editing; reading position reset to the beginning.</div>";
+  }
   out.reserve(out.length() + 6000);
   out += FPSTR(kReadStyle);
   out += "<div id='bvLoading' class='bv-text'>" D_WEB_READ_LOADING "</div>";
