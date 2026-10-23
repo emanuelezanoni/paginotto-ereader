@@ -28,7 +28,7 @@ static const char kStyleCss[] PROGMEM =
   ".wide{max-width:1020px}"
   ".top{display:flex;align-items:flex-start;gap:12px;margin-bottom:10px}"
   ".top-title{min-width:0}"
-  ".title-exit{margin-left:auto;white-space:nowrap;flex:none}"
+  ".title-actions{display:flex;justify-content:flex-start;margin:0 0 10px}"
   ".top a,.link{color:var(--link);text-decoration:none}"
   ".brand{font-size:13px;font-weight:750;letter-spacing:.08em;text-transform:uppercase;color:var(--link);margin-bottom:2px}"
   ".top a:hover,.link:hover{text-decoration:underline}"
@@ -131,6 +131,7 @@ void registerChromeRoutes() {
 String webPageStart(const String& title, const String& subtitle,
                     const String& navHtml, bool wide) {
   notifyUploadActivity();
+  const bool hasNav = navHtml.length() > 0;
   String out;
   out.reserve(1400);
   out = "<!doctype html><html><head><meta charset='utf-8'>"
@@ -145,12 +146,9 @@ String webPageStart(const String& title, const String& subtitle,
   out += title;
   out += "</h1><div class='muted'>";
   out += subtitle;
-  out += "</div></div>";
-  if (navHtml.length() > 0) {
-    out += "<a class='btn secondary small title-exit' href='/exit' onclick=\"return !window.paginottoDirty || confirm('There may be unsaved changes or an active operation. Exit anyway?')\">Exit WebUI</a>";
-  }
-  out += "</div>";
-  if (navHtml.length() > 0) {
+  out += "</div></div></div>";
+  if (hasNav) {
+    out += "<div class='title-actions'><a class='btn secondary small' href='/exit' onclick=\"return !window.paginottoDirty || confirm('There may be unsaved changes or an active operation. Exit anyway?')\">Exit WebUI</a></div>";
     out += "<div class='nav-bar'><div class='nav'>";
     out += navHtml;
     out += "</div></div>";
