@@ -1,6 +1,9 @@
 #include "src/web/files.h"
 
+#include <HTTPClient.h>
 #include <WiFi.h>
+#include <WiFiClient.h>
+#include <WiFiClientSecure.h>
 
 #include "src/config.h"
 #include "src/state.h"
@@ -17,6 +20,7 @@
 //  /               — redirect to book/folder browser
 //  /books          — book/folder browser
 //  /download-book  — GET: stream book .txt as attachment (?id=N)
+//  /download-url   — POST: stream a remote file through the device (?url=...)
 //  /del            — POST: delete book
 //  /mkdir          — POST: create folder
 //  /rmdir          — POST: delete (empty) folder
@@ -55,6 +59,107 @@ static void handleDownloadBook() {
     if (n > 0) client.write(buf, n);
   }
   f.close();
+}
+
+// The remote EPUB is deliberately never written to LittleFS. It is fetched
+// by the already-connected station interface and forwarded to the browser in
+// small chunks, which also avoids the browser's cross-origin CORS restriction.
+static constexpr uint32_t kRemoteBookMaxBytes = 64UL * 1024UL * 1024UL;
+static constexpr uint16_t kRemoteBookTimeoutMs = 60000U;
+static constexpr uint32_t kRemoteBookStallMs = 30000UL;
+
+extern const uint8_t x509_crt_imported_bundle_bin_start[] asm("_binary_x509_crt_bundle_start");
+extern const uint8_t x509_crt_imported_bundle_bin_end[]   asm("_binary_x509_crt_bundle_end");
+
+static void configureRemoteBookClient(WiFiClientSecure& client) {
+  size_t len = (size_t)((uintptr_t)x509_crt_imported_bundle_bin_end
+                       - (uintptr_t)x509_crt_imported_bundle_bin_start);
+  client.setCACertBundle(x509_crt_imported_bundle_bin_start, len);
+}
+
+static void handleRemoteBookDownload() {
+  if (!server.hasArg("url")) {
+    server.send(400, "text/plain; charset=utf-8", "Missing download URL");
+    return;
+  }
+
+  String url = server.arg("url");
+  if (!(url.startsWith("http://") || url.startsWith("https://"))) {
+    server.send(400, "text/plain; charset=utf-8", "Only HTTP(S) URLs are supported");
+    return;
+  }
+
+  WiFiClient plainClient;
+  WiFiClientSecure secureClient;
+  WiFiClient* transport = &plainClient;
+  if (url.startsWith("https://")) {
+    configureRemoteBookClient(secureClient);
+    transport = &secureClient;
+  }
+
+  HTTPClient http;
+  http.setConnectTimeout(15000);
+  http.setTimeout(kRemoteBookTimeoutMs);
+  http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+  http.setRedirectLimit(5);
+  if (!http.begin(*transport, url)) {
+    server.send(502, "text/plain; charset=utf-8", "Could not open remote download");
+    return;
+  }
+
+  int code = http.GET();
+  if (code != HTTP_CODE_OK) {
+    http.end();
+    server.send(502, "text/plain; charset=utf-8", "Remote download failed (HTTP " + String(code) + ")");
+    return;
+  }
+
+  int remaining = http.getSize();
+  if (remaining > (int)kRemoteBookMaxBytes) {
+    http.end();
+    server.send(413, "text/plain; charset=utf-8", "Remote file is too large");
+    return;
+  }
+
+  WiFiClient* source = http.getStreamPtr();
+  if (!source) {
+    http.end();
+    server.send(502, "text/plain; charset=utf-8", "Remote download stream unavailable");
+    return;
+  }
+
+  String contentType = http.header("Content-Type");
+  if (contentType.length() == 0) contentType = "application/octet-stream";
+  if (remaining >= 0) server.setContentLength((size_t)remaining);
+  else server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+  server.send(200, contentType, "");
+
+  WiFiClient browser = server.client();
+  uint8_t buffer[4096];
+  uint32_t total = 0;
+  uint32_t lastData = millis();
+
+  while ((http.connected() || source->available()) && (remaining != 0)) {
+    size_t available = source->available();
+    if (available == 0) {
+      if (millis() - lastData > kRemoteBookStallMs) break;
+      delay(2);
+      continue;
+    }
+
+    size_t wanted = available < sizeof(buffer) ? available : sizeof(buffer);
+    if (remaining >= 0 && wanted > (size_t)remaining) wanted = (size_t)remaining;
+    int n = source->readBytes(buffer, wanted);
+    if (n <= 0 || browser.write(buffer, (size_t)n) != (size_t)n) {
+      break;
+    }
+    total += (uint32_t)n;
+    if (remaining >= 0) remaining -= n;
+    if (total > kRemoteBookMaxBytes) break;
+    lastData = millis();
+  }
+
+  http.end();
 }
 
 static void handleRoot() {
@@ -126,7 +231,7 @@ async function convert(file){
 }
  const prepare=async(file,selected)=>{status.textContent='Converting EPUB…';button.disabled=true;try{const result=await convert(file);if(selected!==choice)return;converted=result;status.textContent='Ready: '+converted.name+' ('+converted.size.toLocaleString()+' bytes)';button.disabled=false;}catch(e){if(selected===choice)fail(e&&e.message?e.message:'invalid EPUB');}};
  input.addEventListener('change',async()=>{const file=input.files[0],selected=++choice;converted=null;button.disabled=false;if(!file){status.textContent='';return;}if(!/\.epub$/i.test(file.name)){status.textContent='';return;}await prepare(file,selected);});
- urlButton.addEventListener('click',async()=>{const raw=urlInput.value.trim(),selected=++choice;converted=null;button.disabled=true;urlButton.disabled=true;if(!/^https?:\/\//i.test(raw)){if(selected===choice)fail('enter a valid HTTP(S) EPUB URL');urlButton.disabled=false;return;}status.textContent='Downloading EPUB…';try{const response=await fetch(raw);if(!response.ok)throw Error('download failed (HTTP '+response.status+')');const blob=await response.blob();const url=new URL(raw),part=decodeURIComponent(url.pathname.split('/').pop()||'book.epub');const filename=/\.epub$/i.test(part)?part:part+'.epub';await prepare(new File([blob],filename,{type:blob.type||'application/epub+zip'}),selected);}catch(e){if(selected===choice)fail(e&&e.message?e.message:'download failed; the server may block browser access (CORS)');}finally{urlButton.disabled=false;}});
+urlButton.addEventListener('click',async()=>{const raw=urlInput.value.trim(),selected=++choice;converted=null;button.disabled=true;urlButton.disabled=true;if(!/^https?:\/\//i.test(raw)){if(selected===choice)fail('enter a valid HTTP(S) EPUB URL');urlButton.disabled=false;return;}status.textContent='Downloading EPUB…';try{const response=await fetch('/download-url',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'url='+encodeURIComponent(raw)});if(!response.ok){const message=await response.text();throw Error(message||('download failed (HTTP '+response.status+')'));}const blob=await response.blob();const url=new URL(raw),part=decodeURIComponent(url.pathname.split('/').pop()||'book.epub');const filename=/\.epub$/i.test(part)?part:part+'.epub';await prepare(new File([blob],filename,{type:blob.type||'application/epub+zip'}),selected);}catch(e){if(selected===choice)fail(e&&e.message?e.message:'download failed');}finally{urlButton.disabled=false;}});
 form.addEventListener('submit',async e=>{if(!converted)return;e.preventDefault();button.disabled=true;status.textContent='Uploading '+converted.name+'…';try{const fd=new FormData();fd.append('file',converted,converted.name);const r=await fetch('/upload',{method:'POST',body:fd});const body=await r.text();if(!r.ok)throw Error(body||('HTTP '+r.status));document.open();document.write(body);document.close();}catch(err){status.textContent='Upload failed: '+(err&&err.message?err.message:'error');button.disabled=false;}});
 })();
 </script>
@@ -162,7 +267,7 @@ static void handleFiles() {
     out += "<p class='muted'>" D_WEB_ONLINE_LIBRARY_MISSING "</p>";
   }
   out += "<label for='bookUrl'>" D_WEB_EPUB_URL_LABEL "</label>"
-         "<input id='bookUrl' type='url' inputmode='url' placeholder='" D_WEB_EPUB_URL_PLACEHOLDER "' autocomplete='url' spellcheck='false'>"
+         "<input id='bookUrl' type='url' inputmode='url' size='80' style='width:100%' placeholder='" D_WEB_EPUB_URL_PLACEHOLDER "' autocomplete='url' spellcheck='false'>"
          "<div class='actions'><button id='bookUrlButton' type='button'>" D_WEB_IMPORT_EPUB_BUTTON "</button></div>"
          "</div>";
 
@@ -539,6 +644,7 @@ void registerFilesRoutes() {
   server.on("/",             HTTP_GET,  handleRoot);
   server.on("/books",        HTTP_GET,  handleFiles);
   server.on("/download-book", HTTP_GET, handleDownloadBook);
+  server.on("/download-url", HTTP_POST, handleRemoteBookDownload);
   server.on("/del",      HTTP_POST, handleDelete);          // POST: prevents accidental deletion via browser prefetch
   server.on("/mkdir",    HTTP_POST, handleCreateFolder);
   server.on("/rmdir",    HTTP_POST, handleDeleteFolder);    // POST: destructive
