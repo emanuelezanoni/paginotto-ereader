@@ -72,7 +72,7 @@ static const int MAX_BOOK_TITLE_BYTES = 79;
 
 // Optional external catalog opened by the Books page. Leave empty until the
 // catalog URL is known; the direct EPUB URL importer works independently.
-static const char ONLINE_BOOK_LIBRARY_URL[] = "";
+static const char ONLINE_BOOK_LIBRARY_URL[] = "https://open-slum.org/";
 
 // Max silence after the most recent release before we commit a click sequence.
 // The press-in-progress gate in input.cpp's trailing-silence check means this
