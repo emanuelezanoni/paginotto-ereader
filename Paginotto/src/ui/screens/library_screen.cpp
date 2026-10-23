@@ -144,37 +144,28 @@ static void drawFolderMenuRow(int yBaseline, const String& label,
   Font::useBody();
 }
 
-static bool beginsSystemSection(int idx) {
-  // drawScrollableList supplies valid entry indices, but keep the array bound
-  // explicit here so static analysis can verify both indexed accesses.
-  if (idx <= 0 || idx >= MAX_LIBRARY_ENTRIES) return false;
-  return isSystemEntryType(s_entries[idx].type)
-      && !isSystemEntryType(s_entries[idx - 1].type);
-}
-
-static bool endsSystemSection(int idx) {
-  if (idx < 0 || idx >= MAX_LIBRARY_ENTRIES) return false;
-  return isSystemEntryType(s_entries[idx].type)
-      && (idx + 1 >= MAX_LIBRARY_ENTRIES
-          || !isSystemEntryType(s_entries[idx + 1].type));
-}
-
-// Technical actions are visually grouped with a narrow rail and a small
-// square marker. This keeps the distinction visible without inserting a
-// fake menu row (which would steal the last visible row on small displays).
+// Technical actions use a compact arrow marker. Its geometry is fixed in both
+// states, so selecting a row changes only the stroke weight, never the
+// horizontal layout or the available scrolling budget.
 static void drawSystemMenuRow(int yBaseline, const String& label,
-                              bool selected, bool first, bool last) {
-  const int railX = UI_LIST_LEFT - 7;
+                              bool selected) {
   const int iconX = UI_LIST_LEFT + 1;
+  const int arrowY = yBaseline - 6;
 
-  gfx.drawFastVLine(railX, yBaseline - 11, menuLineH() + 3, 1);
-  if (first) gfx.drawFastHLine(railX, yBaseline - 11, 8, 1);
-  if (last)  gfx.drawFastHLine(railX, yBaseline + 3, 8, 1);
+  // Both variants occupy the same 10-pixel marker box. The selected version
+  // is bolder, but never wider or shifted.
+  gfx.drawFastHLine(iconX, arrowY, 7, 1);
+  gfx.drawLine(iconX + 5, arrowY - 3, iconX + 9, arrowY, 1);
+  gfx.drawLine(iconX + 5, arrowY + 3, iconX + 9, arrowY, 1);
+  if (selected) {
+    gfx.drawFastHLine(iconX, arrowY + 1, 7, 1);
+    gfx.drawLine(iconX + 5, arrowY - 2, iconX + 9, arrowY + 1, 1);
+    gfx.drawLine(iconX + 5, arrowY + 4, iconX + 9, arrowY + 1, 1);
+    Font::useBold();
+  } else {
+    Font::useBody();
+  }
 
-  if (selected) Font::useBold();
-  else          Font::useBody();
-  gfx.drawRect(iconX, yBaseline - 9, 6, 6, 1);
-  if (selected) gfx.drawFastHLine(iconX + 2, yBaseline - 6, 2, 1);
   u8g2.setCursor(iconX + 14, yBaseline);
   u8g2.print(label.c_str());
   Font::useBody();
@@ -255,8 +246,7 @@ void LibraryScreen::draw() {
         drawFolderMenuRow(rowY, entryLabel(s_entries[idx]), selected,
                           rowIndent(s_entries[idx]));
       } else if (isSystemEntryType(s_entries[idx].type)) {
-        drawSystemMenuRow(rowY, entryLabel(s_entries[idx]), selected,
-                          beginsSystemSection(idx), endsSystemSection(idx));
+        drawSystemMenuRow(rowY, entryLabel(s_entries[idx]), selected);
       } else {
         drawMenuRow(rowY, entryLabel(s_entries[idx]), selected,
                     rowIndent(s_entries[idx]));
