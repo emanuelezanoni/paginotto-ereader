@@ -22,6 +22,7 @@ struct EditUploadState {
   String error;
   String bookmarkAnchor;
   uint32_t bookmarkAnchorAt = 0;
+  uint32_t bookmarkOffset = kOffsetUnset;
   bool hadBookmark = false;
   int bookmarkStatus = 0;
   bool ok = false;
@@ -148,7 +149,8 @@ static void handleEditBookStream() {
     s_edit.bookPath = String(g_library.books[id].path);
     PreferencesStore kv(prefs);
     const String key = prefKeyForBook(s_edit.bookPath);
-    s_edit.hadBookmark = loadSavedOffset(kv, key) != kOffsetUnset;
+    s_edit.bookmarkOffset = loadSavedOffset(kv, key);
+    s_edit.hadBookmark = s_edit.bookmarkOffset != kOffsetUnset;
     s_edit.bookmarkAnchor = loadSavedAnchor(kv, key);
     s_edit.bookmarkAnchorAt = loadSavedAnchorAt(kv, key);
     s_edit.tmpPath = s_edit.bookPath + ".edit.tmp";
@@ -186,8 +188,19 @@ static void handleEditBookDone() {
   loadBooks();
   if (s_edit.hadBookmark) {
     const String key = prefKeyForBook(s_edit.bookPath);
-    s_edit.bookmarkStatus = remapBookmarkAfterEdit(
-        s_edit.bookPath, key, s_edit.bookmarkAnchor, s_edit.bookmarkAnchorAt);
+    if (s_edit.bookmarkOffset == 0) {
+      // Offset zero is already the canonical beginning of the book. There is
+      // nothing to translate, and a missing anchor here is expected for new
+      // books or text removed from the beginning.
+      PreferencesStore kv(prefs);
+      saveSavedOffset(kv, key, 0);
+      saveSavedPage(kv, key, 0);
+      saveSavedAnchor(kv, key, String(), 0);
+      s_edit.bookmarkStatus = 0;
+    } else {
+      s_edit.bookmarkStatus = remapBookmarkAfterEdit(
+          s_edit.bookPath, key, s_edit.bookmarkAnchor, s_edit.bookmarkAnchorAt);
+    }
   }
   String location;
   if (server.hasArg("return") && server.arg("return") == "/upload-review") {
