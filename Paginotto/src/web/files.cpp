@@ -6,6 +6,7 @@
 #include <WiFiClientSecure.h>
 
 #include "src/config.h"
+#include "src/diagnostics/log.h"
 #include "src/state.h"
 #include "src/pure/hashing.h"
 #include "src/pure/paths.h"
@@ -78,19 +79,23 @@ static void configureRemoteBookClient(WiFiClientSecure& client) {
 }
 
 static void handleRemoteBookDownload() {
+  Diagnostics::info("remote_epub.begin");
   if (WiFi.status() != WL_CONNECTED) {
+    Diagnostics::warning("remote_epub.no_station");
     server.send(503, "text/plain; charset=utf-8",
                 "Online EPUB import requires an Internet Wi-Fi connection; hotspot-only mode is unavailable");
     return;
   }
 
   if (!server.hasArg("url")) {
+    Diagnostics::warning("remote_epub.missing_url");
     server.send(400, "text/plain; charset=utf-8", "Missing download URL");
     return;
   }
 
   String url = server.arg("url");
   if (!(url.startsWith("http://") || url.startsWith("https://"))) {
+    Diagnostics::warning("remote_epub.bad_scheme");
     server.send(400, "text/plain; charset=utf-8", "Only HTTP(S) URLs are supported");
     return;
   }
@@ -109,12 +114,14 @@ static void handleRemoteBookDownload() {
   http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
   http.setRedirectLimit(5);
   if (!http.begin(*transport, url)) {
+    Diagnostics::error("remote_epub.begin_failed");
     server.send(502, "text/plain; charset=utf-8", "Could not open remote download");
     return;
   }
 
   int code = http.GET();
   if (code != HTTP_CODE_OK) {
+    Diagnostics::errorCode("remote_epub.http_failed", code);
     http.end();
     server.send(502, "text/plain; charset=utf-8", "Remote download failed (HTTP " + String(code) + ")");
     return;
@@ -122,6 +129,7 @@ static void handleRemoteBookDownload() {
 
   int remaining = http.getSize();
   if (remaining > (int)kRemoteBookMaxBytes) {
+    Diagnostics::warning("remote_epub.too_large");
     http.end();
     server.send(413, "text/plain; charset=utf-8", "Remote file is too large");
     return;
@@ -129,6 +137,7 @@ static void handleRemoteBookDownload() {
 
   WiFiClient* source = http.getStreamPtr();
   if (!source) {
+    Diagnostics::error("remote_epub.no_stream");
     http.end();
     server.send(502, "text/plain; charset=utf-8", "Remote download stream unavailable");
     return;
@@ -172,6 +181,7 @@ static void handleRemoteBookDownload() {
   }
 
   http.end();
+  Diagnostics::info("remote_epub.end");
 }
 
 static void handleRoot() {

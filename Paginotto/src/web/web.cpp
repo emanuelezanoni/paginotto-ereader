@@ -1,6 +1,7 @@
 #include "src/web/web.h"
 
 #include "src/web/chrome.h"
+#include "src/web/diagnostics.h"
 #include "src/web/files.h"
 #include "src/web/find.h"
 #include "src/web/reset.h"
@@ -35,5 +36,6 @@ void registerWebRoutes() {
   registerScreensaverRoutes(); // /screensavers and subroutes
   registerUploadRoutes();      // /upload, /upload-sleep (legacy)
   registerResetRoutes();       // /settings/reset
+  registerDiagnosticsRoutes(); // /diagnostics and /diagnostics.txt
   server.on("/exit", HTTP_GET, handleWebUiExit);
 }

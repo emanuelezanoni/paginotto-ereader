@@ -44,6 +44,7 @@
 #include "src/ui/text.h"
 #include "src/ui/toast.h"
 #include "src/web/web.h"
+#include "src/diagnostics/log.h"
 
 // ============================================================================
 //  Screen instances + current-screen pointer
@@ -87,6 +88,7 @@ void setup() {
   // Load Sleep and Lock settings early — before display.clear() — so both
   // flags are available to gate the full-refresh boot clear below.
   prefs.begin("ereader", false);
+  Diagnostics::begin();
   Sleep::loadSettings();
   Lock::loadSettings();
 
