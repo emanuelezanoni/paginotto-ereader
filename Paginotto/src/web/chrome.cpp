@@ -26,8 +26,8 @@ static const char kStyleCss[] PROGMEM =
   "body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,sans-serif}"
   ".wrap{max-width:820px;margin:0 auto;padding:18px}"
   ".wide{max-width:1020px}"
-  ".top{display:flex;align-items:flex-start;gap:12px;margin-bottom:10px}"
-  ".top-title{min-width:0}"
+  ".top{display:flex;width:100%;align-items:flex-start;gap:12px;margin-bottom:10px}"
+  ".top-title{min-width:0;flex:1}"
   ".title-exit{margin-left:auto;white-space:nowrap;flex:none}"
   ".top a,.link{color:var(--link);text-decoration:none}"
   ".brand{font-size:13px;font-weight:750;letter-spacing:.08em;text-transform:uppercase;color:var(--link);margin-bottom:2px}"
@@ -137,7 +137,7 @@ String webPageStart(const String& title, const String& subtitle,
   out = "<!doctype html><html><head><meta charset='utf-8'>"
         "<meta name='viewport' content='width=device-width,initial-scale=1'>"
         "<meta name='color-scheme' content='light'>"
-        "<link rel='stylesheet' href='/style.css'>";
+        "<link rel='stylesheet' href='/style.css?v=4'>";
   out += "<title>";
   out += title;
   out += "</title></head><body><div class='wrap";
