@@ -152,6 +152,34 @@ static bool beginsSystemSection(int idx) {
       && !isSystemEntryType(s_entries[idx - 1].type);
 }
 
+static bool endsSystemSection(int idx) {
+  if (idx < 0 || idx >= MAX_LIBRARY_ENTRIES) return false;
+  return isSystemEntryType(s_entries[idx].type)
+      && (idx + 1 >= MAX_LIBRARY_ENTRIES
+          || !isSystemEntryType(s_entries[idx + 1].type));
+}
+
+// Technical actions are visually grouped with a narrow rail and a small
+// square marker. This keeps the distinction visible without inserting a
+// fake menu row (which would steal the last visible row on small displays).
+static void drawSystemMenuRow(int yBaseline, const String& label,
+                              bool selected, bool first, bool last) {
+  const int railX = UI_LIST_LEFT - 7;
+  const int iconX = UI_LIST_LEFT + 1;
+
+  gfx.drawFastVLine(railX, yBaseline - 11, menuLineH() + 3, 1);
+  if (first) gfx.drawFastHLine(railX, yBaseline - 11, 8, 1);
+  if (last)  gfx.drawFastHLine(railX, yBaseline + 3, 8, 1);
+
+  if (selected) Font::useBold();
+  else          Font::useBody();
+  gfx.drawRect(iconX, yBaseline - 9, 6, 6, 1);
+  if (selected) gfx.drawFastHLine(iconX + 2, yBaseline - 6, 2, 1);
+  u8g2.setCursor(iconX + 14, yBaseline);
+  u8g2.print(label.c_str());
+  Font::useBody();
+}
+
 static void performLibraryAction(ButtonAction action) {
   switch (action) {
     case ACTION_LOCK:
@@ -223,16 +251,12 @@ void LibraryScreen::draw() {
 
   drawScrollableList(y, s_entryCount, s_cursor,
     [&](int idx, int rowY, bool selected, int) {
-      // Keep the section separator inside the normal row budget. Consuming
-      // an extra row here made the last system item (Firmware update) render
-      // below the panel when the library contained several books.
-      if (beginsSystemSection(idx)) {
-        gfx.drawFastHLine(UI_LIST_LEFT, rowY - (menuLineH() / 2),
-                          SCREEN_W - UI_LIST_LEFT - MARGIN_X, 1);
-      }
       if (s_entries[idx].type == LIB_ENTRY_FOLDER) {
         drawFolderMenuRow(rowY, entryLabel(s_entries[idx]), selected,
                           rowIndent(s_entries[idx]));
+      } else if (isSystemEntryType(s_entries[idx].type)) {
+        drawSystemMenuRow(rowY, entryLabel(s_entries[idx]), selected,
+                          beginsSystemSection(idx), endsSystemSection(idx));
       } else {
         drawMenuRow(rowY, entryLabel(s_entries[idx]), selected,
                     rowIndent(s_entries[idx]));
