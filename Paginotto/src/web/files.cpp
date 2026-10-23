@@ -78,6 +78,12 @@ static void configureRemoteBookClient(WiFiClientSecure& client) {
   client.setTimeout(kRemoteBookTimeoutMs);
 }
 
+static void releaseRemoteBookClient(WiFiClient* transport,
+                                    WiFiClientSecure* secureClient) {
+  if (transport) transport->stop();
+  delete secureClient;
+}
+
 static bool parseRemoteUrl(const String& url, bool& secure, String& host,
                            uint16_t& port, String& path) {
   secure = url.startsWith("https://");
@@ -150,18 +156,27 @@ static void handleRemoteBookDownload() {
   }
 
   WiFiClient plainClient;
-  WiFiClientSecure secureClient;
+  // WiFiClientSecure uses significant stack during TLS setup. The main loop
+  // task has a small stack, so keep the TLS object off-stack like OTA does.
+  WiFiClientSecure* secureClient = nullptr;
   WiFiClient* transport = &plainClient;
   if (secure) {
     Diagnostics::checkpoint("remote_epub.configure_tls");
-    configureRemoteBookClient(secureClient);
-    transport = &secureClient;
+    secureClient = new WiFiClientSecure();
+    if (!secureClient) {
+      Diagnostics::error("remote_epub.tls_alloc_failed");
+      server.send(503, "text/plain; charset=utf-8", "Not enough memory for secure download");
+      return;
+    }
+    configureRemoteBookClient(*secureClient);
+    transport = secureClient;
   }
 
   Diagnostics::checkpoint("remote_epub.connect");
   transport->setTimeout(kRemoteBookTimeoutMs);
   if (!transport->connect(host.c_str(), port)) {
     Diagnostics::error("remote_epub.connect_failed");
+    releaseRemoteBookClient(transport, secureClient);
     server.send(502, "text/plain; charset=utf-8", "Could not connect to remote download");
     return;
   }
@@ -176,7 +191,7 @@ static void handleRemoteBookDownload() {
   String statusLine;
   if (!readRemoteLine(*transport, statusLine)) {
     Diagnostics::error("remote_epub.status_timeout");
-    transport->stop();
+    releaseRemoteBookClient(transport, secureClient);
     server.send(502, "text/plain; charset=utf-8", "Remote response timeout");
     return;
   }
@@ -188,7 +203,7 @@ static void handleRemoteBookDownload() {
   Diagnostics::checkpoint("remote_epub.status_received");
   if (code != 200) {
     Diagnostics::errorCode("remote_epub.http_failed", code);
-    transport->stop();
+    releaseRemoteBookClient(transport, secureClient);
     server.send(502, "text/plain; charset=utf-8", "Remote download failed (HTTP " + String(code) + ")");
     return;
   }
@@ -199,7 +214,7 @@ static void handleRemoteBookDownload() {
   while (true) {
     if (!readRemoteLine(*transport, headerLine)) {
       Diagnostics::error("remote_epub.headers_timeout");
-      transport->stop();
+      releaseRemoteBookClient(transport, secureClient);
       server.send(502, "text/plain; charset=utf-8", "Remote response headers timeout");
       return;
     }
@@ -214,7 +229,7 @@ static void handleRemoteBookDownload() {
     } else if (lowerHeader.startsWith("transfer-encoding:")
                && lowerHeader.indexOf("chunked") >= 0) {
       Diagnostics::error("remote_epub.chunked_unsupported");
-      transport->stop();
+      releaseRemoteBookClient(transport, secureClient);
       server.send(502, "text/plain; charset=utf-8", "Chunked remote downloads are unsupported");
       return;
     }
@@ -223,7 +238,7 @@ static void handleRemoteBookDownload() {
   Diagnostics::checkpoint("remote_epub.response");
   if (remaining > (int)kRemoteBookMaxBytes) {
     Diagnostics::warning("remote_epub.too_large");
-    transport->stop();
+    releaseRemoteBookClient(transport, secureClient);
     server.send(413, "text/plain; charset=utf-8", "Remote file is too large");
     return;
   }
@@ -240,7 +255,7 @@ static void handleRemoteBookDownload() {
   // attempts so the Wi-Fi stack and watchdog continue to be serviced.
   transport->setTimeout(1000);
   browser.setTimeout(1000);
-  uint8_t buffer[4096];
+  static uint8_t buffer[4096];
   uint32_t total = 0;
   uint32_t lastData = millis();
   Diagnostics::checkpoint("remote_epub.streaming");
@@ -266,7 +281,7 @@ static void handleRemoteBookDownload() {
     yield();
   }
 
-  transport->stop();
+  releaseRemoteBookClient(transport, secureClient);
   Diagnostics::checkpoint("remote_epub.end");
 }
 
