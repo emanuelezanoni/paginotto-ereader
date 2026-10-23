@@ -1,6 +1,5 @@
 #include "src/web/files.h"
 
-#include <HTTPClient.h>
 #include <WiFi.h>
 #include <WiFiClient.h>
 #include <WiFiClientSecure.h>
@@ -79,6 +78,45 @@ static void configureRemoteBookClient(WiFiClientSecure& client) {
   client.setTimeout(kRemoteBookTimeoutMs);
 }
 
+static bool parseRemoteUrl(const String& url, bool& secure, String& host,
+                           uint16_t& port, String& path) {
+  secure = url.startsWith("https://");
+  const size_t authorityStart = secure ? 8 : 7;
+  int pathStart = url.indexOf('/', authorityStart);
+  String authority = pathStart < 0
+                   ? url.substring(authorityStart)
+                   : url.substring(authorityStart, pathStart);
+  if (authority.length() == 0) return false;
+
+  port = secure ? 443 : 80;
+  int portSeparator = authority.lastIndexOf(':');
+  if (portSeparator > 0) {
+    int parsedPort = authority.substring(portSeparator + 1).toInt();
+    if (parsedPort <= 0 || parsedPort > 65535) return false;
+    port = (uint16_t)parsedPort;
+    authority = authority.substring(0, portSeparator);
+  }
+  host = authority;
+  path = pathStart < 0 ? "/" : url.substring(pathStart);
+  return host.length() > 0;
+}
+
+static bool readRemoteLine(Stream& source, String& line) {
+  line = "";
+  uint32_t started = millis();
+  while (millis() - started <= kRemoteBookStallMs) {
+    while (source.available()) {
+      char c = (char)source.read();
+      if (c == '\n') return true;
+      if (c != '\r') line += c;
+      if (line.length() > 2048) return false;
+    }
+    delay(2);
+    yield();
+  }
+  return false;
+}
+
 static void handleRemoteBookDownload() {
   Diagnostics::checkpoint("remote_epub.begin");
   if (WiFi.status() != WL_CONNECTED) {
@@ -101,57 +139,96 @@ static void handleRemoteBookDownload() {
     return;
   }
 
+  bool secure = false;
+  String host;
+  String path;
+  uint16_t port = 0;
+  if (!parseRemoteUrl(url, secure, host, port, path)) {
+    Diagnostics::warning("remote_epub.bad_url");
+    server.send(400, "text/plain; charset=utf-8", "Invalid download URL");
+    return;
+  }
+
   WiFiClient plainClient;
   WiFiClientSecure secureClient;
   WiFiClient* transport = &plainClient;
-  if (url.startsWith("https://")) {
+  if (secure) {
     Diagnostics::checkpoint("remote_epub.configure_tls");
     configureRemoteBookClient(secureClient);
     transport = &secureClient;
   }
 
-  Diagnostics::checkpoint("remote_epub.http_config");
-  HTTPClient http;
-  http.setConnectTimeout(15000);
-  http.setTimeout(kRemoteBookTimeoutMs);
-  http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
-  http.setRedirectLimit(5);
-  Diagnostics::checkpoint("remote_epub.http_begin");
-  if (!http.begin(*transport, url)) {
-    Diagnostics::error("remote_epub.begin_failed");
-    server.send(502, "text/plain; charset=utf-8", "Could not open remote download");
+  Diagnostics::checkpoint("remote_epub.connect");
+  transport->setTimeout(kRemoteBookTimeoutMs);
+  if (!transport->connect(host.c_str(), port)) {
+    Diagnostics::error("remote_epub.connect_failed");
+    server.send(502, "text/plain; charset=utf-8", "Could not connect to remote download");
     return;
   }
+  Diagnostics::checkpoint("remote_epub.connected");
+  transport->print("GET ");
+  transport->print(path);
+  transport->print(" HTTP/1.1\r\nHost: ");
+  transport->print(host);
+  transport->print("\r\nConnection: close\r\nUser-Agent: Paginotto\r\n\r\n");
+  Diagnostics::checkpoint("remote_epub.request_sent");
 
-  Diagnostics::checkpoint("remote_epub.get");
-  int code = http.GET();
-  if (code != HTTP_CODE_OK) {
+  String statusLine;
+  if (!readRemoteLine(*transport, statusLine)) {
+    Diagnostics::error("remote_epub.status_timeout");
+    transport->stop();
+    server.send(502, "text/plain; charset=utf-8", "Remote response timeout");
+    return;
+  }
+  int firstSpace = statusLine.indexOf(' ');
+  int secondSpace = firstSpace < 0 ? -1 : statusLine.indexOf(' ', firstSpace + 1);
+  int code = (firstSpace >= 0)
+           ? statusLine.substring(firstSpace + 1, secondSpace < 0 ? statusLine.length() : secondSpace).toInt()
+           : 0;
+  Diagnostics::checkpoint("remote_epub.status_received");
+  if (code != 200) {
     Diagnostics::errorCode("remote_epub.http_failed", code);
-    http.end();
+    transport->stop();
     server.send(502, "text/plain; charset=utf-8", "Remote download failed (HTTP " + String(code) + ")");
     return;
   }
 
+  int remaining = -1;
+  String contentType = "application/octet-stream";
+  String headerLine;
+  while (true) {
+    if (!readRemoteLine(*transport, headerLine)) {
+      Diagnostics::error("remote_epub.headers_timeout");
+      transport->stop();
+      server.send(502, "text/plain; charset=utf-8", "Remote response headers timeout");
+      return;
+    }
+    if (headerLine.length() == 0) break;
+    String lowerHeader = headerLine;
+    lowerHeader.toLowerCase();
+    if (lowerHeader.startsWith("content-length:")) {
+      remaining = headerLine.substring(headerLine.indexOf(':') + 1).toInt();
+    } else if (lowerHeader.startsWith("content-type:")) {
+      contentType = headerLine.substring(headerLine.indexOf(':') + 1);
+      contentType.trim();
+    } else if (lowerHeader.startsWith("transfer-encoding:")
+               && lowerHeader.indexOf("chunked") >= 0) {
+      Diagnostics::error("remote_epub.chunked_unsupported");
+      transport->stop();
+      server.send(502, "text/plain; charset=utf-8", "Chunked remote downloads are unsupported");
+      return;
+    }
+  }
+
   Diagnostics::checkpoint("remote_epub.response");
-  int remaining = http.getSize();
   if (remaining > (int)kRemoteBookMaxBytes) {
     Diagnostics::warning("remote_epub.too_large");
-    http.end();
+    transport->stop();
     server.send(413, "text/plain; charset=utf-8", "Remote file is too large");
     return;
   }
 
-  WiFiClient* source = http.getStreamPtr();
-  if (!source) {
-    Diagnostics::error("remote_epub.no_stream");
-    http.end();
-    server.send(502, "text/plain; charset=utf-8", "Remote download stream unavailable");
-    return;
-  }
-
   Diagnostics::checkpoint("remote_epub.stream");
-  String contentType = http.header("Content-Type");
-  if (contentType.length() == 0) contentType = "application/octet-stream";
   if (remaining >= 0) server.setContentLength((size_t)remaining);
   else server.setContentLength(CONTENT_LENGTH_UNKNOWN);
   server.send(200, contentType, "");
@@ -161,15 +238,15 @@ static void handleRemoteBookDownload() {
   // Never let a slow remote server block the loop task for the full HTTP
   // timeout. The proxy reads only bytes already available and yields between
   // attempts so the Wi-Fi stack and watchdog continue to be serviced.
-  source->setTimeout(1000);
+  transport->setTimeout(1000);
   browser.setTimeout(1000);
   uint8_t buffer[4096];
   uint32_t total = 0;
   uint32_t lastData = millis();
   Diagnostics::checkpoint("remote_epub.streaming");
 
-  while ((http.connected() || source->available()) && (remaining != 0)) {
-    size_t available = source->available();
+  while ((transport->connected() || transport->available()) && (remaining != 0)) {
+    size_t available = transport->available();
     if (available == 0) {
       if (millis() - lastData > kRemoteBookStallMs) break;
       delay(2);
@@ -178,7 +255,7 @@ static void handleRemoteBookDownload() {
 
     size_t wanted = available < sizeof(buffer) ? available : sizeof(buffer);
     if (remaining >= 0 && wanted > (size_t)remaining) wanted = (size_t)remaining;
-    int n = source->read(buffer, wanted);
+    int n = transport->read(buffer, wanted);
     if (n <= 0 || browser.write(buffer, (size_t)n) != (size_t)n) {
       break;
     }
@@ -189,7 +266,7 @@ static void handleRemoteBookDownload() {
     yield();
   }
 
-  http.end();
+  transport->stop();
   Diagnostics::checkpoint("remote_epub.end");
 }
 
