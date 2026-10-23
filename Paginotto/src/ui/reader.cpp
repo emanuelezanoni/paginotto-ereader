@@ -98,8 +98,10 @@ bool OpenBook::open(const String& path) {
 }
 
 void OpenBook::close() {
-  if (file_) Diagnostics::trace("reader.book.close");
-  if (file_) file_.close();
+  if (file_) {
+    Diagnostics::trace("reader.book.close");
+    file_.close();
+  }
   path_ = "";
   key_  = "";
 }
