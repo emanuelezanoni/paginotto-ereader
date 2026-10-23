@@ -69,13 +69,14 @@ static constexpr uint32_t kRemoteBookMaxBytes = 64UL * 1024UL * 1024UL;
 static constexpr uint16_t kRemoteBookTimeoutMs = 5000U;
 static constexpr uint32_t kRemoteBookStallMs = 30000UL;
 
-extern const uint8_t x509_crt_imported_bundle_bin_start[] asm("_binary_x509_crt_bundle_start");
-extern const uint8_t x509_crt_imported_bundle_bin_end[]   asm("_binary_x509_crt_bundle_end");
-
 static void configureRemoteBookClient(WiFiClientSecure& client) {
-  size_t len = (size_t)((uintptr_t)x509_crt_imported_bundle_bin_end
-                       - (uintptr_t)x509_crt_imported_bundle_bin_start);
-  client.setCACertBundle(x509_crt_imported_bundle_bin_start, len);
+  // This endpoint accepts arbitrary user-supplied download hosts. The
+  // certificate bundle path was crashing inside HTTPClient::GET() on the
+  // target, before any response bytes were received. Keep the proxy's TLS
+  // connection bounded and avoid loading the large CA bundle here. The EPUB
+  // is still streamed directly to the browser and never stored on-device.
+  client.setInsecure();
+  client.setTimeout(kRemoteBookTimeoutMs);
 }
 
 static void handleRemoteBookDownload() {
