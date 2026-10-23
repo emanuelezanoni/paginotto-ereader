@@ -81,7 +81,7 @@ static bool catalogContainsFolderBook(const String& folder) {
 static const char kEpubUploadScript[] = R"EPUBJS(
 <script>
 (()=>{
-const form=document.getElementById('bookUpload'),input=document.getElementById('bookFile'),status=document.getElementById('bookUploadStatus'),button=document.getElementById('bookUploadButton');
+const form=document.getElementById('bookUpload'),input=document.getElementById('bookFile'),urlInput=document.getElementById('bookUrl'),urlButton=document.getElementById('bookUrlButton'),status=document.getElementById('bookUploadStatus'),button=document.getElementById('bookUploadButton');
 let converted=null,choice=0;
 const fail=m=>{converted=null;status.textContent='EPUB conversion failed: '+m;button.disabled=true;};
 const u16=(a,o)=>a[o]|a[o+1]<<8, u32=(a,o)=>(u16(a,o)|u16(a,o+2)<<16)>>>0;
@@ -124,7 +124,9 @@ async function convert(file){
  if(!sections.length)throw Error('no readable XHTML/HTML spine content');const text=sections.join('\n\n').replace(/\n{3,}/g,'\n\n');if(!text)throw Error('empty EPUB');
  const filename=(file.name.replace(/\.epub$/i,'')||'book')+'.txt';return new File([text],filename,{type:'text/plain;charset=utf-8'});
 }
-input.addEventListener('change',async()=>{const file=input.files[0],selected=++choice;converted=null;button.disabled=false;if(!file){status.textContent='';return;}if(!/\.epub$/i.test(file.name)){status.textContent='';return;}status.textContent='Converting EPUB…';button.disabled=true;try{const result=await convert(file);if(selected!==choice)return;converted=result;status.textContent='Ready: '+converted.name+' ('+converted.size.toLocaleString()+' bytes)';button.disabled=false;}catch(e){if(selected===choice)fail(e&&e.message?e.message:'invalid EPUB');}});
+ const prepare=async(file,selected)=>{status.textContent='Converting EPUB…';button.disabled=true;try{const result=await convert(file);if(selected!==choice)return;converted=result;status.textContent='Ready: '+converted.name+' ('+converted.size.toLocaleString()+' bytes)';button.disabled=false;}catch(e){if(selected===choice)fail(e&&e.message?e.message:'invalid EPUB');}};
+ input.addEventListener('change',async()=>{const file=input.files[0],selected=++choice;converted=null;button.disabled=false;if(!file){status.textContent='';return;}if(!/\.epub$/i.test(file.name)){status.textContent='';return;}await prepare(file,selected);});
+ urlButton.addEventListener('click',async()=>{const raw=urlInput.value.trim(),selected=++choice;converted=null;button.disabled=true;urlButton.disabled=true;if(!/^https?:\/\//i.test(raw)){if(selected===choice)fail('enter a valid HTTP(S) EPUB URL');urlButton.disabled=false;return;}status.textContent='Downloading EPUB…';try{const response=await fetch(raw);if(!response.ok)throw Error('download failed (HTTP '+response.status+')');const blob=await response.blob();const url=new URL(raw),part=decodeURIComponent(url.pathname.split('/').pop()||'book.epub');const filename=/\.epub$/i.test(part)?part:part+'.epub';await prepare(new File([blob],filename,{type:blob.type||'application/epub+zip'}),selected);}catch(e){if(selected===choice)fail(e&&e.message?e.message:'download failed; the server may block browser access (CORS)');}finally{urlButton.disabled=false;}});
 form.addEventListener('submit',async e=>{if(!converted)return;e.preventDefault();button.disabled=true;status.textContent='Uploading '+converted.name+'…';try{const fd=new FormData();fd.append('file',converted,converted.name);const r=await fetch('/upload',{method:'POST',body:fd});const body=await r.text();if(!r.ok)throw Error(body||('HTTP '+r.status));document.open();document.write(body);document.close();}catch(err){status.textContent='Upload failed: '+(err&&err.message?err.message:'error');button.disabled=false;}});
 })();
 </script>
@@ -145,12 +147,26 @@ static void handleFiles() {
     "<div class='card'><h2>" D_WEB_UPLOAD_BOOK_HEADING "</h2>"
     "<p class='muted'>" D_WEB_UPLOAD_BOOK_DESC "</p>"
     "<form id='bookUpload' method='POST' action='/upload' enctype='multipart/form-data' accept-charset='UTF-8' style='margin-top:14px'>"
-    "<input id='bookFile' type='file' name='file' accept='.txt,text/plain,.epub,application/epub+zip' required>"
+    "<input id='bookFile' type='file' name='file' accept='.txt,text/plain,.epub,application/epub+zip'>"
     "<p id='bookUploadStatus' class='muted' aria-live='polite'></p>"
     "<div class='actions'><button id='bookUploadButton' type='submit'>" D_WEB_UPLOAD_BOOK_BUTTON "</button></div>"
     "</form>";
-  out += kEpubUploadScript;
   out += "</div>";
+
+  out += "<div class='card'><h2>" D_WEB_ONLINE_BOOKS_HEADING "</h2>"
+         "<p class='muted'>" D_WEB_ONLINE_BOOKS_DESC "</p>";
+  String onlineLibraryUrl = ONLINE_BOOK_LIBRARY_URL;
+  if (onlineLibraryUrl.length() > 0) {
+    out += "<div class='actions'><a class='btn secondary' href='" + htmlEscape(onlineLibraryUrl) + "' target='_blank' rel='noopener'>" D_WEB_OPEN_ONLINE_LIBRARY "</a></div>";
+  } else {
+    out += "<p class='muted'>" D_WEB_ONLINE_LIBRARY_MISSING "</p>";
+  }
+  out += "<label for='bookUrl'>" D_WEB_EPUB_URL_LABEL "</label>"
+         "<input id='bookUrl' type='url' inputmode='url' placeholder='" D_WEB_EPUB_URL_PLACEHOLDER "' autocomplete='url' spellcheck='false'>"
+         "<div class='actions'><button id='bookUrlButton' type='button'>" D_WEB_IMPORT_EPUB_BUTTON "</button></div>"
+         "</div>";
+
+  out += kEpubUploadScript;
 
   // This is an index, not a second action list: each book entry links to the
   // corresponding card below. It gives the library a stable mental model:

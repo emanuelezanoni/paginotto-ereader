@@ -95,6 +95,13 @@
 #define D_WEB_UPLOAD_BOOK_DESC      "Send UTF-8 plain text books or EPUBs to <b>/books</b>. EPUBs convert to plain text in this browser before upload; the device stores only .txt files."
 #define D_WEB_UPLOAD_BOOK_BUTTON    "Upload"
 #define D_WEB_MANAGE_BOOKS_BUTTON   "Manage books"
+#define D_WEB_ONLINE_BOOKS_HEADING  "Online book library"
+#define D_WEB_ONLINE_BOOKS_DESC     "Browse an external library, copy the direct EPUB download link, and import it here."
+#define D_WEB_OPEN_ONLINE_LIBRARY   "Browse library"
+#define D_WEB_EPUB_URL_LABEL        "EPUB download link"
+#define D_WEB_EPUB_URL_PLACEHOLDER  "https://example.org/book.epub"
+#define D_WEB_IMPORT_EPUB_BUTTON    "Download and import"
+#define D_WEB_ONLINE_LIBRARY_MISSING "The online library link is not configured yet."
 #define D_WEB_NOTES_HEADING         "Notes"
 #define D_WEB_NOTES_DESC            "Uploaded books are normalized and compacted before saving, so a source TXT can be larger than the final stored file. The reader is optimized for UTF-8 plain text."
 
