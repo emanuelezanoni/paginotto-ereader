@@ -66,7 +66,10 @@ static void handleDownloadBook() {
 // small chunks, which also avoids the browser's cross-origin CORS restriction.
 static constexpr uint32_t kRemoteBookMaxBytes = 64UL * 1024UL * 1024UL;
 static constexpr uint16_t kRemoteBookTimeoutMs = 5000U;
-static constexpr uint32_t kRemoteBookStallMs = 30000UL;
+// A remote HTTPS stream can legitimately pause for longer than the WebUI
+// keepalive interval on a weak Wi-Fi link. Keep waiting for data instead of
+// turning a temporary pause into a truncated EPUB.
+static constexpr uint32_t kRemoteBookStallMs = 120000UL;
 
 static void configureRemoteBookClient(WiFiClientSecure& client) {
   // This endpoint accepts arbitrary user-supplied download hosts. The
@@ -261,7 +264,10 @@ static void handleRemoteBookDownload() {
   uint32_t lastData = millis();
   Diagnostics::checkpoint("remote_epub.streaming");
 
-  while ((transport->connected() || transport->available()) && (remaining != 0)) {
+  // Do not use connected() as the loop condition: on ESP TLS clients it can
+  // briefly report false while the socket is idle, even though more data may
+  // still arrive. available() plus the stall deadline is the reliable test.
+  while (remaining != 0) {
     size_t available = transport->available();
     if (available == 0) {
       if (millis() - lastData > kRemoteBookStallMs) break;
