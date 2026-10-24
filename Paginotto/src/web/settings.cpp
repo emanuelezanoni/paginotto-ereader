@@ -74,7 +74,8 @@ static void handleSettings() {
   );
   out.reserve(out.length() + 4500);
 
-  out += "<div class='card'><h2>" D_WEB_FIRMWARE_HEADING "</h2><p class='muted'>" D_WEB_FIRMWARE_LABEL "</p></div>";
+  out += "<div class='card'><h2>" D_WEB_FIRMWARE_HEADING "</h2><p class='muted'>"
+         D_WEB_FIRMWARE_LABEL " " FW_VERSION "</p></div>";
 
   out += "<div class='card'><h2>" D_WEB_SLEEP_HEADING "</h2>"
          "<form method='POST' action='/settings' class='stack' style='margin-top:12px'>"

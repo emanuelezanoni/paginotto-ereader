@@ -25,8 +25,8 @@ def build_id():
 
 def fw_version():
     # `git describe --tags --always --dirty`:
-    #   tagged commit       -> "v3.0"
-    #   N commits past tag  -> "v3.0-3-gabc1234"
+    #   tagged commit       -> "v1.1.0"
+    #   N commits past tag  -> "v1.1.0-3-gabc1234"
     #   no tags in history  -> "abc1234"   (just the sha, via --always)
     #   uncommitted changes -> "...-dirty"
     #

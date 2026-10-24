@@ -189,7 +189,7 @@
 #define D_WEB_SETTINGS_TITLE        "Settings"
 #define D_WEB_SETTINGS_SUBTITLE     "Device and reading settings."
 #define D_WEB_FIRMWARE_HEADING      "Firmware"
-#define D_WEB_FIRMWARE_LABEL        "Paginotto firmware v3.0"
+#define D_WEB_FIRMWARE_LABEL        "Paginotto firmware"
 #define D_WEB_READING_HEADING       "Reading"
 #define D_WEB_FONT_SIZE_LABEL       "Font size"
 #define D_WEB_FONT_SIZE_8           "8px &mdash; tiny"
