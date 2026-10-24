@@ -6,7 +6,6 @@
 #include "src/state.h"
 #include "src/pure/hashing.h"             // prefKeyForBook
 #include "src/storage/book_metadata.h"
-#include "src/storage/fs_util.h"
 #include "src/storage/page_cache.h"
 #include "src/storage/library.h"
 #include "src/storage/preferences_store.h"
@@ -154,39 +153,26 @@ static void handleEditBookStream() {
     s_edit.hadBookmark = s_edit.bookmarkOffset != kOffsetUnset;
     s_edit.bookmarkAnchor = loadSavedAnchor(kv, key);
     s_edit.bookmarkAnchorAt = loadSavedAnchorAt(kv, key);
-    s_edit.tmpPath = s_edit.bookPath + ".edit.tmp";
-    File existing = FS.open(s_edit.bookPath, "r");
-    const size_t existingSize = existing ? existing.size() : 0;
-    if (existing) existing.close();
-    const size_t freeBytes = fsFreeBytesSafe();
-    if (existingSize > 0 && freeBytes < existingSize + 8192) {
-      s_edit.error = "not enough free space for safe edit (need " +
-                     String(existingSize + 8192) + " bytes, have " +
-                     String(freeBytes) + ")";
-      return;
-    }
-    if (FS.exists(s_edit.tmpPath)) FS.remove(s_edit.tmpPath);
-    s_edit.tmp = FS.open(s_edit.tmpPath, "w");
-    if (!s_edit.tmp) s_edit.error = "cannot create temporary edit file";
+    // Direct replacement deliberately avoids requiring a second full copy of
+    // the book on LittleFS. The WebUI asks the user to download a manual
+    // backup first; an interrupted edit can leave a partial book.
+    s_edit.tmpPath = "";
+    s_edit.tmp = FS.open(s_edit.bookPath, "w");
+    if (!s_edit.tmp) s_edit.error = "cannot open book for direct edit";
   } else if (up.status == UPLOAD_FILE_WRITE) {
     if (s_edit.error.length() == 0 && s_edit.tmp && up.currentSize > 0
         && s_edit.tmp.write(up.buf, up.currentSize) != up.currentSize) {
-      s_edit.error = "write failed";
+      s_edit.error = "direct edit write failed";
       s_edit.tmp.close();
-      if (FS.exists(s_edit.tmpPath)) FS.remove(s_edit.tmpPath);
     }
   } else if (up.status == UPLOAD_FILE_END) {
     if (s_edit.tmp) s_edit.tmp.close();
-    if (s_edit.error.length() == 0 && FS.exists(s_edit.tmpPath)) {
-      if (FS.exists(s_edit.bookPath)) FS.remove(s_edit.bookPath);
-      if (FS.rename(s_edit.tmpPath, s_edit.bookPath)) s_edit.ok = true;
-      else s_edit.error = "cannot replace book";
+    if (s_edit.error.length() == 0 && FS.exists(s_edit.bookPath)) {
+      s_edit.ok = true;
     }
-    if (!s_edit.ok && s_edit.tmpPath.length() && FS.exists(s_edit.tmpPath)) FS.remove(s_edit.tmpPath);
   } else if (up.status == UPLOAD_FILE_ABORTED) {
     if (s_edit.tmp) s_edit.tmp.close();
-    if (s_edit.tmpPath.length() && FS.exists(s_edit.tmpPath)) FS.remove(s_edit.tmpPath);
-    s_edit.error = "edit upload aborted";
+    s_edit.error = "direct edit upload aborted; book may be incomplete";
   }
 }
 
