@@ -9,7 +9,8 @@
 //  On-disk page-offset cache (pc_<hash>.bin files in LittleFS root)
 //
 //  Per-book binary file mapping page index -> byte offset, stamped with the
-//  PageCacheLayout under which the offsets were computed.
+//  PageCacheLayout under which the offsets were computed. Entries are appended
+//  as pages are discovered and read by direct LittleFS seeks.
 //  Load rejects mismatched files; stale entries are silently overwritten on
 //  the next save. No external "invalidate everything" pass needed on font or
 //  layout change — layout-correctness is a property of the file format itself.
@@ -19,10 +20,8 @@
 //  bionic) flows into that one struct, so this
 //  module never has to know what specifically affects layout.
 //
-//  The active reader bulk-loads the whole table into `g_bookview.pages` via
-//  `loadPageOffsetCacheForBook`. Cross-book lookups for page-text export use
-//  the lighter `loadOffsetForPageFromDisk` to read
-//  one entry without allocating a 40 KB scratch table.
+//  The active reader never bulk-loads the table into RAM. Cross-book lookups
+//  and reader navigation read individual entries directly from LittleFS.
 // ============================================================================
 
 // Anything that affects page layout — and therefore must invalidate the
@@ -51,6 +50,16 @@ bool loadPageOffsetCacheForBook(const String& path, size_t expectedSize,
 void savePageOffsetCacheForBook(const String& path, size_t fileSize,
                                 const PageCacheLayout& layout,
                                 const PageOffsetTable& in);
+
+bool ensurePageOffsetCacheForBook(const String& path, size_t fileSize,
+                                  const PageCacheLayout& layout);
+
+uint32_t pageOffsetCacheCount(const String& path, size_t fileSize,
+                              const PageCacheLayout& layout);
+
+bool appendPageOffsetForBook(const String& path, size_t fileSize,
+                             const PageCacheLayout& layout,
+                             uint32_t pageIndex, uint32_t offset);
 
 // Single-entry on-disk lookup: read header, validate magic + layout +
 // expected file size, and return the offset of the largest cached page

@@ -182,6 +182,16 @@ static void clearResumeOnWake() {
 int findPageForOffset(uint32_t targetOffset) {
   uint32_t offset = 0;
   uint32_t page = 0;
+  const PageCacheLayout layout = Font::layoutForCache();
+  ensurePageOffsetCacheForBook(g_bookview.book.path(), g_bookview.book.size(), layout);
+  int cachedPage = loadOffsetForPageFromDisk(g_bookview.book.path(),
+                                             g_bookview.book.size(), layout,
+                                             g_bookview.cursor.pageIndex, &offset);
+  if (cachedPage >= 0 && offset > targetOffset) {
+    offset = 0;
+    cachedPage = 0;
+  }
+  if (cachedPage >= 0) page = (uint32_t)cachedPage;
   g_bookview.pages.eofReached = false;
   while (offset < targetOffset) {
     uint32_t next = nextPageOffset(g_bookview.book.file(), offset);
@@ -191,6 +201,8 @@ int findPageForOffset(uint32_t targetOffset) {
     }
     offset = next;
     page++;
+    appendPageOffsetForBook(g_bookview.book.path(), g_bookview.book.size(),
+                            layout, page, offset);
     if (offset >= (uint32_t)g_bookview.book.size()) {
       g_bookview.pages.eofReached = true;
       break;
@@ -242,6 +254,9 @@ void serviceBookOpening() {
     }
     s_openScanOffset = next;
     s_openScanPage++;
+    appendPageOffsetForBook(g_bookview.book.path(), g_bookview.book.size(),
+                            Font::layoutForCache(), s_openScanPage,
+                            s_openScanOffset);
     if (s_openScanOffset >= (uint32_t)g_bookview.book.size()) {
       g_bookview.pages.eofReached = true;
     }
@@ -276,6 +291,8 @@ bool openBookByIndex(int idx) {
 
   g_bookview.pages.currentOffset = 0;
   g_bookview.pages.eofReached = false;
+  const PageCacheLayout layout = Font::layoutForCache();
+  ensurePageOffsetCacheForBook(g_bookview.book.path(), g_bookview.book.size(), layout);
 
   // Resolve the reading position. The byte offset (`_off`) is canonical and
   // survives font changes; if it's set, find which page contains it under
@@ -291,23 +308,43 @@ bool openBookByIndex(int idx) {
   if (savedOffset != kOffsetUnset) {
     g_bookview.cursor.pageIndex = 0;
     if (savedOffset > 0) {
-      s_openScanOffset = 0;
-      s_openScanPage = 0;
+      uint32_t cachedOffset = 0;
+      int cachedPage = loadOffsetForPageFromDisk(
+          g_bookview.book.path(), g_bookview.book.size(), layout,
+          loadSavedPage(kv, g_bookview.book.key()), &cachedOffset);
+      if (cachedPage < 0 || cachedOffset > savedOffset) {
+        cachedPage = 0;
+        cachedOffset = 0;
+      }
+      s_openScanOffset = cachedOffset;
+      s_openScanPage = (uint32_t)cachedPage;
       s_openTargetOffset = savedOffset;
       s_openTargetIsPage = false;
-      s_openingBook = true;
+      s_openingBook = cachedOffset < savedOffset;
       s_lastOpeningPaint = 0;
+      if (!s_openingBook) {
+        g_bookview.cursor.pageIndex = cachedPage;
+        g_bookview.pages.currentOffset = cachedOffset;
+      }
     }
   } else {
     g_bookview.cursor.pageIndex = loadSavedPage(kv, g_bookview.book.key());
     if (g_bookview.cursor.pageIndex > 0) {
-      s_openScanOffset = 0;
-      s_openScanPage = 0;
+      uint32_t cachedOffset = 0;
+      int cachedPage = loadOffsetForPageFromDisk(
+          g_bookview.book.path(), g_bookview.book.size(), layout,
+          g_bookview.cursor.pageIndex, &cachedOffset);
+      if (cachedPage < 0) {
+        cachedPage = 0;
+        cachedOffset = 0;
+      }
+      s_openScanOffset = cachedOffset;
+      s_openScanPage = (uint32_t)cachedPage;
       s_openTargetOffset = (uint32_t)g_bookview.cursor.pageIndex;
       s_openTargetIsPage = true;
-      s_openingBook = true;
+      s_openingBook = s_openScanPage < s_openTargetOffset;
       s_lastOpeningPaint = 0;
-      g_bookview.cursor.pageIndex = 0;
+      g_bookview.cursor.pageIndex = cachedPage;
     }
   }
   g_bookview.cursor.pageTurnsSinceFull = 0;
@@ -420,6 +457,9 @@ bool advancePage() {
   }
   g_bookview.pages.currentOffset = next;
   g_bookview.cursor.pageIndex++;
+  appendPageOffsetForBook(g_bookview.book.path(), g_bookview.book.size(),
+                          Font::layoutForCache(),
+                          (uint32_t)g_bookview.cursor.pageIndex, next);
   g_bookview.cursor.pageTurnsSinceFull++;
   return true;
 }
@@ -430,11 +470,18 @@ bool retreatPage() {
     Diagnostics::trace("reader.page.first");
     return false;
   }
+  const uint32_t targetPage = (uint32_t)(g_bookview.cursor.pageIndex - 1);
   uint32_t offset = 0;
-  for (int page = 0; page < g_bookview.cursor.pageIndex - 1; page++) {
+  int startPage = loadOffsetForPageFromDisk(
+      g_bookview.book.path(), g_bookview.book.size(), Font::layoutForCache(),
+      (int)targetPage, &offset);
+  if (startPage < 0) startPage = 0;
+  for (uint32_t page = (uint32_t)startPage; page < targetPage; page++) {
     uint32_t next = nextPageOffset(g_bookview.book.file(), offset);
     if (next <= offset) return false;
     offset = next;
+    appendPageOffsetForBook(g_bookview.book.path(), g_bookview.book.size(),
+                            Font::layoutForCache(), page + 1, offset);
   }
   g_bookview.pages.currentOffset = offset;
   g_bookview.pages.eofReached = false;
