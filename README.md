@@ -27,6 +27,10 @@ matching PlatformIO environment when building or uploading firmware.
 
 - TXT reading with adjustable font size and line spacing
 - Reading progress persistence
+- Persistent page-offset index on LittleFS with bounded RAM usage, so large
+  books are not capped by an arbitrary in-memory page-count limit
+- Incremental book opening with progress feedback; the index is extended in
+  batches and reused for later opens, page turns and bookmarks
 - Bionic reading mode
 - Button gesture navigation and configurable reader actions
 - Library tree with folders and book management
@@ -146,6 +150,21 @@ ctest --test-dir test/build -C Release --output-on-failure
 ```
 
 See [`test/README.md`](test/README.md) for platform-specific prerequisites.
+
+### Large-book navigation
+
+The reader does not keep a page-offset table proportional to the book size in
+RAM. It stores page offsets in a per-book LittleFS index and keeps only a fixed
+recent-page window in memory. The first open of a book may therefore spend time
+building the index, but the work is incremental, visible on the display, and
+does not enter the screensaver. Once the requested range has been indexed,
+reopening the book from its bookmark and moving backward can seek directly to
+the saved offsets instead of rescanning the book from byte zero.
+
+The current reading position (byte offset and page hint) is persisted on every
+page turn. The larger textual bookmark anchor is throttled separately so that
+the exact position is not lost without forcing a full text-anchor rewrite on
+every click.
 
 ## Repository layout
 

@@ -251,8 +251,11 @@ void serviceBookOpening() {
   if (!s_openingBook || !g_bookview.book.isOpen()) return;
 
   // Keep each main-loop slice bounded. This is what makes the emergency
-  // triple-click useful while a large book is being indexed.
-  static constexpr int kPagesPerSlice = 24;
+  // triple-click useful while a large book is being indexed.  The index is
+  // appended once per slice, so 64 pages cuts LittleFS open/count/append
+  // cycles substantially compared with the old 24-page batch while keeping
+  // the temporary buffer tiny (256 bytes).
+  static constexpr int kPagesPerSlice = 64;
   uint32_t batch[kPagesPerSlice];
   uint32_t batchFirstPage = s_openScanPage + 1;
   uint32_t batchCount = 0;
