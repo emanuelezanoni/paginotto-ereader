@@ -315,9 +315,16 @@ static void handleRemoteBookDownload() {
   // briefly report false while the socket is idle, even though more data may
   // still arrive. available() plus the stall deadline is the reliable test.
   while (remaining != 0) {
+    if (!browser.connected()) {
+      Diagnostics::errorCode("remote_epub.browser_closed", (int)total);
+      break;
+    }
     size_t available = transport->available();
     if (available == 0) {
-      if (millis() - lastData > kRemoteBookStallMs) break;
+      if (millis() - lastData > kRemoteBookStallMs) {
+        Diagnostics::errorCode("remote_epub.stall_timeout", (int)total);
+        break;
+      }
       delay(2);
       continue;
     }
@@ -325,7 +332,12 @@ static void handleRemoteBookDownload() {
     size_t wanted = available < sizeof(buffer) ? available : sizeof(buffer);
     if (remaining >= 0 && wanted > (size_t)remaining) wanted = (size_t)remaining;
     int n = transport->read(buffer, wanted);
-    if (n <= 0 || browser.write(buffer, (size_t)n) != (size_t)n) {
+    if (n <= 0) {
+      Diagnostics::errorCode("remote_epub.remote_read_failed", (int)total);
+      break;
+    }
+    if (browser.write(buffer, (size_t)n) != (size_t)n) {
+      Diagnostics::errorCode("remote_epub.browser_write_failed", (int)total);
       break;
     }
     total += (uint32_t)n;
@@ -366,11 +378,15 @@ static bool catalogContainsFolderBook(const String& folder) {
 static const char kEpubUploadScript[] = R"EPUBJS(
 <script>
 (()=>{
-const form=document.getElementById('bookUpload'),input=document.getElementById('bookFile'),urlInput=document.getElementById('bookUrl'),urlButton=document.getElementById('bookUrlButton'),uploadStatus=document.getElementById('bookUploadStatus'),downloadStatus=document.getElementById('bookDownloadStatus'),downloadProgress=document.getElementById('bookDownloadProgress'),uploadProgress=document.getElementById('bookUploadProgress'),button=document.getElementById('bookUploadButton');
-let converted=null,choice=0,keepaliveTimer=null;
+const form=document.getElementById('bookUpload'),input=document.getElementById('bookFile'),urlInput=document.getElementById('bookUrl'),urlButton=document.getElementById('bookUrlButton'),uploadStatus=document.getElementById('bookUploadStatus'),downloadStatus=document.getElementById('bookDownloadStatus'),downloadProgress=document.getElementById('bookDownloadProgress'),uploadProgress=document.getElementById('bookUploadProgress'),button=document.getElementById('bookUploadButton'),operationOverlay=document.getElementById('bookOperationOverlay'),operationTitle=document.getElementById('bookOperationTitle'),operationMessage=document.getElementById('bookOperationMessage'),operationCancel=document.getElementById('bookOperationCancel');
+let converted=null,choice=0,keepaliveTimer=null,operationController=null,activeXhr=null,operationCancelled=false;
+const setControlsDisabled=disabled=>{input.disabled=disabled;urlInput.disabled=disabled;urlButton.disabled=disabled;button.disabled=disabled;};
+const beginOperation=(title,message)=>{operationCancelled=false;operationTitle.textContent=title;operationMessage.textContent=message;operationOverlay.hidden=false;setControlsDisabled(true);};
+const endOperation=()=>{operationOverlay.hidden=true;operationController=null;activeXhr=null;setControlsDisabled(false);};
+const cancelOperation=()=>{operationCancelled=true;choice++;if(operationController)operationController.abort();if(activeXhr)activeXhr.abort();stopKeepalive();operationMessage.textContent='Operation cancelled.';endOperation();uploadStatus.textContent='Operation cancelled.';downloadStatus.textContent='Operation cancelled.';};
 const startKeepalive=()=>{if(keepaliveTimer!==null)return;const ping=()=>{fetch('/keepalive',{cache:'no-store'}).catch(()=>{});};ping();keepaliveTimer=setInterval(ping,30000);};
 const stopKeepalive=()=>{if(keepaliveTimer!==null){clearInterval(keepaliveTimer);keepaliveTimer=null;}};
-const fail=(m,target=uploadStatus)=>{stopKeepalive();converted=null;target.textContent='EPUB conversion failed: '+m;button.disabled=true;};
+const fail=(m,target=uploadStatus)=>{stopKeepalive();converted=null;endOperation();target.textContent='EPUB conversion failed: '+m;button.disabled=true;};
 const showSelected=file=>{try{const dt=new DataTransfer();dt.items.add(file);input.files=dt.files;}catch(_){/* visual status remains the fallback */}};
 const u16=(a,o)=>a[o]|a[o+1]<<8, u32=(a,o)=>(u16(a,o)|u16(a,o+2)<<16)>>>0;
 const name=(a,o,n)=>new TextDecoder('utf-8').decode(a.subarray(o,o+n));
@@ -412,12 +428,13 @@ async function convert(file){
  if(!sections.length)throw Error('no readable XHTML/HTML spine content');const text=sections.join('\n\n').replace(/\n{3,}/g,'\n\n');if(!text)throw Error('empty EPUB');
  const filename=(file.name.replace(/\.epub$/i,'')||'book')+'.txt';return new File([text],filename,{type:'text/plain;charset=utf-8'});
 }
-const prepare=async(file,selected,fromOnline)=>{startKeepalive();if(fromOnline)downloadStatus.textContent='Converting EPUB…';else uploadStatus.textContent='Converting EPUB…';uploadProgress.hidden=false;uploadProgress.removeAttribute('value');button.disabled=true;try{const result=await convert(file);if(selected!==choice)return;converted=result;showSelected(converted);uploadProgress.hidden=true;uploadStatus.textContent='Selected file: '+converted.name+' ('+converted.size.toLocaleString()+' bytes)';if(fromOnline)downloadStatus.textContent='Download complete. EPUB converted and ready to upload.';button.disabled=false;stopKeepalive();}catch(e){uploadProgress.hidden=true;if(selected===choice)fail(e&&e.message?e.message:'invalid EPUB',fromOnline?downloadStatus:uploadStatus);}};
-input.addEventListener('change',async()=>{const file=input.files[0],selected=++choice;converted=null;button.disabled=false;uploadProgress.hidden=true;if(!file){stopKeepalive();uploadStatus.textContent='';return;}if(!/\.epub$/i.test(file.name)){stopKeepalive();uploadStatus.textContent='Selected file: '+file.name;return;}await prepare(file,selected,false);});
+const prepare=async(file,selected,fromOnline)=>{startKeepalive();if(fromOnline)downloadStatus.textContent='Converting EPUB…';else uploadStatus.textContent='Converting EPUB…';uploadProgress.hidden=false;uploadProgress.removeAttribute('value');try{const result=await convert(file);if(selected!==choice)return;converted=result;showSelected(converted);uploadProgress.hidden=true;uploadStatus.textContent='Selected file: '+converted.name+' ('+converted.size.toLocaleString()+' bytes)';if(fromOnline)downloadStatus.textContent='Download complete. EPUB converted and ready to upload.';stopKeepalive();endOperation();}catch(e){uploadProgress.hidden=true;if(selected===choice&&!operationCancelled)fail(e&&e.message?e.message:'invalid EPUB',fromOnline?downloadStatus:uploadStatus);}};
+input.addEventListener('change',async()=>{const file=input.files[0],selected=++choice;converted=null;uploadProgress.hidden=true;if(!file){stopKeepalive();uploadStatus.textContent='';return;}if(!/\.epub$/i.test(file.name)){stopKeepalive();uploadStatus.textContent='Selected file: '+file.name;return;}beginOperation('Converting EPUB…','The interface is locked while the EPUB is converted.');await prepare(file,selected,false);});
  const readDownload=async(response,offset,chunks,totalHint)=>{const advertised=Number(response.headers.get('X-Remote-Total-Length'))||totalHint||Number(response.headers.get('Content-Length'))||0,reader=response.body&&response.body.getReader();let loaded=offset;if(!reader){try{const blob=await response.blob();if(blob.size)chunks.push(blob);loaded+=blob.size;return {loaded,total:advertised};}catch(e){e.loaded=loaded;e.total=advertised;throw e;}}downloadProgress.hidden=false;downloadProgress.max=advertised||1;downloadProgress.value=offset;try{for(;;){const part=await reader.read();if(part.done)break;chunks.push(part.value);loaded+=part.value.byteLength;if(advertised){downloadProgress.value=loaded;downloadStatus.textContent='Downloading EPUB… '+Math.round(loaded*100/advertised)+'%';}else downloadStatus.textContent='Downloading EPUB… '+loaded.toLocaleString()+' bytes';}}catch(e){e.loaded=loaded;e.total=advertised;throw e;}return {loaded,total:advertised};};
- const fetchRemoteWithResume=async raw=>{let chunks=[],offset=0,total=0,lastError=null;for(let attempt=1;attempt<=6;attempt++){try{downloadStatus.textContent=offset===0?(attempt===1?'Connecting to remote download…':'Retrying remote download… ('+attempt+'/6)'):'Resuming remote download… '+Math.round(offset*100/(total||offset+1))+'%';const response=await fetch('/download-url',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'url='+encodeURIComponent(raw)+'&offset='+offset});if(!response.ok){const message=await response.text(),error=Error(message||('download failed (HTTP '+response.status+')'));error.httpStatus=response.status;throw error;}const state=await readDownload(response,offset,chunks,total);total=state.total||total;if(!total||state.loaded===total)return new Blob(chunks,{type:response.headers.get('Content-Type')||'application/epub+zip'});if(state.loaded>offset){offset=state.loaded;continue;}throw Error('remote download made no progress');}catch(e){lastError=e;if(e&&e.loaded>offset){offset=e.loaded;total=e.total||total;}if(e&&e.httpStatus===409&&offset>0){chunks=[];offset=0;total=0;continue;}if(attempt<6){downloadStatus.textContent=offset>0?'Download interrupted. Resuming…':'Download interrupted. Retrying…';await new Promise(resolve=>setTimeout(resolve,1000*Math.min(attempt,3)));}}}throw lastError||Error('download failed');};
- urlButton.addEventListener('click',async()=>{const raw=urlInput.value.trim(),selected=++choice;converted=null;button.disabled=true;urlButton.disabled=true;downloadProgress.hidden=true;if(!/^https?:\/\//i.test(raw)){if(selected===choice)fail('enter a valid HTTP(S) EPUB URL',downloadStatus);urlButton.disabled=false;return;}startKeepalive();try{const blob=await fetchRemoteWithResume(raw);const url=new URL(raw),part=decodeURIComponent(url.pathname.split('/').pop()||'book.epub');const filename=/\.epub$/i.test(part)?part:part+'.epub';await prepare(new File([blob],filename,{type:'application/epub+zip'}),selected,true);}catch(e){if(selected===choice)fail(e&&e.message?e.message:'download failed',downloadStatus);}finally{urlButton.disabled=false;}});
- form.addEventListener('submit',e=>{if(!converted)return;e.preventDefault();startKeepalive();button.disabled=true;uploadProgress.hidden=false;uploadProgress.max=converted.size;uploadProgress.value=0;uploadStatus.textContent='Uploading '+converted.name+'… 0%';const fd=new FormData();fd.append('file',converted,converted.name);const xhr=new XMLHttpRequest();xhr.open('POST','/upload');xhr.upload.onprogress=ev=>{if(ev.lengthComputable){uploadProgress.value=ev.loaded;uploadStatus.textContent='Uploading '+converted.name+'… '+Math.round(ev.loaded*100/ev.total)+'%';}};xhr.onload=()=>{stopKeepalive();if(xhr.status<200||xhr.status>=300){uploadStatus.textContent='Upload failed: HTTP '+xhr.status;button.disabled=false;return;}document.open();document.write(xhr.responseText);document.close();};xhr.onerror=()=>{stopKeepalive();uploadStatus.textContent='Upload failed: network error';button.disabled=false;};xhr.onabort=()=>{stopKeepalive();uploadStatus.textContent='Upload cancelled';button.disabled=false;};xhr.send(fd);});
+ const fetchRemoteWithResume=async raw=>{let chunks=[],offset=0,total=0,lastError=null;for(let attempt=1;attempt<=6;attempt++){try{downloadStatus.textContent=offset===0?(attempt===1?'Connecting to remote download…':'Retrying remote download… ('+attempt+'/6)'):'Resuming remote download… '+Math.round(offset*100/(total||offset+1))+'%';const response=await fetch('/download-url',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'url='+encodeURIComponent(raw)+'&offset='+offset,signal:operationController&&operationController.signal});if(!response.ok){const message=await response.text(),error=Error(message||('download failed (HTTP '+response.status+')'));error.httpStatus=response.status;throw error;}const state=await readDownload(response,offset,chunks,total);total=state.total||total;if(!total||state.loaded===total)return new Blob(chunks,{type:response.headers.get('Content-Type')||'application/epub+zip'});if(state.loaded>offset){offset=state.loaded;continue;}throw Error('remote download made no progress');}catch(e){lastError=e;if(operationCancelled)throw Error('operation cancelled');if(e&&e.loaded>offset){offset=e.loaded;total=e.total||total;}if(e&&e.httpStatus===409&&offset>0){chunks=[];offset=0;total=0;continue;}if(attempt<6){downloadStatus.textContent=offset>0?'Download interrupted. Resuming…':'Download interrupted. Retrying…';await new Promise(resolve=>setTimeout(resolve,1000*Math.min(attempt,3)));}}}throw lastError||Error('download failed');};
+ urlButton.addEventListener('click',async()=>{const raw=urlInput.value.trim(),selected=++choice;converted=null;downloadProgress.hidden=true;if(!/^https?:\/\//i.test(raw)){fail('enter a valid HTTP(S) EPUB URL',downloadStatus);return;}beginOperation('Downloading EPUB…','The interface is locked while the remote book is downloaded.');operationController=new AbortController();startKeepalive();try{const blob=await fetchRemoteWithResume(raw);const url=new URL(raw),part=decodeURIComponent(url.pathname.split('/').pop()||'book.epub'),filename=/\.epub$/i.test(part)?part:part+'.epub';await prepare(new File([blob],filename,{type:'application/epub+zip'}),selected,true);}catch(e){if(!operationCancelled)fail(e&&e.message?e.message:'download failed',downloadStatus);}finally{if(!operationCancelled)endOperation();}});
+ form.addEventListener('submit',e=>{if(!converted)return;e.preventDefault();beginOperation('Uploading book…','The interface is locked while the converted book is uploaded.');startKeepalive();uploadProgress.hidden=false;uploadProgress.max=converted.size;uploadProgress.value=0;uploadStatus.textContent='Uploading '+converted.name+'… 0%';const fd=new FormData();fd.append('file',converted,converted.name);const xhr=new XMLHttpRequest();activeXhr=xhr;xhr.open('POST','/upload');xhr.upload.onprogress=ev=>{if(ev.lengthComputable){uploadProgress.value=ev.loaded;uploadStatus.textContent='Uploading '+converted.name+'… '+Math.round(ev.loaded*100/ev.total)+'%';}};xhr.onload=()=>{stopKeepalive();if(xhr.status<200||xhr.status>=300){endOperation();uploadStatus.textContent='Upload failed: HTTP '+xhr.status;return;}document.open();document.write(xhr.responseText);document.close();};xhr.onerror=()=>{stopKeepalive();endOperation();uploadStatus.textContent='Upload failed: network error';};xhr.onabort=()=>{stopKeepalive();if(!operationCancelled){endOperation();uploadStatus.textContent='Upload cancelled';}};xhr.send(fd);});
+ operationCancel.addEventListener('click',cancelOperation);
 })();
 </script>
 )EPUBJS";
@@ -464,6 +481,11 @@ static void handleFiles() {
     "<progress id='bookUploadProgress' max='1' value='0' hidden style='width:100%;margin-top:8px'></progress>"
     "<div class='actions'><button id='bookUploadButton' type='submit'>" D_WEB_UPLOAD_BOOK_BUTTON "</button></div>"
     "</form></div>";
+
+  out += "<div id='bookOperationOverlay' class='operation-overlay' hidden aria-live='polite'>"
+         "<div class='operation-dialog'><h2 id='bookOperationTitle'>Working…</h2>"
+         "<p id='bookOperationMessage'>Please wait while the book is processed.</p>"
+         "<button id='bookOperationCancel' type='button' class='btn danger'>Cancel</button></div></div>";
 
   out += kEpubUploadScript;
 

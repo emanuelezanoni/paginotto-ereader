@@ -142,7 +142,13 @@ static String uploadReviewPage() {
   inner += "</select><div class='hint'>Choose the destination folder before confirming.</div>"
            "<div class='actions review-actions-bottom'><button type='submit'>Done</button>"
            "<button type='submit' class='btn danger' formaction='/upload-cancel' formnovalidate onclick=\"return confirm('Cancel and delete this uploaded book?')\">Cancel</button></div></form></div>";
-  return successPage("Book uploaded", "Review and save", "Upload complete", inner, "books");
+  String banner = "Upload complete";
+  if (server.hasArg("notice")) {
+    String notice = server.arg("notice");
+    if (notice == "renamed") banner = "Book name saved";
+    else if (notice == "edited") banner = "Book text saved";
+  }
+  return successPage("Book uploaded", "Review and save", banner, inner, "books");
 }
 
 static void handleUploadReview() {
@@ -209,7 +215,8 @@ static void handleUploadFinalize() {
   s_book.finalName = leaf;
   loadBooks();
   if (server.hasArg("stay")) {
-    server.sendHeader("Location", "/upload-review");
+    server.sendHeader("Location", String("/upload-review?notice=") +
+                                (newPath != oldPath ? "renamed" : "review"));
     server.send(302, "text/plain", "");
     return;
   }

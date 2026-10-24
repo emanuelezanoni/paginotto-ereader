@@ -205,6 +205,7 @@ static void handleEditBookDone() {
   String location;
   if (server.hasArg("return") && server.arg("return") == "/upload-review") {
     location = "/upload-review";
+    location += "?notice=edited";
   } else {
     location = String("/read?id=")
              + String(server.hasArg("id") ? server.arg("id") : "0");
