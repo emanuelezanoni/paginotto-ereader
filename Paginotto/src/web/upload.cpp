@@ -1,6 +1,7 @@
 #include "src/web/upload.h"
 
 #include "src/config.h"
+#include "src/diagnostics/log.h"
 #include "src/state.h"
 #include "src/pure/paths.h"
 #include "src/pure/text_util.h"
@@ -28,6 +29,9 @@ struct BookUpload {
   // correctly. Reset in UPLOAD_FILE_START. See pure/text_util.h.
   bool   compactLastWasSpace = false;
   int    compactNewlineCount = 0;
+  size_t receivedBytes = 0;
+  size_t writtenBytes = 0;
+  size_t nextProgressBytes = 256UL * 1024UL;
 };
 
 struct SleepUpload {
@@ -239,6 +243,7 @@ static void handleUploadBookStream() {
   HTTPUpload& up = server.upload();
 
   if (up.status == UPLOAD_FILE_START) {
+    Diagnostics::checkpoint("upload.begin");
     s_book.ok = false;
     s_book.error = "";
     s_book.finalName = "";
@@ -247,6 +252,9 @@ static void handleUploadBookStream() {
     s_book.tmpPath = "";
     s_book.compactLastWasSpace = false;
     s_book.compactNewlineCount = 0;
+    s_book.receivedBytes = 0;
+    s_book.writtenBytes = 0;
+    s_book.nextProgressBytes = 256UL * 1024UL;
 
     loadBooks();   // defensive — protects MAX_BOOKS check from a stale catalog
     if (g_library.bookCount >= MAX_BOOKS) {
@@ -257,9 +265,17 @@ static void handleUploadBookStream() {
     size_t freeBytes = fsFreeBytesSafe();
     if (freeBytes < 8192) {
       s_book.error = D_WEB_ERR_NOT_ENOUGH_SPACE;
+      Diagnostics::errorCode("upload.no_space", (int)freeBytes);
       return;
     }
     s_book.maxBytes = freeBytes;
+    char detail[112];
+    snprintf(detail, sizeof(detail),
+             "upload.request total=%lu fsfree=%lu limit=%lu",
+             (unsigned long)up.totalSize,
+             (unsigned long)freeBytes,
+             (unsigned long)s_book.maxBytes);
+    Diagnostics::trace(detail);
 
     // Keep uploaded stems within the catalog name buffer as well as the
     // filesystem path buffer. The reader can display only 29 title chars;
@@ -286,8 +302,10 @@ static void handleUploadBookStream() {
   else if (up.status == UPLOAD_FILE_WRITE) {
     if (s_book.error.length() > 0) return;
     if (s_book.tmpFile && up.currentSize > 0) {
+      s_book.receivedBytes += up.currentSize;
       if (s_book.tmpFile.size() + up.currentSize > s_book.maxBytes) {
         s_book.error = D_WEB_ERR_WRITE_FAILED;
+        Diagnostics::errorCode("upload.write_failed", (int)s_book.receivedBytes);
         s_book.tmpFile.close();
         if (s_book.tmpPath.length() > 0 && FS.exists(s_book.tmpPath)) FS.remove(s_book.tmpPath);
         return;
@@ -309,10 +327,22 @@ static void handleUploadBookStream() {
                               /*trimTail=*/false);
         size_t cleanedLen = cleaned.length();
         size_t wrote = s_book.tmpFile.print(cleaned);
+        s_book.writtenBytes += wrote;
+        if (s_book.receivedBytes >= s_book.nextProgressBytes) {
+          char detail[112];
+          snprintf(detail, sizeof(detail),
+                   "upload.progress received=%lu written=%lu fsfree=%lu",
+                   (unsigned long)s_book.receivedBytes,
+                   (unsigned long)s_book.writtenBytes,
+                   (unsigned long)fsFreeBytesSafe());
+          Diagnostics::trace(detail);
+          s_book.nextProgressBytes += 256UL * 1024UL;
+        }
         if (wrote != cleanedLen) {
           // Short write — out of space or FS error. Abort so a truncated
           // file isn't promoted to a finalized book.
           s_book.error = D_WEB_ERR_WRITE_FAILED;
+          Diagnostics::errorCode("upload.write_failed", (int)s_book.receivedBytes);
           s_book.tmpFile.close();
           if (s_book.tmpPath.length() > 0
               && FS.exists(s_book.tmpPath)) {
@@ -323,7 +353,6 @@ static void handleUploadBookStream() {
     }
   }
   else if (up.status == UPLOAD_FILE_END) {
-    if (s_book.error.length() > 0 && !s_book.tmpFile) return;
     if (s_book.tmpFile) {
       if (s_book.pendingUtf8Tail.length() > 0) {
         String cleaned = normalizeTypography(s_book.pendingUtf8Tail);
@@ -333,8 +362,10 @@ static void handleUploadBookStream() {
                               /*trimTail=*/true);
         size_t cleanedLen = cleaned.length();
         size_t wrote = s_book.tmpFile.print(cleaned);
+        s_book.writtenBytes += wrote;
         if (wrote != cleanedLen && s_book.error.length() == 0) {
           s_book.error = D_WEB_ERR_WRITE_FAILED;
+          Diagnostics::errorCode("upload.write_failed", (int)s_book.receivedBytes);
         }
         s_book.pendingUtf8Tail = "";
       }
@@ -368,6 +399,16 @@ static void handleUploadBookStream() {
       if (s_book.error.length() == 0) s_book.error = D_WEB_UPLOAD_ERR_FALLBACK;
       s_book.tmpPath = "";
     }
+    char detail[112];
+    snprintf(detail, sizeof(detail),
+             "upload.end received=%lu written=%lu total=%lu fsfree=%lu result=%s",
+             (unsigned long)s_book.receivedBytes,
+             (unsigned long)s_book.writtenBytes,
+             (unsigned long)up.totalSize,
+             (unsigned long)fsFreeBytesSafe(),
+             s_book.ok ? "ok" : "failed");
+    Diagnostics::trace(detail);
+    Diagnostics::checkpoint("upload.end");
   }
   else if (up.status == UPLOAD_FILE_ABORTED) {
     if (s_book.tmpFile) s_book.tmpFile.close();
@@ -376,6 +417,7 @@ static void handleUploadBookStream() {
     s_book.tmpPath = "";
     s_book.ok = false;
     s_book.error = D_WEB_ERR_UPLOAD_ABORTED;
+    Diagnostics::errorCode("upload.aborted", (int)s_book.receivedBytes);
   }
 }
 
