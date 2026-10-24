@@ -386,16 +386,6 @@ static void handleFiles() {
 
   out += "<div class='card'><p class='muted'>" D_WEB_BOOKS_PATHS_DESC "</p></div>";
 
-  out +=
-    "<div class='card'><h2>" D_WEB_UPLOAD_BOOK_HEADING "</h2>"
-    "<p class='muted'>" D_WEB_UPLOAD_BOOK_DESC "</p>"
-    "<form id='bookUpload' method='POST' action='/upload' enctype='multipart/form-data' accept-charset='UTF-8' style='margin-top:14px'>"
-    "<input id='bookFile' type='file' name='file' accept='.txt,text/plain,.epub,application/epub+zip'>"
-    "<p id='bookUploadStatus' class='muted' aria-live='polite'></p>"
-    "<progress id='bookUploadProgress' max='1' value='0' hidden style='width:100%;margin-top:8px'></progress>"
-    "<div class='actions'><button id='bookUploadButton' type='submit'>" D_WEB_UPLOAD_BOOK_BUTTON "</button></div>"
-    "</form></div>";
-
   out += "<div class='card'><h2>" D_WEB_ONLINE_BOOKS_HEADING "</h2>"
          "<p class='muted'>" D_WEB_ONLINE_BOOKS_DESC "</p>";
   String onlineLibraryUrl = ONLINE_BOOK_LIBRARY_URL;
@@ -417,6 +407,16 @@ static void handleFiles() {
     out += "<p class='muted'>" D_WEB_ONLINE_BOOKS_WIFI_REQUIRED "</p>";
   }
   out += "</div>";
+
+  out +=
+    "<div class='card'><h2>" D_WEB_UPLOAD_BOOK_HEADING "</h2>"
+    "<p class='muted'>" D_WEB_UPLOAD_BOOK_DESC "</p>"
+    "<form id='bookUpload' method='POST' action='/upload' enctype='multipart/form-data' accept-charset='UTF-8' style='margin-top:14px'>"
+    "<input id='bookFile' type='file' name='file' accept='.txt,text/plain,.epub,application/epub+zip'>"
+    "<p id='bookUploadStatus' class='muted' aria-live='polite'></p>"
+    "<progress id='bookUploadProgress' max='1' value='0' hidden style='width:100%;margin-top:8px'></progress>"
+    "<div class='actions'><button id='bookUploadButton' type='submit'>" D_WEB_UPLOAD_BOOK_BUTTON "</button></div>"
+    "</form></div>";
 
   out += kEpubUploadScript;
 

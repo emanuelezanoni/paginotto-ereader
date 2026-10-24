@@ -127,6 +127,8 @@ static String uploadReviewPage() {
            "<label for='uploadedBookName'>File name</label>"
            "<input id='uploadedBookName' type='text' name='name' value='" + htmlEscape(displayName) + "' maxlength='" + String(titleLimit) + "' required autocomplete='off' autocapitalize='off' spellcheck='false' oninput=\"document.getElementById('uploadedBookNameCount').textContent=this.value.length\">"
            "<div class='hint'><span id='uploadedBookNameCount'>" + String(displayName.length()) + "</span>/" + String(titleLimit) + " characters. The .txt extension is added automatically.</div>"
+           "<div class='actions review-actions-top'><button type='submit' name='stay' value='1' class='btn secondary'>Rename</button>"
+           "<a class='btn secondary' href='/edit-text?id=" + String(id) + "&return=/upload-review'>Edit text</a></div>"
            "<label for='uploadedBookFolder'>Folder</label><select id='uploadedBookFolder' name='folder'><option value=''" +
            (folder.length() == 0 ? String(" selected") : String()) +
            ">Library root</option>";
@@ -138,10 +140,8 @@ static String uploadReviewPage() {
              htmlEscape(folderLeafLabel(option)) + "</option>";
   }
   inner += "</select><div class='hint'>Choose the destination folder before confirming.</div>"
-           "<div class='actions review-actions'><button type='submit' name='stay' value='1' class='btn secondary'>Rename</button>"
-           "<button type='submit'>Done</button>"
-           "<button type='submit' class='btn secondary' formaction='/upload-cancel' formnovalidate onclick=\"return confirm('Cancel and delete this uploaded book?')\">Cancel</button>"
-           "<a class='btn secondary' href='/edit-text?id=" + String(id) + "&return=/upload-review'>Edit text</a></div></form></div>";
+           "<div class='actions review-actions-bottom'><button type='submit'>Done</button>"
+           "<button type='submit' class='btn danger' formaction='/upload-cancel' formnovalidate onclick=\"return confirm('Cancel and delete this uploaded book?')\">Cancel</button></div></form></div>";
   return successPage("Book uploaded", "Review and save", "Upload complete", inner, "books");
 }
 
