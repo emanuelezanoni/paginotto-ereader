@@ -582,7 +582,7 @@ static void handleFiles() {
   for (int i = 0; i < g_library.bookCount; i++) {
     if (g_library.books[i].folder[0] != '\0') continue;
     rootHasBooks = true;
-    out += "<div class='tree-book'><span class='tree-mark tree-book-mark'>&#9654;</span><a href='#book-card-" + String(i) + "'>";
+    out += "<div class='tree-book'><span class='tree-book-mark' aria-hidden='true'></span><a href='#book-card-" + String(i) + "'>";
     out += htmlEscape(String(g_library.books[i].name));
     out += "</a><span class='muted'>" + String((int)g_library.books[i].size) + D_WEB_BOOK_BYTES_LABEL "</span></div>";
   }
@@ -603,7 +603,7 @@ static void handleFiles() {
       String bookFolder = String(g_library.books[i].folder);
       if (!(bookFolder == folder || bookFolder.startsWith(prefix))) continue;
       folderHasBooks = true;
-      out += "<div class='tree-book'><span class='tree-mark tree-book-mark'>&#9654;</span><a href='#book-card-" + String(i) + "'>";
+      out += "<div class='tree-book'><span class='tree-book-mark' aria-hidden='true'></span><a href='#book-card-" + String(i) + "'>";
       out += htmlEscape(String(g_library.books[i].name));
       out += "</a><span class='muted'>" + String((int)g_library.books[i].size) + D_WEB_BOOK_BYTES_LABEL "</span></div>";
     }

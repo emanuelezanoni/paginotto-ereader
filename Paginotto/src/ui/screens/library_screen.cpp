@@ -152,9 +152,17 @@ static void drawSystemMenuRow(int yBaseline, const String& label,
   const int iconX = UI_LIST_LEFT + 1;
   const int arrowY = yBaseline - 6;
 
-  gfx.fillTriangle(iconX + 2, arrowY - 4,
-                   iconX + 2, arrowY + 4,
-                   iconX + 11, arrowY, 1);
+  // Keep the marker box fixed, but make the selected state visibly heavier.
+  // The label origin remains unchanged, so rows never reflow horizontally.
+  if (selected) {
+    gfx.fillTriangle(iconX + 1, arrowY - 5,
+                     iconX + 1, arrowY + 5,
+                     iconX + 12, arrowY, 1);
+  } else {
+    gfx.fillTriangle(iconX + 3, arrowY - 3,
+                     iconX + 3, arrowY + 3,
+                     iconX + 10, arrowY, 1);
+  }
   if (selected) Font::useBold();
   else          Font::useBody();
 
