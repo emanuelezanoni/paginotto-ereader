@@ -187,10 +187,8 @@ static void handleSettingsPost() {
       (g_currentScreen == &g_readerScreen) &&
       g_bookview.book.isOpen();
   uint32_t savedByte = 0;
-  if (readerActive
-      && g_bookview.cursor.pageIndex >= 0
-      && g_bookview.cursor.pageIndex < g_bookview.pages.count) {
-    savedByte = g_bookview.pages.offsets[g_bookview.cursor.pageIndex];
+  if (readerActive && g_bookview.cursor.pageIndex >= 0) {
+    savedByte = g_bookview.pages.currentOffset;
   }
 
   bool layoutChanged = applySettingsForm();
@@ -202,8 +200,7 @@ static void handleSettingsPost() {
   // contains the saved byte offset. Then render so the user sees the new
   // layout immediately when they return to the device.
   if (readerActive && layoutChanged) {
-    g_bookview.pages.count = 1;
-    g_bookview.pages.offsets[0] = 0;
+    g_bookview.pages.currentOffset = 0;
     g_bookview.pages.eofReached = false;
     int newPage = findPageForOffset(savedByte);
     if (newPage < 0) newPage = 0;

@@ -77,9 +77,8 @@ void cancelBookOpening();
 bool advancePage();
 bool retreatPage();
 
-// Find which page of the active book contains `targetOffset` — the largest
-// N where `g_bookview.pages.offsets[N] <= targetOffset`. Paginates the
-// active book forward as needed (so the page table grows up to the answer).
+// Find which page of the active book contains `targetOffset`. Paginates the
+// active book forward as needed without allocating a page-offset table.
 // Used to resume from a saved byte offset.
 int findPageForOffset(uint32_t targetOffset);
 

@@ -82,44 +82,25 @@ static bool openAndValidateCache(const String& path, size_t expectedSize,
 bool loadPageOffsetCacheForBook(const String& path, size_t expectedSize,
                                 const PageCacheLayout& layout,
                                 PageOffsetTable& out) {
-  File f;
-  uint16_t count = 0;
-  if (!openAndValidateCache(path, expectedSize, layout, f, count)) return false;
-  if (count > MAX_PAGES) { f.close(); return false; }
-
-  int loaded = 0;
-  for (uint16_t i = 0; i < count; i++) {
-    uint32_t off = 0;
-    if (f.read(reinterpret_cast<uint8_t*>(&off), sizeof(off)) != sizeof(off)) break;
-    out.offsets[i] = off;
-    loaded++;
-  }
-  f.close();
-
-  if (loaded == 0) return false;
-  out.count = loaded;
-  return true;
+  // Dense cache files from the old implementation are not bulk-loaded: doing
+  // so made the number of pages a hidden RAM limit. The reader now keeps only
+  // its current offset and paginates on demand.
+  (void)path;
+  (void)expectedSize;
+  (void)layout;
+  (void)out;
+  return false;
 }
 
 void savePageOffsetCacheForBook(const String& path, size_t fileSize,
                                 const PageCacheLayout& layout,
                                 const PageOffsetTable& in) {
-  if (in.count <= 1) return;
-
-  File f = FS.open(pageCachePathForBook(path), "w");
-  if (!f) return;
-
-  uint32_t magic = kPageCacheMagic;
-  uint32_t layoutVersion = encodeLayoutVersion(layout);
-  uint32_t size32 = (uint32_t)fileSize;
-  uint16_t count16 = (uint16_t)min(in.count, MAX_PAGES);
-
-  f.write(reinterpret_cast<const uint8_t*>(&magic), sizeof(magic));
-  f.write(reinterpret_cast<const uint8_t*>(&layoutVersion), sizeof(layoutVersion));
-  f.write(reinterpret_cast<const uint8_t*>(&size32), sizeof(size32));
-  f.write(reinterpret_cast<const uint8_t*>(&count16), sizeof(count16));
-  f.write(reinterpret_cast<const uint8_t*>(in.offsets), count16 * sizeof(uint32_t));
-  f.close();
+  // Compatibility hook. A streaming disk index will be written separately;
+  // never recreate the old RAM-sized dense table here.
+  (void)path;
+  (void)fileSize;
+  (void)layout;
+  (void)in;
 }
 
 int loadOffsetForPageFromDisk(const String& path, size_t expectedSize,

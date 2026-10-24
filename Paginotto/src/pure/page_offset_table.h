@@ -4,20 +4,11 @@
 #include "arduino_compat.h"
 #include "../config.h"
 
-// A book's "page index" — the in-memory map from page number to absolute
-// byte offset in the source file. Filled incrementally by the paginator as
-// the reader walks forward; persisted to flash as a `pc_<hash>.bin` file so
-// reopening a book doesn't have to re-paginate from scratch.
-//
-// `offsets[i]` is the start byte of page `i`. Valid entries are `[0, count)`.
-// `count == 0` means "empty / no entries yet" (caller will typically seed
-// `offsets[0] = 0` and set `count = 1` before reading).
-//
-// `eofReached` distinguishes "we haven't paginated this far yet" from
-// "there are no more pages." Without it, `pageIndex >= count` is ambiguous.
+// Reader pagination state. Page offsets are deliberately NOT stored as an
+// array in RAM: a pathological text file can contain an enormous number of
+// tiny pages. The reader keeps only the offset of the page currently shown.
 struct PageOffsetTable {
-  uint32_t offsets[MAX_PAGES];
-  int  count = 0;
+  uint32_t currentOffset = 0;
   bool eofReached = false;
 };
 
