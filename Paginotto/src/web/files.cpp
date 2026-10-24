@@ -445,10 +445,10 @@ static bool catalogContainsFolderBook(const String& folder) {
 static const char kEpubUploadScript[] = R"EPUBJS(
 <script>
 (()=>{
-const form=document.getElementById('bookUpload'),input=document.getElementById('bookFile'),urlInput=document.getElementById('bookUrl'),urlButton=document.getElementById('bookUrlButton'),uploadStatus=document.getElementById('bookUploadStatus'),downloadStatus=document.getElementById('bookDownloadStatus'),downloadProgress=document.getElementById('bookDownloadProgress'),uploadProgress=document.getElementById('bookUploadProgress'),button=document.getElementById('bookUploadButton'),operationOverlay=document.getElementById('bookOperationOverlay'),operationTitle=document.getElementById('bookOperationTitle'),operationMessage=document.getElementById('bookOperationMessage'),operationCancel=document.getElementById('bookOperationCancel');
+const form=document.getElementById('bookUpload'),input=document.getElementById('bookFile'),urlInput=document.getElementById('bookUrl'),urlButton=document.getElementById('bookUrlButton'),uploadStatus=document.getElementById('bookUploadStatus'),downloadStatus=document.getElementById('bookDownloadStatus'),downloadProgress=document.getElementById('bookDownloadProgress'),uploadProgress=document.getElementById('bookUploadProgress'),button=document.getElementById('bookUploadButton'),operationOverlay=document.getElementById('bookOperationOverlay'),operationTitle=document.getElementById('bookOperationTitle'),operationMessage=document.getElementById('bookOperationMessage'),operationStatus=document.getElementById('bookOperationStatus'),operationCancel=document.getElementById('bookOperationCancel');
 let converted=null,choice=0,keepaliveTimer=null,operationController=null,activeXhr=null,operationCancelled=false;
 const setControlsDisabled=disabled=>{input.disabled=disabled;urlInput.disabled=disabled;urlButton.disabled=disabled;button.disabled=disabled;};
-const beginOperation=(title,message)=>{operationCancelled=false;operationTitle.textContent=title;operationMessage.textContent=message;operationOverlay.hidden=false;setControlsDisabled(true);};
+const beginOperation=(title,message)=>{operationCancelled=false;downloadProgress.hidden=true;uploadProgress.hidden=true;operationStatus.textContent='';operationTitle.textContent=title;operationMessage.textContent=message;operationOverlay.hidden=false;setControlsDisabled(true);};
 const endOperation=()=>{operationOverlay.hidden=true;operationController=null;activeXhr=null;setControlsDisabled(false);};
 const clearSelectedFile=()=>{try{input.value='';}catch(_){} };
 const formatBytes=n=>{if(n<1024)return n+' B';if(n<1024*1024)return (n/1024).toFixed(1)+' KB';return (n/(1024*1024)).toFixed(1)+' MB';};
@@ -532,7 +532,6 @@ static void handleFiles() {
   out += "<label for='bookUrl'>" D_WEB_EPUB_URL_LABEL "</label>"
          "<input id='bookUrl' type='url' inputmode='url' size='80' style='width:100%' placeholder='" D_WEB_EPUB_URL_PLACEHOLDER "' autocomplete='url' spellcheck='false'>"
          "<p id='bookDownloadStatus' class='muted' aria-live='polite'></p>"
-         "<progress id='bookDownloadProgress' max='1' value='0' hidden style='width:100%;margin-top:8px'></progress>"
          "<div class='actions'><button id='bookUrlButton' type='button'";
   if (WiFi.status() != WL_CONNECTED) {
     out += " disabled";
@@ -549,13 +548,15 @@ static void handleFiles() {
     "<form id='bookUpload' method='POST' action='/upload' enctype='multipart/form-data' accept-charset='UTF-8' style='margin-top:14px'>"
     "<input id='bookFile' type='file' name='file' accept='.txt,text/plain,.epub,application/epub+zip'>"
     "<p id='bookUploadStatus' class='muted' aria-live='polite'></p>"
-    "<progress id='bookUploadProgress' max='1' value='0' hidden style='width:100%;margin-top:8px'></progress>"
     "<div class='actions'><button id='bookUploadButton' type='submit'>" D_WEB_UPLOAD_BOOK_BUTTON "</button></div>"
     "</form></div>";
 
   out += "<div id='bookOperationOverlay' class='operation-overlay' hidden aria-live='polite'>"
          "<div class='operation-dialog'><h2 id='bookOperationTitle'>Working…</h2>"
          "<p id='bookOperationMessage'>Please wait while the book is processed.</p>"
+         "<p id='bookOperationStatus' class='operation-status' aria-live='polite'></p>"
+         "<progress id='bookDownloadProgress' max='1' value='0' hidden></progress>"
+         "<progress id='bookUploadProgress' max='1' value='0' hidden></progress>"
          "<button id='bookOperationCancel' type='button' class='btn danger'>Cancel</button></div></div>";
 
   out += kEpubUploadScript;

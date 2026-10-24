@@ -104,6 +104,8 @@ static const char kStyleCss[] PROGMEM =
   ".operation-overlay{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:20px;background:rgba(31,35,40,.42)}"
   ".operation-dialog{width:min(420px,100%);padding:22px;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.2);text-align:center}"
   ".operation-dialog p{margin:8px 0 16px;color:var(--muted)}"
+  ".operation-dialog progress{display:block;width:100%;height:10px;margin:14px 0 18px}"
+  ".operation-dialog .operation-status{min-height:20px;margin-bottom:8px}"
   ".wifi-scan-list{display:grid;gap:8px;margin-top:10px}"
   ".wifi-scan-item{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid var(--line-soft);border-radius:10px;background:var(--stat-bg)}"
   "button,.btn{display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:10px;background:var(--btn-bg);color:var(--btn-fg);padding:10px 14px;font:600 14px system-ui,sans-serif;text-decoration:none;cursor:pointer}"
