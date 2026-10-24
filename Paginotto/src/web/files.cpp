@@ -70,6 +70,19 @@ static constexpr uint16_t kRemoteBookTimeoutMs = 5000U;
 // Interrupted transfers are resumed by the browser with HTTP Range requests.
 static constexpr uint32_t kRemoteBookStallMs = 30000UL;
 
+static void traceRemoteBookState(const char* event, uint32_t offset,
+                                 int expected, uint32_t resumeOffset,
+                                 uint32_t startedMs) {
+  char detail[112];
+  snprintf(detail, sizeof(detail),
+           "remote_epub.%s offset=%lu expected=%ld resume=%lu fsfree=%lu elapsed=%lu",
+           event, (unsigned long)offset, (long)expected,
+           (unsigned long)resumeOffset, (unsigned long)fsFreeBytesSafe(),
+           (unsigned long)(millis() - startedMs));
+  // Runtime-only: do not write progress samples to NVS.
+  Diagnostics::trace(detail);
+}
+
 static void configureRemoteBookClient(WiFiClientSecure& client) {
   // This endpoint accepts arbitrary user-supplied download hosts. The
   // certificate bundle path was crashing inside HTTPClient::GET() on the
@@ -126,6 +139,7 @@ static bool readRemoteLine(Stream& source, String& line) {
 }
 
 static void handleRemoteBookDownload() {
+  const uint32_t remoteStartedMs = millis();
   Diagnostics::checkpoint("remote_epub.begin");
   if (WiFi.status() != WL_CONNECTED) {
     Diagnostics::warning("remote_epub.no_station");
@@ -156,6 +170,7 @@ static void handleRemoteBookDownload() {
     }
     resumeOffset = strtoul(offsetText.c_str(), nullptr, 10);
   }
+  traceRemoteBookState("request", 0, -1, resumeOffset, remoteStartedMs);
 
   bool secure = false;
   String host;
@@ -297,6 +312,7 @@ static void handleRemoteBookDownload() {
   if (remoteTotal >= 0) {
     server.sendHeader("X-Remote-Total-Length", String(remoteTotal));
   }
+  traceRemoteBookState("headers", 0, remaining, resumeOffset, remoteStartedMs);
   server.send(200, contentType, "");
   Diagnostics::checkpoint("remote_epub.headers_sent");
 
@@ -309,6 +325,7 @@ static void handleRemoteBookDownload() {
   static uint8_t buffer[4096];
   uint32_t total = 0;
   uint32_t lastData = millis();
+  uint32_t nextProgressTrace = 256UL * 1024UL;
   Diagnostics::checkpoint("remote_epub.streaming");
 
   // Do not use connected() as the loop condition: on ESP TLS clients it can
@@ -343,6 +360,11 @@ static void handleRemoteBookDownload() {
     total += (uint32_t)n;
     if (remaining >= 0) remaining -= n;
     if (total > kRemoteBookMaxBytes) break;
+    if (total >= nextProgressTrace) {
+      traceRemoteBookState("progress", total, expectedLength,
+                           resumeOffset, remoteStartedMs);
+      nextProgressTrace += 256UL * 1024UL;
+    }
     lastData = millis();
     yield();
   }
@@ -351,6 +373,7 @@ static void handleRemoteBookDownload() {
   if (expectedLength >= 0 && total != (uint32_t)expectedLength) {
     Diagnostics::errorCode("remote_epub.incomplete", (int)total);
   }
+  traceRemoteBookState("end", total, expectedLength, resumeOffset, remoteStartedMs);
   Diagnostics::checkpoint("remote_epub.end");
 }
 
