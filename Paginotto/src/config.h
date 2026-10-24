@@ -60,7 +60,11 @@ static const int MAX_BOOKS = 80;
 static const int MAX_FOLDERS = 32;
 static const int MAX_FOLDER_PATH = 63;  // chars, excluding null
 static const int MAX_FOLDER_NAME_BYTES = 24;
-static const int MAX_PAGES = 10000;
+// Keep enough entries for large plain-text books. 10,000 was an artificial
+// ceiling: readers that exceeded it appeared to reach EOF even when bytes
+// remained in the file. The offset table is static, so this is deliberately
+// increased only to 16,000 rather than made unbounded.
+static const int MAX_PAGES = 16000;
 static const int MAX_LIBRARY_ENTRIES = (MAX_BOOKS * 2) + (MAX_FOLDERS * 2) + 8;
 // Conservative character limit for book labels in the e-ink library list.
 // The renderer appends an ellipsis when a label reaches this limit.

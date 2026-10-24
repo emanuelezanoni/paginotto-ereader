@@ -41,6 +41,17 @@ void ReaderScreen::draw() {
 
 void ReaderScreen::onButton(const ButtonEvent& e) {
   Diagnostics::trace("reader.screen.button");
+  if (isOpeningBook()) {
+    if (e.kind == ButtonEvent::Triple) {
+      // LibraryScreen::onEnter() performs the full reader reset after the
+      // transition. Stop the incremental scan immediately so no stale file
+      // handle survives the cancel gesture.
+      cancelBookOpening();
+      navigateToLibraryRoot();
+    }
+    return;
+  }
+
   if (e.kind == ButtonEvent::Triple) {
     // Catch any progress / pagination since the last throttled save before
     // we lose the active book.
@@ -71,6 +82,12 @@ void ReaderScreen::onButton(const ButtonEvent& e) {
     }
     return;
   }
+}
+
+void ReaderScreen::onIdleTick() {
+  if (!isOpeningBook()) return;
+  serviceBookOpening();
+  if (!isOpeningBook()) draw();
 }
 
 void ReaderScreen::onSleep() {

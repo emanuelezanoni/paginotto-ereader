@@ -8,6 +8,7 @@ public:
   void onEnter() override;
   void onButton(const ButtonEvent& e) override;
   void draw() override;
+  void onIdleTick() override;
   void onSleep() override;
 };
 

@@ -24,6 +24,34 @@ BookView g_bookview;
 // the unlock path to clear screensaver ghosting).
 static bool s_forceNextFull = false;
 
+static bool     s_openingBook = false;
+static uint32_t s_openTargetOffset = 0;
+static uint32_t s_lastOpeningPaint = 0;
+
+static void drawOpeningProgress() {
+  display.fastmodeOn();
+  beginPageCanvas();
+  Font::useBody();
+
+  const int lineH = 16;
+  const int page = g_bookview.pages.count > 0 ? g_bookview.pages.count : 1;
+  char progress[48];
+  snprintf(progress, sizeof(progress), "Scanning page %d...", page);
+
+  const char* title = "Opening book...";
+  int y = (SCREEN_H / 2) - lineH;
+  int titleW = u8g2.getUTF8Width(title);
+  u8g2.setCursor((SCREEN_W - titleW) / 2, y);
+  u8g2.print(title);
+
+  y += lineH + 4;
+  int progressW = u8g2.getUTF8Width(progress);
+  u8g2.setCursor((SCREEN_W - progressW) / 2, y);
+  u8g2.print(progress);
+  display.update();
+  s_lastOpeningPaint = millis();
+}
+
 void forceNextRenderFull() { s_forceNextFull = true; }
 
 // Fixed reader footer. This is intentionally independent from the removed
@@ -231,6 +259,43 @@ int findPageForOffset(uint32_t targetOffset) {
   return 0;
 }
 
+bool isOpeningBook() { return s_openingBook; }
+
+void cancelBookOpening() {
+  s_openingBook = false;
+  s_openTargetOffset = 0;
+}
+
+void serviceBookOpening() {
+  if (!s_openingBook || !g_bookview.book.isOpen()) return;
+
+  // Keep each main-loop slice bounded. This is what makes the emergency
+  // triple-click useful while a large book is being indexed.
+  static constexpr int kPagesPerSlice = 24;
+  for (int i = 0; i < kPagesPerSlice; i++) {
+    if (g_bookview.pages.count > 0
+        && g_bookview.pages.offsets[g_bookview.pages.count - 1] >= s_openTargetOffset) {
+      g_bookview.cursor.pageIndex = findPageForOffset(s_openTargetOffset);
+      s_openingBook = false;
+      s_openTargetOffset = 0;
+      return;
+    }
+    if (!tryExtendPageTable()) {
+      // EOF is a valid resolution even if the bookmark points beyond the
+      // current file; the normal render clamp will select the final page.
+      if (g_bookview.pages.count > 0)
+        g_bookview.cursor.pageIndex = g_bookview.pages.count - 1;
+      s_openingBook = false;
+      s_openTargetOffset = 0;
+      return;
+    }
+  }
+
+  if ((uint32_t)(millis() - s_lastOpeningPaint) >= 500) {
+    drawOpeningProgress();
+  }
+}
+
 // ============================================================================
 //  Reader operations
 // ============================================================================
@@ -270,7 +335,20 @@ bool openBookByIndex(int idx) {
   PreferencesStore kv(prefs);
   uint32_t savedOffset = loadSavedOffset(kv, g_bookview.book.key());
   if (savedOffset != kOffsetUnset) {
-    g_bookview.cursor.pageIndex = findPageForOffset(savedOffset);
+    // Do not scan the whole book inside the library button handler. If the
+    // saved position is not already covered by the on-disk cache, continue
+    // the lookup incrementally from ReaderScreen::onIdleTick().
+    if (g_bookview.pages.count > 0
+        && g_bookview.pages.offsets[g_bookview.pages.count - 1] >= savedOffset) {
+      g_bookview.cursor.pageIndex = findPageForOffset(savedOffset);
+    } else if (savedOffset > 0) {
+      g_bookview.cursor.pageIndex = 0;
+      s_openTargetOffset = savedOffset;
+      s_openingBook = true;
+      s_lastOpeningPaint = 0;
+    } else {
+      g_bookview.cursor.pageIndex = 0;
+    }
   } else {
     g_bookview.cursor.pageIndex = loadSavedPage(kv, g_bookview.book.key());
   }
@@ -315,6 +393,10 @@ static bool prepareForRender() {
 
 void renderCurrentPage() {
   Diagnostics::trace("reader.render.begin");
+  if (s_openingBook) {
+    if (s_lastOpeningPaint == 0) drawOpeningProgress();
+    return;
+  }
   // Strong invariant: if we got here, a book is open. The reader screen
   // is never active otherwise.
   if (!prepareForRender()) {
@@ -415,6 +497,7 @@ void resetBookView() {
   g_bookview.book.close();
   g_bookview.cursor = ReaderCursor{};
   g_bookview.pages  = PageOffsetTable{};
+  cancelBookOpening();
   resetSaveThrottle();
 }
 

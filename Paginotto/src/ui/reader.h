@@ -62,6 +62,13 @@ bool openBookByIndex(int idx);
 void renderCurrentPage();
 void forceNextRenderFull();  // one-shot: next renderCurrentPage() does a full refresh
 
+// Large books may need a long scan to resolve a saved byte offset. Opening is
+// therefore serviced incrementally by the main loop so the display can show
+// progress and the input frontend can still receive a cancel gesture.
+bool isOpeningBook();
+void serviceBookOpening();
+void cancelBookOpening();
+
 // Cursor navigation. Both move the cursor and bump `pageTurnsSinceFull` on
 // a real page change; `advancePage` lazily paginates one ahead and clamps
 // to EOF. Return true iff the cursor actually moved — caller decides what
