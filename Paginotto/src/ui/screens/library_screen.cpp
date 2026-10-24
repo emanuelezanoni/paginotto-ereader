@@ -144,29 +144,22 @@ static void drawFolderMenuRow(int yBaseline, const String& label,
   Font::useBody();
 }
 
-// Technical actions use a compact arrow marker. Its geometry is fixed in both
-// states, so selecting a row changes only the stroke weight, never the
-// horizontal layout or the available scrolling budget.
+// Technical actions use the same 14-pixel marker box as folder rows. The
+// filled triangle is deliberately drawn as geometry instead of a font glyph:
+// it stays closed and stable across the selected/unselected fonts.
 static void drawSystemMenuRow(int yBaseline, const String& label,
                               bool selected) {
   const int iconX = UI_LIST_LEFT + 1;
   const int arrowY = yBaseline - 6;
 
-  // Both variants occupy the same 10-pixel marker box. The selected version
-  // is bolder, but never wider or shifted.
-  gfx.drawFastHLine(iconX, arrowY, 7, 1);
-  gfx.drawLine(iconX + 5, arrowY - 3, iconX + 9, arrowY, 1);
-  gfx.drawLine(iconX + 5, arrowY + 3, iconX + 9, arrowY, 1);
-  if (selected) {
-    gfx.drawFastHLine(iconX, arrowY + 1, 7, 1);
-    gfx.drawLine(iconX + 5, arrowY - 2, iconX + 9, arrowY + 1, 1);
-    gfx.drawLine(iconX + 5, arrowY + 4, iconX + 9, arrowY + 1, 1);
-    Font::useBold();
-  } else {
-    Font::useBody();
-  }
+  gfx.fillTriangle(iconX + 2, arrowY - 4,
+                   iconX + 2, arrowY + 4,
+                   iconX + 11, arrowY, 1);
+  if (selected) Font::useBold();
+  else          Font::useBody();
 
-  u8g2.setCursor(iconX + 14, yBaseline);
+  // Folder rows place their label at x + 19; keep the same text origin.
+  u8g2.setCursor(iconX + 19, yBaseline);
   u8g2.print(label.c_str());
   Font::useBody();
 }

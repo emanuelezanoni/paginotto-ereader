@@ -65,6 +65,7 @@ static const char kStyleCss[] PROGMEM =
   ".tree-mark{color:var(--link);font-weight:800;flex:none}"
   ".tree-children{padding:0 12px 10px 30px}"
   ".tree-book{display:flex;align-items:baseline;justify-content:flex-start;gap:10px;padding:6px 0;border-top:1px solid var(--line-soft)}"
+  ".tree-book-mark{display:inline-block;width:18px;flex:none;text-align:center}"
   ".tree-book .muted{margin-left:auto}"
   ".tree-book a{min-width:0;color:var(--link);overflow-wrap:anywhere;word-break:break-word;text-decoration:none}"
   ".tree-book a:hover{text-decoration:underline}"
