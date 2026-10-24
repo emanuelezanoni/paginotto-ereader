@@ -3,6 +3,7 @@
 #include <WiFi.h>
 #include <WiFiClient.h>
 #include <WiFiClientSecure.h>
+#include <esp_heap_caps.h>
 
 #include "src/config.h"
 #include "src/diagnostics/log.h"
@@ -80,6 +81,20 @@ static void traceRemoteBookState(const char* event, uint32_t offset,
            (unsigned long)resumeOffset, (unsigned long)fsFreeBytesSafe(),
            (unsigned long)(millis() - startedMs));
   // Runtime-only: do not write progress samples to NVS.
+  Diagnostics::trace(detail);
+}
+
+static void traceRemoteBookMemory(const char* event, uint32_t offset,
+                                  uint32_t startedMs) {
+  char detail[112];
+  snprintf(detail, sizeof(detail),
+           "remote_epub.mem_%s offset=%lu free=%lu largest=%lu min=%lu elapsed=%lu",
+           event, (unsigned long)offset,
+           (unsigned long)heap_caps_get_free_size(MALLOC_CAP_8BIT),
+           (unsigned long)heap_caps_get_largest_free_block(MALLOC_CAP_8BIT),
+           (unsigned long)heap_caps_get_minimum_free_size(MALLOC_CAP_8BIT),
+           (unsigned long)(millis() - startedMs));
+  // Runtime-only: memory probes must not add persistent writes or allocations.
   Diagnostics::trace(detail);
 }
 
@@ -326,6 +341,7 @@ static void handleRemoteBookDownload() {
   uint32_t total = 0;
   uint32_t lastData = millis();
   uint32_t nextProgressTrace = 256UL * 1024UL;
+  uint32_t nextMemoryProbe = 64UL * 1024UL;
   Diagnostics::checkpoint("remote_epub.streaming");
 
   // Do not use connected() as the loop condition: on ESP TLS clients it can
@@ -348,16 +364,23 @@ static void handleRemoteBookDownload() {
 
     size_t wanted = available < sizeof(buffer) ? available : sizeof(buffer);
     if (remaining >= 0 && wanted > (size_t)remaining) wanted = (size_t)remaining;
+    const bool probeMemory = total >= nextMemoryProbe;
+    if (probeMemory) traceRemoteBookMemory("before_read", total, remoteStartedMs);
     int n = transport->read(buffer, wanted);
     if (n <= 0) {
       Diagnostics::errorCode("remote_epub.remote_read_failed", (int)total);
       break;
     }
+    if (probeMemory) traceRemoteBookMemory("after_read", total, remoteStartedMs);
     if (browser.write(buffer, (size_t)n) != (size_t)n) {
       Diagnostics::errorCode("remote_epub.browser_write_failed", (int)total);
       break;
     }
     total += (uint32_t)n;
+    if (probeMemory) {
+      traceRemoteBookMemory("after_write", total, remoteStartedMs);
+      nextMemoryProbe += 64UL * 1024UL;
+    }
     if (remaining >= 0) remaining -= n;
     if (total > kRemoteBookMaxBytes) break;
     if (total >= nextProgressTrace) {
@@ -367,6 +390,7 @@ static void handleRemoteBookDownload() {
     }
     lastData = millis();
     yield();
+    if (probeMemory) traceRemoteBookMemory("after_yield", total, remoteStartedMs);
   }
 
   releaseRemoteBookClient(transport, secureClient);
