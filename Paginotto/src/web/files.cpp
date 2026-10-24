@@ -366,6 +366,9 @@ static void handleRemoteBookDownload() {
   if (remoteTotal >= 0) {
     server.sendHeader("X-Remote-Total-Length", String(remoteTotal));
   }
+  // A truncated response must be observable by fetch. Otherwise the browser
+  // keeps waiting for the advertised Content-Length and never starts resume.
+  server.sendHeader("Connection", "close");
   traceRemoteBookState("headers", 0, remaining, resumeOffset, remoteStartedMs);
   server.send(200, contentType, "");
   Diagnostics::checkpoint("remote_epub.headers_sent");
@@ -436,8 +439,13 @@ static void handleRemoteBookDownload() {
   }
 
   releaseRemoteBookClient(transport, secureClient);
-  if (expectedLength >= 0 && total != (uint32_t)expectedLength) {
+  const bool complete = expectedLength < 0 || total == (uint32_t)expectedLength;
+  if (!complete) {
     Diagnostics::errorCode("remote_epub.incomplete", (int)total);
+    // Do not leave a Content-Length response open after an upstream failure:
+    // the browser must observe EOF/error so its resume loop can issue a new
+    // request instead of waiting forever for bytes that cannot arrive.
+    browser.stop();
   }
   traceRemoteBookState("end", total, expectedLength, resumeOffset, remoteStartedMs);
   Diagnostics::checkpoint("remote_epub.end");
