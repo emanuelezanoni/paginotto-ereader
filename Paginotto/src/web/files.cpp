@@ -70,6 +70,13 @@ static constexpr uint16_t kRemoteBookTimeoutMs = 5000U;
 // The proxy is synchronous, so a stalled upstream must have a bounded wait.
 // Interrupted transfers are resumed by the browser with HTTP Range requests.
 static constexpr uint32_t kRemoteBookStallMs = 30000UL;
+static constexpr uint32_t kRemoteBookWriteStallMs = 10000UL;
+
+enum class RemoteBrowserWriteResult {
+  complete,
+  closed,
+  timeout,
+};
 
 static void traceRemoteBookState(const char* event, uint32_t offset,
                                  int expected, uint32_t resumeOffset,
@@ -96,6 +103,39 @@ static void traceRemoteBookMemory(const char* event, uint32_t offset,
            (unsigned long)(millis() - startedMs));
   // Runtime-only: memory probes must not add persistent writes or allocations.
   Diagnostics::trace(detail);
+}
+
+static RemoteBrowserWriteResult writeRemoteBookChunk(
+    WiFiClient& browser, const uint8_t* buffer, size_t length,
+    uint32_t offset, uint32_t startedMs, size_t& written) {
+  written = 0;
+  uint32_t lastProgress = millis();
+  while (written < length) {
+    if (!browser.connected()) return RemoteBrowserWriteResult::closed;
+
+    size_t n = browser.write(buffer + written, length - written);
+    if (n > 0) {
+      written += n;
+      lastProgress = millis();
+      if (written < length) {
+        char detail[112];
+        snprintf(detail, sizeof(detail),
+                 "remote_epub.browser_short_write offset=%lu written=%lu/%lu elapsed=%lu",
+                 (unsigned long)(offset + written), (unsigned long)written,
+                 (unsigned long)length,
+                 (unsigned long)(millis() - startedMs));
+        Diagnostics::trace(detail);
+      }
+      continue;
+    }
+
+    if (millis() - lastProgress >= kRemoteBookWriteStallMs) {
+      return RemoteBrowserWriteResult::timeout;
+    }
+    delay(1);
+    yield();
+  }
+  return RemoteBrowserWriteResult::complete;
 }
 
 static void configureRemoteBookClient(WiFiClientSecure& client) {
@@ -372,8 +412,15 @@ static void handleRemoteBookDownload() {
       break;
     }
     if (probeMemory) traceRemoteBookMemory("after_read", total, remoteStartedMs);
-    if (browser.write(buffer, (size_t)n) != (size_t)n) {
-      Diagnostics::errorCode("remote_epub.browser_write_failed", (int)total);
+    size_t written = 0;
+    RemoteBrowserWriteResult writeResult = writeRemoteBookChunk(
+        browser, buffer, (size_t)n, total, remoteStartedMs, written);
+    if (writeResult != RemoteBrowserWriteResult::complete) {
+      if (writeResult == RemoteBrowserWriteResult::closed) {
+        Diagnostics::errorCode("remote_epub.browser_closed", (int)total);
+      } else {
+        Diagnostics::errorCode("remote_epub.browser_write_timeout", (int)total);
+      }
       break;
     }
     total += (uint32_t)n;
