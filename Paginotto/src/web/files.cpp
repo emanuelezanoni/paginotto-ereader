@@ -534,7 +534,7 @@ static void handleFiles() {
   }
   out += "<label for='bookUrl'>" D_WEB_EPUB_URL_LABEL "</label>"
          "<input id='bookUrl' type='url' inputmode='url' size='80' style='width:100%' placeholder='" D_WEB_EPUB_URL_PLACEHOLDER "' autocomplete='url' spellcheck='false'>"
-         "<p id='bookDownloadStatus' class='muted' aria-live='polite'></p>"
+         "<p id='bookDownloadStatus' class='muted' aria-live='polite' hidden></p>"
          "<div class='actions'><button id='bookUrlButton' type='button'";
   if (WiFi.status() != WL_CONNECTED) {
     out += " disabled";
@@ -550,19 +550,19 @@ static void handleFiles() {
     "<p class='muted'>" D_WEB_UPLOAD_BOOK_DESC "</p>"
     "<form id='bookUpload' method='POST' action='/upload' enctype='multipart/form-data' accept-charset='UTF-8' style='margin-top:14px'>"
     "<input id='bookFile' type='file' name='file' accept='.txt,text/plain,.epub,application/epub+zip'>"
-    "<p id='bookUploadStatus' class='muted' aria-live='polite'></p>"
+    "<p id='bookUploadStatus' class='muted' aria-live='polite' hidden></p>"
     "<div class='actions'><button id='bookUploadButton' type='submit'>" D_WEB_UPLOAD_BOOK_BUTTON "</button></div>"
     "</form></div>";
 
   out += "<div id='bookOperationOverlay' class='operation-overlay' hidden aria-live='polite'>"
          "<div class='operation-dialog'><h2 id='bookOperationTitle'>Working…</h2>"
-         "<p id='bookOperationMessage'>Please wait while the book is processed.</p>"
+         "<p id='bookOperationMessage' hidden></p>"
          "<div class='operation-progress-line'>"
-         "<span id='bookOperationStatus' aria-live='polite'></span>"
          "<progress id='bookDownloadProgress' max='1' value='0' hidden></progress>"
          "<progress id='bookUploadProgress' max='1' value='0' hidden></progress>"
          "<strong id='bookOperationPercent'></strong>"
          "</div>"
+         "<p id='bookOperationStatus' class='operation-status' aria-live='polite'></p>"
          "<button id='bookOperationCancel' type='button' class='btn danger'>Cancel</button></div></div>";
 
   out += kEpubUploadScript;
