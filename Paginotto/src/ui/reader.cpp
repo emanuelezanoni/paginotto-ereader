@@ -7,6 +7,7 @@
 #include "src/storage/library.h"   // g_library — openBookByIndex reads it
 #include "src/storage/page_cache.h"
 #include "src/storage/preferences_store.h"
+#include "src/hal/input.h"                  // markUserActivity during long opens
 
 #include "src/ui/font.h"                    // layoutForCache for cache stamping
 #include "src/ui/screens/library_screen.h"  // navigateToLibraryRoot — fallback on error
@@ -225,6 +226,7 @@ void serviceBookOpening() {
       s_openingBook = false;
       s_openTargetOffset = 0;
       s_openTargetIsPage = false;
+      markUserActivity();
       return;
     }
     uint32_t next = nextPageOffset(g_bookview.book.file(), s_openScanOffset);
@@ -235,6 +237,7 @@ void serviceBookOpening() {
       s_openingBook = false;
       s_openTargetOffset = 0;
       s_openTargetIsPage = false;
+      markUserActivity();
       return;
     }
     s_openScanOffset = next;

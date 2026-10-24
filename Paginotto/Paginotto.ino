@@ -231,6 +231,7 @@ void loop() {
       // Don't sleep while button held — ClickHold unlock may still complete.
       // fires on release, so sleeping mid-hold would swallow the gesture.
       if (ENABLE_DEEP_SLEEP && g_currentScreen->allowSleep()
+          && !isOpeningBook()
           && userIdleMs() > 1500 && !g_btns.isPressed()) {
         Sleep::enter();
         return;
@@ -242,7 +243,8 @@ void loop() {
 
   if (ev.any()) markUserActivity();
 
-  if (ENABLE_DEEP_SLEEP && g_currentScreen->allowSleep() && !WifiProvisioning::isActive()) {
+  if (ENABLE_DEEP_SLEEP && g_currentScreen->allowSleep()
+      && !isOpeningBook() && !WifiProvisioning::isActive()) {
     if (userIdleMs() > Sleep::idleTimeoutMs()) {
       Sleep::enter();
       return;
@@ -281,6 +283,7 @@ void loop() {
   // only re-process the edge on the next timer wake (~150ms later in the
   // worst case under the bound below).
   if (g_currentScreen->allowSleep()
+      && !isOpeningBook()
       && !g_btns.hasPendingClicks()
       && !buttonQueueNonEmpty()
       && !WifiProvisioning::isActive()) {

@@ -67,7 +67,7 @@ static const char kStyleCss[] PROGMEM =
   ".tree-book{display:flex;align-items:baseline;justify-content:flex-start;gap:10px;padding:6px 0;border-top:1px solid var(--line-soft)}"
   ".tree-book-mark{display:inline-block;width:18px;height:1em;flex:none;position:relative;color:var(--link);transform-origin:center}"
   ".tree-book-mark::before{content:'';position:absolute;left:5px;top:.28em;border-top:.34em solid transparent;border-bottom:.34em solid transparent;border-left:.48em solid currentColor}"
-  ".tree-book:hover .tree-book-mark,.tree-book:focus-within .tree-book-mark{transform:scale(1.22)}"
+  ".tree-book:hover .tree-book-mark,.tree-book:focus-within .tree-book-mark{transform:scale(1.08)}"
   ".tree-book .muted{margin-left:auto}"
   ".tree-book a{min-width:0;color:var(--link);overflow-wrap:anywhere;word-break:break-word;text-decoration:none}"
   ".tree-book a:hover{text-decoration:underline}"
