@@ -247,7 +247,9 @@ void serviceBookOpening() {
     }
   }
 
-  if ((uint32_t)(millis() - s_lastOpeningPaint) >= 500) {
+  // E-ink refreshes are comparatively expensive; keep progress visible
+  // without slowing the sequential scan with needless panel updates.
+  if ((uint32_t)(millis() - s_lastOpeningPaint) >= 5000) {
     drawOpeningProgress();
   }
 }
