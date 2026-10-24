@@ -6,6 +6,7 @@
 #include "src/state.h"
 #include "src/pure/hashing.h"             // prefKeyForBook
 #include "src/storage/book_metadata.h"
+#include "src/storage/fs_util.h"
 #include "src/storage/page_cache.h"
 #include "src/storage/library.h"
 #include "src/storage/preferences_store.h"
@@ -154,6 +155,16 @@ static void handleEditBookStream() {
     s_edit.bookmarkAnchor = loadSavedAnchor(kv, key);
     s_edit.bookmarkAnchorAt = loadSavedAnchorAt(kv, key);
     s_edit.tmpPath = s_edit.bookPath + ".edit.tmp";
+    File existing = FS.open(s_edit.bookPath, "r");
+    const size_t existingSize = existing ? existing.size() : 0;
+    if (existing) existing.close();
+    const size_t freeBytes = fsFreeBytesSafe();
+    if (existingSize > 0 && freeBytes < existingSize + 8192) {
+      s_edit.error = "not enough free space for safe edit (need " +
+                     String(existingSize + 8192) + " bytes, have " +
+                     String(freeBytes) + ")";
+      return;
+    }
     if (FS.exists(s_edit.tmpPath)) FS.remove(s_edit.tmpPath);
     s_edit.tmp = FS.open(s_edit.tmpPath, "w");
     if (!s_edit.tmp) s_edit.error = "cannot create temporary edit file";
@@ -384,9 +395,9 @@ static const char kReadScript[] PROGMEM =
   "elPrev.addEventListener('click',function(){if(hits.length)gotoHit(curHit-1);});"
   "elText.addEventListener('click',function(e){var t=e.target;if(t.classList&&t.classList.contains('find-hit')){var idx=parseInt(t.dataset.i,10);if(!isNaN(idx))gotoHit(idx);}});"
   "elEdit.addEventListener('click',function(){setEdit(true);});"
-  "elCancel.addEventListener('click',function(){setEdit(false);window.paginottoDirty=false;});"
+  "elCancel.addEventListener('click',function(){var returnTo=new URLSearchParams(window.location.search).get('return');window.paginottoDirty=false;if(returnTo==='/upload-review')window.location.href='/upload-review';else setEdit(false);});"
   "elEditor.addEventListener('input',function(){window.paginottoDirty=true;});"
-  "elSave.addEventListener('click',function(){if(!confirm('WARNING: this replaces the book on the device immediately. There is no device backup. Download the current TXT first if needed. Continue?'))return;var fd=new FormData();fd.append('file',new Blob([elEditor.value],{type:'text/plain;charset=utf-8'}),'edited-book.txt');elSave.disabled=true;elSave.textContent='Saving...';var returnTo=new URLSearchParams(window.location.search).get('return');var target='/edit-book?id='+encodeURIComponent(bookId)+(returnTo==='/upload-review'?'&return=%2Fupload-review':'');fetch(target,{method:'POST',body:fd}).then(function(r){if(!r.ok)return r.text().then(function(t){throw Error(t||('HTTP '+r.status));});window.location.href=r.url;}).catch(function(e){elJumpStat.textContent='Save failed: '+(e&&e.message?e.message:'error');elSave.disabled=false;elSave.textContent='Save & repaginate';});});"
+  "elSave.addEventListener('click',function(){if(!confirm('WARNING: this replaces the book on the device immediately. There is no device backup. Download the current TXT first if needed. Continue?'))return;var fd=new FormData();fd.append('file',new Blob([elEditor.value],{type:'text/plain;charset=utf-8'}),'edited-book.txt');elSave.disabled=true;elSave.textContent='Saving...';var returnTo=new URLSearchParams(window.location.search).get('return');var target='/edit-book?id='+encodeURIComponent(bookId)+(returnTo==='/upload-review'?'&return=%2Fupload-review':'');fetch(target,{method:'POST',body:fd}).then(function(r){if(!r.ok)return r.text().then(function(t){throw Error(t||('HTTP '+r.status));});window.location.href=returnTo==='/upload-review'?'/upload-review?notice=edited':r.url;}).catch(function(e){elJumpStat.textContent='Save failed: '+(e&&e.message?e.message:'error');elSave.disabled=false;elSave.textContent='Save & repaginate';});});"
   "elJump.addEventListener('click',function(){if(curHit<0){elJumpStat.textContent='Find something first.';return;}"
   "var hitStart=hits[curHit].start,off=utf8Len(rawText.slice(0,hitStart));var anchorStart=Math.max(0,hitStart-64),anchorEnd=Math.min(rawText.length,hitStart+128),anchor=rawText.slice(anchorStart,anchorEnd),anchorAt=utf8Len(rawText.slice(anchorStart,hitStart));var fd=new FormData();fd.append('id',String(bookId));fd.append('offset',String(off));fd.append('anchor',anchor);fd.append('anchorAt',String(anchorAt));"
   "elJumpStat.textContent='Saving...';elJump.disabled=true;"
