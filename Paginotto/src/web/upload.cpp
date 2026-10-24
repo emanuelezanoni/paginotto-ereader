@@ -66,6 +66,14 @@ static void handleWebUiKeepalive() {
   server.send(204, "text/plain", "");
 }
 
+static void handleWebUiStorageInfo() {
+  char body[96];
+  snprintf(body, sizeof(body), "{\"freeBytes\":%lu}",
+           (unsigned long)fsFreeBytesSafe());
+  server.sendHeader("Cache-Control", "no-store");
+  server.send(200, "application/json; charset=utf-8", body);
+}
+
 void resetBookUpload() {
   if (s_book.tmpFile) s_book.tmpFile.close();
   s_book = BookUpload{};
@@ -509,6 +517,7 @@ static void handleUploadSleepStream() {
 void registerUploadRoutes() {
   server.on("/upload",       HTTP_POST, handleUploadDone,      handleUploadBookStream);
   server.on("/upload-sleep", HTTP_POST, handleUploadSleepDone, handleUploadSleepStream);
+  server.on("/storage-info", HTTP_GET,  handleWebUiStorageInfo);
   server.on("/keepalive",    HTTP_GET,  handleWebUiKeepalive);
   server.on("/upload-review", HTTP_GET, handleUploadReview);
   server.on("/upload-finalize", HTTP_POST, handleUploadFinalize);
