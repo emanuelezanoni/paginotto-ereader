@@ -34,8 +34,8 @@ static uint32_t s_lastOpeningPaint = 0;
 
 // Small hot-path window: page turns should not touch LittleFS on every click.
 // The persistent index is still extended periodically for fast future opens.
-static constexpr uint32_t kRecentPageWindow = 16;
-static constexpr uint32_t kPersistentPageStride = 8;
+static constexpr uint32_t kRecentPageWindow = 64;
+static constexpr uint32_t kPersistentPageStride = 64;
 static uint32_t s_recentPages[kRecentPageWindow] = {};
 static uint32_t s_recentOffsets[kRecentPageWindow] = {};
 static uint32_t s_recentCount = 0;
@@ -590,9 +590,24 @@ void saveProgress() {
 void saveProgressThrottled() {
   if (!g_bookview.book.isOpen()) return;
   if (g_bookview.cursor.pageIndex == s_save.lastSavedPage) return;
+
+  // Persist the actual reading position on every page turn. These two small
+  // integer writes are cheap enough for the explicit bookmark guarantee;
+  // the larger text anchor remains throttled below.
+  PreferencesStore kv(prefs);
+  saveSavedOffset(kv, g_bookview.book.key(), g_bookview.pages.currentOffset);
+  saveSavedPage(kv, g_bookview.book.key(), g_bookview.cursor.pageIndex);
+  s_save.lastSavedPage = g_bookview.cursor.pageIndex;
+
   uint32_t now = millis();
   if (s_save.lastSaveMs != 0 && (now - s_save.lastSaveMs) < SAVE_EVERY_MS) return;
-  saveProgress();
+
+  uint32_t anchorAt = 0;
+  saveSavedAnchor(kv, g_bookview.book.key(),
+                  bookmarkAnchor(g_bookview.book.file(),
+                                 g_bookview.pages.currentOffset, anchorAt),
+                  anchorAt);
+  s_save.lastSaveMs = now;
 }
 
 // Commit everything the active reader has accumulated to durable storage.
