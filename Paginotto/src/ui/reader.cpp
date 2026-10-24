@@ -32,6 +32,31 @@ static uint32_t s_openScanPage = 0;
 static bool     s_openTargetIsPage = false;
 static uint32_t s_lastOpeningPaint = 0;
 
+// Small hot-path window: page turns should not touch LittleFS on every click.
+// The persistent index is still extended periodically for fast future opens.
+static constexpr uint32_t kRecentPageWindow = 16;
+static constexpr uint32_t kPersistentPageStride = 8;
+static uint32_t s_recentPages[kRecentPageWindow] = {};
+static uint32_t s_recentOffsets[kRecentPageWindow] = {};
+static uint32_t s_recentCount = 0;
+
+static void rememberPageOffset(uint32_t page, uint32_t offset) {
+  s_recentPages[page % kRecentPageWindow] = page;
+  s_recentOffsets[page % kRecentPageWindow] = offset;
+  if (s_recentCount < kRecentPageWindow) s_recentCount++;
+}
+
+static bool recentOffsetForPage(uint32_t page, uint32_t& offset) {
+  for (uint32_t i = 0; i < s_recentCount; i++) {
+    uint32_t slot = (page + i) % kRecentPageWindow;
+    if (s_recentPages[slot] == page) {
+      offset = s_recentOffsets[slot];
+      return true;
+    }
+  }
+  return false;
+}
+
 static void drawOpeningProgress() {
   display.fastmodeOn();
   beginPageCanvas();
@@ -228,11 +253,23 @@ void serviceBookOpening() {
   // Keep each main-loop slice bounded. This is what makes the emergency
   // triple-click useful while a large book is being indexed.
   static constexpr int kPagesPerSlice = 24;
+  uint32_t batch[kPagesPerSlice];
+  uint32_t batchFirstPage = s_openScanPage + 1;
+  uint32_t batchCount = 0;
+  auto flushIndexBatch = [&]() {
+    if (batchCount == 0) return;
+    appendPageOffsetsForBook(g_bookview.book.path(), g_bookview.book.size(),
+                             Font::layoutForCache(), batchFirstPage, batch,
+                             batchCount);
+    batchCount = 0;
+    batchFirstPage = s_openScanPage + 1;
+  };
   for (int i = 0; i < kPagesPerSlice; i++) {
     bool targetReached = s_openTargetIsPage
                        ? s_openScanPage >= s_openTargetOffset
                        : s_openScanOffset >= s_openTargetOffset;
     if (targetReached) {
+      flushIndexBatch();
       g_bookview.cursor.pageIndex = (int)s_openScanPage;
       g_bookview.pages.currentOffset = s_openScanOffset;
       s_openingBook = false;
@@ -243,6 +280,7 @@ void serviceBookOpening() {
     }
     uint32_t next = nextPageOffset(g_bookview.book.file(), s_openScanOffset);
     if (next <= s_openScanOffset) {
+      flushIndexBatch();
       g_bookview.pages.eofReached = true;
       g_bookview.pages.currentOffset = s_openScanOffset;
       g_bookview.cursor.pageIndex = (int)s_openScanPage;
@@ -254,13 +292,13 @@ void serviceBookOpening() {
     }
     s_openScanOffset = next;
     s_openScanPage++;
-    appendPageOffsetForBook(g_bookview.book.path(), g_bookview.book.size(),
-                            Font::layoutForCache(), s_openScanPage,
-                            s_openScanOffset);
+    rememberPageOffset(s_openScanPage, s_openScanOffset);
+    batch[batchCount++] = s_openScanOffset;
     if (s_openScanOffset >= (uint32_t)g_bookview.book.size()) {
       g_bookview.pages.eofReached = true;
     }
   }
+  flushIndexBatch();
 
   // E-ink refreshes are comparatively expensive; keep progress visible
   // without slowing the sequential scan with needless panel updates.
@@ -291,6 +329,7 @@ bool openBookByIndex(int idx) {
 
   g_bookview.pages.currentOffset = 0;
   g_bookview.pages.eofReached = false;
+  s_recentCount = 0;
   const PageCacheLayout layout = Font::layoutForCache();
   ensurePageOffsetCacheForBook(g_bookview.book.path(), g_bookview.book.size(), layout);
 
@@ -318,6 +357,7 @@ bool openBookByIndex(int idx) {
       }
       s_openScanOffset = cachedOffset;
       s_openScanPage = (uint32_t)cachedPage;
+      rememberPageOffset(s_openScanPage, s_openScanOffset);
       s_openTargetOffset = savedOffset;
       s_openTargetIsPage = false;
       s_openingBook = cachedOffset < savedOffset;
@@ -340,6 +380,7 @@ bool openBookByIndex(int idx) {
       }
       s_openScanOffset = cachedOffset;
       s_openScanPage = (uint32_t)cachedPage;
+      rememberPageOffset(s_openScanPage, s_openScanOffset);
       s_openTargetOffset = (uint32_t)g_bookview.cursor.pageIndex;
       s_openTargetIsPage = true;
       s_openingBook = s_openScanPage < s_openTargetOffset;
@@ -457,9 +498,24 @@ bool advancePage() {
   }
   g_bookview.pages.currentOffset = next;
   g_bookview.cursor.pageIndex++;
-  appendPageOffsetForBook(g_bookview.book.path(), g_bookview.book.size(),
-                          Font::layoutForCache(),
-                          (uint32_t)g_bookview.cursor.pageIndex, next);
+  rememberPageOffset((uint32_t)g_bookview.cursor.pageIndex, next);
+  if (((uint32_t)g_bookview.cursor.pageIndex % kPersistentPageStride) == 0) {
+    uint32_t batch[kPersistentPageStride];
+    uint32_t firstPage = (uint32_t)g_bookview.cursor.pageIndex
+                       - kPersistentPageStride + 1;
+    bool complete = true;
+    for (uint32_t i = 0; i < kPersistentPageStride; i++) {
+      if (!recentOffsetForPage(firstPage + i, batch[i])) {
+        complete = false;
+        break;
+      }
+    }
+    if (complete) {
+      appendPageOffsetsForBook(g_bookview.book.path(), g_bookview.book.size(),
+                               Font::layoutForCache(), firstPage, batch,
+                               kPersistentPageStride);
+    }
+  }
   g_bookview.cursor.pageTurnsSinceFull++;
   return true;
 }
@@ -472,9 +528,11 @@ bool retreatPage() {
   }
   const uint32_t targetPage = (uint32_t)(g_bookview.cursor.pageIndex - 1);
   uint32_t offset = 0;
-  int startPage = loadOffsetForPageFromDisk(
-      g_bookview.book.path(), g_bookview.book.size(), Font::layoutForCache(),
-      (int)targetPage, &offset);
+  int startPage = -1;
+  if (recentOffsetForPage(targetPage, offset)) startPage = (int)targetPage;
+  else startPage = loadOffsetForPageFromDisk(
+          g_bookview.book.path(), g_bookview.book.size(), Font::layoutForCache(),
+          (int)targetPage, &offset);
   if (startPage < 0) startPage = 0;
   for (uint32_t page = (uint32_t)startPage; page < targetPage; page++) {
     uint32_t next = nextPageOffset(g_bookview.book.file(), offset);

@@ -163,6 +163,30 @@ bool appendPageOffsetForBook(const String& path, size_t fileSize,
   return ok;
 }
 
+bool appendPageOffsetsForBook(const String& path, size_t fileSize,
+                              const PageCacheLayout& layout,
+                              uint32_t firstPage, const uint32_t* offsets,
+                              uint32_t count) {
+  if (!offsets || count == 0 || !ensurePageOffsetCacheForBook(path, fileSize, layout))
+    return false;
+  uint32_t existing = pageOffsetCacheCount(path, fileSize, layout);
+  if (firstPage < existing) return true;
+  if (firstPage != existing) return false;
+
+  File f = FS.open(pageCachePathForBook(path), "a");
+  if (!f) return false;
+  bool ok = true;
+  for (uint32_t i = 0; i < count; i++) {
+    if (f.write(reinterpret_cast<const uint8_t*>(&offsets[i]), sizeof(uint32_t))
+        != sizeof(uint32_t)) {
+      ok = false;
+      break;
+    }
+  }
+  f.close();
+  return ok;
+}
+
 int loadOffsetForPageFromDisk(const String& path, size_t expectedSize,
                               const PageCacheLayout& layout,
                               int maxPage, uint32_t* out) {

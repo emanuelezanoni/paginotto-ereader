@@ -61,6 +61,11 @@ bool appendPageOffsetForBook(const String& path, size_t fileSize,
                              const PageCacheLayout& layout,
                              uint32_t pageIndex, uint32_t offset);
 
+bool appendPageOffsetsForBook(const String& path, size_t fileSize,
+                              const PageCacheLayout& layout,
+                              uint32_t firstPage, const uint32_t* offsets,
+                              uint32_t count);
+
 // Single-entry on-disk lookup: read header, validate magic + layout +
 // expected file size, and return the offset of the largest cached page
 // `<= maxPage` along with that page's index. Constant-RAM (no PageOffsetTable
