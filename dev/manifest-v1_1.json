@@ -1,8 +1,8 @@
 {
   "name": "Paginotto (V1_1 display)",
   "channel": "dev",
-  "version": "v1.0.0-56-gdae6f70",
-  "commit": "dae6f70",
-  "commitTimestamp": 1792870531,
+  "version": "v1.0.0-57-g8790a78",
+  "commit": "8790a78",
+  "commitTimestamp": 1792870669,
   "firmware": "firmware-v1_1.bin"
 }
