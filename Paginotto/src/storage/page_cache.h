@@ -3,6 +3,7 @@
 
 #include "src/config.h"
 #include "src/state.h"
+#include "src/pure/page_cache_format.h"
 #include "src/pure/page_offset_table.h"
 
 // ============================================================================
@@ -31,12 +32,6 @@
 //
 // New fields go at the end and bump the on-disk magic in page_cache.cpp so
 // older caches are silently rejected and re-built on the next save.
-struct PageCacheLayout {
-  int     bodySize;          // 8/10/12/14
-  int     lineGap;           // [0, 4]
-  uint8_t bionic;            // 0 / 1
-};
-
 // Bulk-load the persisted offset table for `path` into `out`. Layout-stamped
 // at save time; load rejects any file whose stamp doesn't match `layout`.
 // Returns true on success; on false, `out` is left untouched (callers

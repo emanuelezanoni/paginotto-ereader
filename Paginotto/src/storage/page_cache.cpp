@@ -24,22 +24,6 @@
 //  save. No migration code needed.
 // ============================================================================
 
-static constexpr uint32_t kPageCacheMagic = 0x50434F4CUL;
-
-static constexpr size_t kHeaderBytes =
-    sizeof(uint32_t)   // magic
-  + sizeof(uint32_t)   // layoutVersion
-  + sizeof(uint32_t);  // fileSize
-
-// Compact encoding of "what layout were the offsets in this file computed
-// under?" — every field tucks into one byte (bodySize ∈ {8,10,12,14},
-// lineGap ∈ [0,4], bionic ∈ {0,1}.
-static uint32_t encodeLayoutVersion(const PageCacheLayout& layout) {
-  return ((uint32_t)(layout.bodySize         & 0xFF))
-       | ((uint32_t)(layout.lineGap          & 0xFF) << 8)
-       | ((uint32_t)(layout.bionic           & 0x0F) << 16);
-}
-
 static String pageCachePathForBook(const String& path) {
   return String("/pc_") + prefKeyForBook(path) + ".bin";
 }
@@ -63,16 +47,11 @@ static bool openAndValidateCache(const String& path, size_t expectedSize,
   if (f.read(reinterpret_cast<uint8_t*>(&magic), sizeof(magic)) != sizeof(magic))                         { f.close(); return false; }
   if (f.read(reinterpret_cast<uint8_t*>(&layoutVersion), sizeof(layoutVersion)) != sizeof(layoutVersion)) { f.close(); return false; }
   if (f.read(reinterpret_cast<uint8_t*>(&fileSize), sizeof(fileSize)) != sizeof(fileSize))                { f.close(); return false; }
-  if (magic != kPageCacheMagic
-      || layoutVersion != encodeLayoutVersion(layout)
-      || fileSize != (uint32_t)expectedSize
-      || f.size() < kHeaderBytes + sizeof(uint32_t)
-      || ((f.size() - kHeaderBytes) % sizeof(uint32_t)) != 0) {
+  if (!validatePageCacheHeader(magic, layoutVersion, fileSize, expectedSize,
+                               f.size(), layout, count)) {
     f.close();
     return false;
   }
-
-  count = (uint32_t)((f.size() - kHeaderBytes) / sizeof(uint32_t));
 
   outFile = f;
   outCount = count;
@@ -105,8 +84,8 @@ void savePageOffsetCacheForBook(const String& path, size_t fileSize,
 
 static bool writeCacheHeader(File& f, size_t fileSize,
                              const PageCacheLayout& layout) {
-  uint32_t magic = kPageCacheMagic;
-  uint32_t layoutVersion = encodeLayoutVersion(layout);
+  uint32_t magic = pageCacheMagic();
+  uint32_t layoutVersion = encodePageCacheLayout(layout);
   uint32_t sourceSize = (uint32_t)fileSize;
   return f.write(reinterpret_cast<const uint8_t*>(&magic), sizeof(magic)) == sizeof(magic)
       && f.write(reinterpret_cast<const uint8_t*>(&layoutVersion), sizeof(layoutVersion)) == sizeof(layoutVersion)
@@ -125,6 +104,7 @@ static bool createPageOffsetCache(const String& path, size_t fileSize,
   uint32_t zero = 0;
   bool ok = f.write(reinterpret_cast<const uint8_t*>(&zero), sizeof(zero)) == sizeof(zero);
   f.close();
+  if (!ok) FS.remove(cachePath);
   return ok;
 }
 
@@ -190,14 +170,15 @@ bool appendPageOffsetsForBook(const String& path, size_t fileSize,
 int loadOffsetForPageFromDisk(const String& path, size_t expectedSize,
                               const PageCacheLayout& layout,
                               int maxPage, uint32_t* out) {
-  if (maxPage < 0) return -1;
+  if (maxPage < 0 || out == nullptr) return -1;
 
   File f;
   uint32_t count = 0;
   if (!openAndValidateCache(path, expectedSize, layout, f, count)) return -1;
 
   int targetPage = (maxPage >= (int)count) ? (int)count - 1 : maxPage;
-  size_t entryPos = kHeaderBytes + (size_t)targetPage * sizeof(uint32_t);
+  size_t entryPos = pageCacheHeaderBytes()
+                  + (size_t)targetPage * sizeof(uint32_t);
   if (!f.seek(entryPos)) { f.close(); return -1; }
 
   uint32_t off = 0;
@@ -214,6 +195,7 @@ void deletePageCacheForBook(const String& path) {
 }
 
 void renamePageCacheForBook(const String& oldPath, const String& newPath) {
+  if (oldPath == newPath) return;
   String oldCache = pageCachePathForBook(oldPath);
   if (!FS.exists(oldCache)) return;
   String newCache = pageCachePathForBook(newPath);

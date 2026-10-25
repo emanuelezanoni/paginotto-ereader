@@ -20,6 +20,7 @@ set(SUT_SRC
   ${FW_SRC}/pure/paginator.cpp
   ${FW_SRC}/pure/library_nav.cpp
   ${FW_SRC}/pure/library_catalog.cpp
+  ${FW_SRC}/pure/page_cache_format.cpp
   ${FW_SRC}/pure/hold_gesture.cpp
   ${FW_SRC}/storage/book_metadata.cpp
 )
@@ -33,6 +34,7 @@ set(TEST_SRC
   ${CMAKE_CURRENT_SOURCE_DIR}/test_library_nav.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_library_catalog.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_book_metadata.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_page_cache_format.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_hold_gesture.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_stream.cpp
 )

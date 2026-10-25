@@ -123,6 +123,16 @@ clean provenance decision.
      anchor fields covered by host tests.
    - [x] Metadata helpers compiled successfully for both firmware boards.
 
+   Reader-state/cache progress:
+
+   - [x] Page-cache header encoding and validation extracted into the pure
+     `page_cache_format` module and covered by host tests.
+   - [x] Existing cache magic, layout stamp and file-size compatibility kept
+     unchanged.
+   - [x] Malformed cache sizes, stale layout stamps, null output pointers and
+     self-renames are handled safely.
+   - [x] Cache integration compiled successfully for both firmware boards.
+
 2. **Persistence and library storage**
    - `src/storage/fs_util.cpp`
    - `src/storage/fs_util.h`
