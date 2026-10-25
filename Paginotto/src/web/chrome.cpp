@@ -127,7 +127,7 @@ static const char kStyleCss[] PROGMEM =
   "@media(min-width:620px){.grid.cols-2{grid-template-columns:1fr 1fr}}"
   ".book-actions-left .btn,.book-actions-right .btn{white-space:nowrap}"
   "@media(max-width:640px){.row,.book-row{flex-direction:column}.book-tools{align-self:stretch;flex-direction:row;flex-wrap:wrap}.book-actions{align-items:stretch;flex-direction:column}.book-actions-left,.book-actions-right{width:100%}.book-actions-left{display:grid;grid-template-columns:minmax(0,1fr);align-items:stretch}.book-actions-right{display:grid;grid-template-columns:1fr 1fr}.book-actions-right form,.book-actions-right .btn{width:100%}.book-folder-form{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center}.book-folder-form select{min-width:0}.wrap{padding:14px}}"
-  "@media(max-width:640px){input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea{font-size:16px}}"
+  "@media(max-width:640px){input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea{font-size:16px!important}}"
   ;
 
 static void handleStyleCss() {
@@ -151,7 +151,7 @@ String webPageStart(const String& title, const String& subtitle,
   out = "<!doctype html><html><head><meta charset='utf-8'>"
         "<meta name='viewport' content='width=device-width,initial-scale=1'>"
         "<meta name='color-scheme' content='light'>"
-        "<link rel='stylesheet' href='/style.css?v=7'>";
+        "<link rel='stylesheet' href='/style.css?v=8'>";
   out += "<title>";
   out += title;
   out += "</title></head><body><div class='wrap";
