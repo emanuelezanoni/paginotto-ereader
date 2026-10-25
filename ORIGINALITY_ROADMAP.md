@@ -137,6 +137,23 @@ clean provenance decision.
      value during serialization.
    - [x] Clean rebuild verified both firmware environments after the audit.
 
+   Hardware/dependency boundary:
+
+   - The board/framework layer is external and is not a rewrite target:
+     pioarduino/Arduino-ESP32/ESP-IDF, Heltec E-Ink Modules, Adafruit GFX,
+     U8g2, Improv WiFi Library, ArduinoJson and QRCode are declared in
+     `platformio.ini` and retain their own licenses.
+   - Project files that call those APIs are not automatically third-party.
+     `display`, `input`, `battery`, `sleep`, `widgets`, `lock`, OTA and Wi-Fi
+     provisioning contain Paginotto adapters, policy and user-visible
+     behaviour; they require provenance review where upstream similarity is
+     high.
+   - The review must separate three things: external API/driver code,
+     Paginotto wrapper or product policy, and any inherited implementation
+     still present inside the wrapper. Hardware-specific code is therefore
+     reviewed file by file, not blindly rewritten or blindly classified as
+     vendor code.
+
 2. **Persistence and library storage**
    - `src/storage/fs_util.cpp`
    - `src/storage/fs_util.h`
@@ -238,6 +255,30 @@ allow the implementation and internal organisation to be Paginotto-specific.
 
 ## Current status
 
+## Remaining work — ordered by importance
+
+1. **Reader integration and state** — audit `state`, `reader_screen` and the
+   hand-off between persistent position, page cache and the active book. This
+   is the next functional priority because it can break opening/resuming a
+   book even though the pure core and storage layers pass independently.
+2. **Hardware boundary classification** — inspect display, input, sleep,
+   battery, font and file-stream files and mark each block as external API,
+   Paginotto wrapper/policy or inherited implementation. Do this before any
+   rewrite so vendor code is not duplicated and copied product logic is not
+   excused as vendor code.
+3. **Reader-facing UI/HAL implementation** — rewrite only the inherited
+   product logic found in step 2, preserving the Heltec/ESP32 contracts;
+   compile both board variants after each subsystem.
+4. **Connectivity and maintenance** — Wi-Fi provisioning, OTA and lock
+   lifecycle. These are important for the product but do not block local
+   pagination and book reading.
+5. **Cosmetic/UI remainder** — widgets, toast and screensaver runtime/WebUI.
+   Screensavers are the clearest remaining derived feature but are not core
+   reader functionality.
+6. **Final provenance and licensing audit** — refresh the inventory from the
+   current tree, audit dependencies/assets, add third-party notices, define
+   the provenance boundary, then choose and add the Paginotto license.
+
 - [x] Upstream license/assignment check completed.
 - [x] Initial comparison completed.
 - [x] First-pass automated provenance inventory.
@@ -253,8 +294,12 @@ allow the implementation and internal organisation to be Paginotto-specific.
 - [ ] Differential oracle against the imported implementation (needed for
   stronger historical-behaviour compatibility evidence).
 - [ ] Remaining core reader algorithms review/rewrite.
-- [ ] Persistence and library storage review/rewrite.
-- [ ] Device UI and hardware adapter review/rewrite.
+- [x] Persistence and library storage review/rewrite (paths, catalog,
+  metadata and page-cache integration completed).
+- [ ] Classify device UI/HAL files into external API, Paginotto wrapper and
+  inherited implementation before deciding what to rewrite.
+- [ ] Device UI and hardware adapter review/rewrite, starting with reader
+  integration and only then display/input/sleep/battery.
 - [ ] Connectivity and maintenance review/rewrite.
 - [ ] Screensaver WebUI rewrite.
 - [ ] Remaining inherited utility review.
