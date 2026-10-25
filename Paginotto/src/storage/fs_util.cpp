@@ -26,19 +26,31 @@ size_t fsFreeBytesSafe() {
 }
 
 void ensureBooksDir() {
-  if (!FS.exists("/books")) FS.mkdir("/books");
+  File books = FS.open("/books");
+  if (books) {
+    const bool isDirectory = books.isDirectory();
+    books.close();
+    if (isDirectory) return;
+    // A file named /books cannot be used as the library root. Do not delete
+    // it implicitly; leave the filesystem intact for diagnostics.
+    return;
+  }
+  FS.mkdir("/books");
 }
 
 bool ensureDirRecursive(const String& path) {
   if (path.length() == 0 || path == "/") return true;
-  if (FS.exists(path)) return true;
+  File existing = FS.open(path);
+  if (existing) {
+    const bool isDirectory = existing.isDirectory();
+    existing.close();
+    return isDirectory;
+  }
 
   int slash = path.lastIndexOf('/');
   if (slash > 0) {
     String parent = path.substring(0, slash);
-    if (parent.length() > 0 && !FS.exists(parent)) {
-      if (!ensureDirRecursive(parent)) return false;
-    }
+    if (parent.length() > 0 && !ensureDirRecursive(parent)) return false;
   }
   return FS.mkdir(path);
 }

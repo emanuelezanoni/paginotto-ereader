@@ -102,6 +102,16 @@ clean provenance decision.
    require a new buffered-stream API or changing the caller's write model; it
    is not silently claimed as solved by a source refactor.
 
+   Storage progress:
+
+   - [x] Pure path and filename utilities reimplemented with explicit
+     UTF-8-safe truncation and expanded boundary tests.
+   - [x] Filesystem helpers hardened so existing files are not mistaken for
+     directories and `/books` is never removed implicitly.
+   - [x] Catalog ordering made deterministic when books share a display name.
+   - [ ] Complete host-testable catalog characterization and verify the
+     LittleFS-backed path in the firmware build.
+
 2. **Persistence and library storage**
    - `src/storage/fs_util.cpp`
    - `src/storage/fs_util.h`

@@ -1,29 +1,65 @@
 #include "paths.h"
 
+namespace {
+
+bool isAllowedFilenameByte(uint8_t c) {
+  return ((c >= 'a' && c <= 'z') ||
+          (c >= 'A' && c <= 'Z') ||
+          (c >= '0' && c <= '9') ||
+          c == '_' || c == '-' || c == ' ' || c == '.' || c >= 128);
+}
+
+String sanitizeFilenameBytes(const String& input) {
+  String clean;
+  clean.reserve(input.length());
+  for (size_t i = 0; i < input.length(); ++i) {
+    const uint8_t c = (uint8_t)input[i];
+    clean += isAllowedFilenameByte(c) ? (char)c : '_';
+  }
+  return clean;
+}
+
+String truncateUtf8Stem(const String& filename, size_t maxBytes) {
+  if (maxBytes == 0 || filename.length() <= maxBytes || maxBytes <= 4) {
+    return filename;
+  }
+
+  const size_t stemBytes = maxBytes - 4;  // reserve the ".txt" suffix
+  size_t cut = stemBytes;
+  while (cut > 0 && (((uint8_t)filename[cut] & 0xC0) == 0x80)) {
+    --cut;
+  }
+
+  // A too-small UTF-8 prefix is less useful than the deterministic fallback.
+  return cut == 0 ? String("book.txt") : filename.substring(0, cut) + ".txt";
+}
+
+}  // namespace
+
 String stripTxtExt(const String& s) {
   return s.endsWith(".txt") ? s.substring(0, s.length() - 4) : s;
 }
 
 String lastPathComponent(const String& path) {
-  int slash = path.lastIndexOf('/');
-  return (slash >= 0) ? path.substring(slash + 1) : path;
+  const int slash = path.lastIndexOf('/');
+  return slash < 0 ? path : path.substring(slash + 1);
 }
 
 String folderParent(const String& relPath) {
-  int slash = relPath.lastIndexOf('/');
-  return (slash < 0) ? String("") : relPath.substring(0, slash);
+  const int slash = relPath.lastIndexOf('/');
+  return slash < 0 ? String("") : relPath.substring(0, slash);
 }
 
 String prettyRelativeLabel(const String& relPath) {
-  String out;
-  out.reserve(relPath.length() + 8);
-  for (size_t i = 0; i < relPath.length(); i++) {
-    char c = relPath[i];
-    if (c == '_') out += ' ';
-    else if (c == '/') out += " / ";
-    else out += c;
+  String label;
+  label.reserve(relPath.length() + 8);
+  for (size_t i = 0; i < relPath.length(); ++i) {
+    const char c = relPath[i];
+    if (c == '_') label += ' ';
+    else if (c == '/') label += " / ";
+    else label += c;
   }
-  return stripTxtExt(out);
+  return stripTxtExt(label);
 }
 
 String folderLeafLabel(const String& relPath) {
@@ -42,15 +78,14 @@ bool isAllowedFolderByte(uint8_t c) {
   return ((c >= 'a' && c <= 'z') ||
           (c >= 'A' && c <= 'Z') ||
           (c >= '0' && c <= '9') ||
-          c == '_' || c == '-' || c == ' ' ||
-          c >= 128);
+          c == '_' || c == '-' || c == ' ' || c >= 128);
 }
 
 String sanitizeFolderSegment(const String& segment) {
   String clean;
   clean.reserve(segment.length());
-  for (size_t i = 0; i < segment.length(); i++) {
-    uint8_t c = (uint8_t)segment[i];
+  for (size_t i = 0; i < segment.length(); ++i) {
+    const uint8_t c = (uint8_t)segment[i];
     clean += isAllowedFolderByte(c) ? (char)c : '_';
   }
   clean.trim();
@@ -61,57 +96,33 @@ String sanitizeFolderInput(const String& raw) {
   String normalized = raw;
   normalized.replace('\\', '/');
 
-  String out;
-  int start = 0;
-  while (start <= (int)normalized.length()) {
-    int slash = normalized.indexOf('/', start);
-    String part = (slash >= 0) ? normalized.substring(start, slash)
-                               : normalized.substring(start);
-    start = (slash >= 0) ? slash + 1 : (int)normalized.length() + 1;
+  String result;
+  int cursor = 0;
+  while (cursor <= (int)normalized.length()) {
+    const int slash = normalized.indexOf('/', cursor);
+    String segment = slash < 0 ? normalized.substring(cursor)
+                               : normalized.substring(cursor, slash);
+    cursor = slash < 0 ? (int)normalized.length() + 1 : slash + 1;
 
-    part.trim();
-    if (part.length() == 0 || part == "." || part == "..") continue;
-    String clean = sanitizeFolderSegment(part);
-    if (clean.length() == 0) continue;
-    if (out.length() > 0) out += '/';
-    out += clean;
+    segment.trim();
+    if (segment.length() == 0 || segment == "." || segment == "..") continue;
+    segment = sanitizeFolderSegment(segment);
+    if (segment.length() == 0) continue;
+    if (result.length() > 0) result += '/';
+    result += segment;
   }
-  return out;
+  return result;
 }
 
 String sanitizeUploadedFilename(String fname, size_t maxBytes) {
-  int slash = fname.lastIndexOf('/');
+  const int slash = fname.lastIndexOf('/');
   if (slash >= 0) fname = fname.substring(slash + 1);
 
-  String clean;
-  clean.reserve(fname.length());
-  for (size_t i = 0; i < fname.length(); i++) {
-    uint8_t c = (uint8_t)fname[i];
-    if ((c >= 'a' && c <= 'z') ||
-        (c >= 'A' && c <= 'Z') ||
-        (c >= '0' && c <= '9') ||
-        c == '_' || c == '-' || c == ' ' || c == '.' ||
-        c >= 128) {
-      clean += (char)c;
-    } else {
-      clean += '_';
-    }
-  }
-
+  String clean = sanitizeFilenameBytes(fname);
   clean.replace("..", "");
   while (clean.startsWith(".")) clean.remove(0, 1);
   if (clean.length() == 0) clean = "book";
   if (!clean.endsWith(".txt")) clean += ".txt";
 
-  // String lengths are bytes. Do not split a UTF-8 continuation sequence
-  // when making the leaf fit the fixed catalog path buffer.
-  if (maxBytes > 4 && clean.length() > maxBytes) {
-    size_t stemBytes = maxBytes - 4;  // reserve .txt
-    while (stemBytes > 0 && (((uint8_t)clean[stemBytes] & 0xC0) == 0x80)) {
-      stemBytes--;
-    }
-    if (stemBytes == 0) clean = "book.txt";
-    else clean = clean.substring(0, stemBytes) + ".txt";
-  }
-  return clean;
+  return truncateUtf8Stem(clean, maxBytes);
 }

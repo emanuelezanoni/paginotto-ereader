@@ -38,7 +38,15 @@ static void sortFolders() {
 static void sortBooks() {
   for (int i = 0; i < g_library.bookCount - 1; i++) {
     for (int j = i + 1; j < g_library.bookCount; j++) {
-      if (strcmp(g_library.books[j].name, g_library.books[i].name) < 0) {
+      const int byName = strcmp(g_library.books[j].name,
+                                g_library.books[i].name);
+      // Names are shown without their folder. Use the full path as a stable
+      // tie-breaker so equal display names do not depend on LittleFS order.
+      const bool shouldSwap =
+          byName < 0 ||
+          (byName == 0 &&
+           strcmp(g_library.books[j].path, g_library.books[i].path) < 0);
+      if (shouldSwap) {
         BookInfo tmp = g_library.books[i];
         g_library.books[i] = g_library.books[j];
         g_library.books[j] = tmp;

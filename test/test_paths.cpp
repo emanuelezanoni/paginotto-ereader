@@ -80,3 +80,24 @@ TEST_CASE("sanitizeUploadedFilename") {
   CHECK(sanitizeUploadedFilename("long-name.txt", 8) == "long.txt");
   CHECK(sanitizeUploadedFilename("caf\xC3\xA9.txt", 8) == "caf.txt");
 }
+
+TEST_CASE("path labels handle empty and trailing separators") {
+  CHECK(lastPathComponent("folder/") == "");
+  CHECK(folderParent("folder/") == "folder");
+  CHECK(folderLeafLabel("folder/") == "");
+  CHECK(bookLeafLabel("/books/") == "");
+  CHECK(prettyRelativeLabel("folder/book.txt") == "folder / book");
+}
+
+TEST_CASE("sanitizeFolderInput strips unsafe segments without creating traversal") {
+  CHECK(sanitizeFolderInput("/safe/../../other/") == "safe/other");
+  CHECK(sanitizeFolderInput("safe:folder/with*chars") == "safe_folder/with_chars");
+  CHECK(sanitizeFolderInput("\\safe\\nested") == "safe/nested");
+}
+
+TEST_CASE("sanitizeUploadedFilename preserves UTF-8 boundaries at the limit") {
+  CHECK(sanitizeUploadedFilename("na\xC3\xAFve.txt", 8) == "na\xC3\xAF.txt");
+  CHECK(sanitizeUploadedFilename("na\xC3\xAFve.txt", 9) == "na\xC3\xAFv.txt");
+  CHECK(sanitizeUploadedFilename("na\xC3\xAFve.txt", 10) == "na\xC3\xAFve.txt");
+  CHECK(sanitizeUploadedFilename("/tmp/\xC3\xA9.txt") == "\xC3\xA9.txt");
+}
