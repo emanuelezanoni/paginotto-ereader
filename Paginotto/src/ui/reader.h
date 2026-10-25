@@ -119,10 +119,9 @@ void saveProgress();
 // on every page turn in the reader to bound NVS write rate.
 void saveProgressThrottled();
 
-// Commit progress + page table to durable storage. Call at every "leaving"
-// moment (sleep, exit-to-home, preview commit) so a later boot or open
-// finds both the latest cursor and a fresh on-disk page cache. No-op if
-// no book is open.
+// Commit the latest reading position to durable storage. The page-offset
+// cache is persisted incrementally while scanning and turning pages; it is
+// not rebuilt as a RAM table when leaving the reader.
 void persistReaderState();
 
 #endif  // PAGINOTTO_UI_READER_H

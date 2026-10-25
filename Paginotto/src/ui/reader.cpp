@@ -10,6 +10,7 @@
 #include "src/hal/input.h"                  // markUserActivity during long opens
 
 #include "src/ui/font.h"                    // layoutForCache for cache stamping
+#include "src/pure/reader_resume.h"
 #include "src/ui/screens/library_screen.h"  // navigateToLibraryRoot — fallback on error
 #include "src/ui/text.h"
 #include "src/ui/toast.h"                   // Toast::isActive / Toast::draw
@@ -340,56 +341,34 @@ bool openBookByIndex(int idx) {
   // survives font changes; if it's set, find which page contains it under
   // the current layout. If absent (legacy data from older firmware), fall
   // back to the saved page number — it'll get rewritten as an offset on
-  // the next save.
-  // Both branches below produce a >= 0 page index (findPageForOffset's
-  // floor is 0; loadSavedPage clamps internally), so no extra guard needed.
-  // Any out-of-range value vs. the page table gets normalized in
-  // prepareForRender on the first draw.
+  // the next save. The pure resolver keeps the two paths identical about
+  // cache misses, stale entries, and asynchronous scanning.
   PreferencesStore kv(prefs);
   uint32_t savedOffset = loadSavedOffset(kv, g_bookview.book.key());
-  if (savedOffset != kOffsetUnset) {
-    g_bookview.cursor.pageIndex = 0;
-    if (savedOffset > 0) {
-      uint32_t cachedOffset = 0;
-      int cachedPage = loadOffsetForPageFromDisk(
-          g_bookview.book.path(), g_bookview.book.size(), layout,
-          loadSavedPage(kv, g_bookview.book.key()), &cachedOffset);
-      if (cachedPage < 0 || cachedOffset > savedOffset) {
-        cachedPage = 0;
-        cachedOffset = 0;
-      }
-      s_openScanOffset = cachedOffset;
-      s_openScanPage = (uint32_t)cachedPage;
-      rememberPageOffset(s_openScanPage, s_openScanOffset);
-      s_openTargetOffset = savedOffset;
-      s_openTargetIsPage = false;
-      s_openingBook = cachedOffset < savedOffset;
-      s_lastOpeningPaint = 0;
-      if (!s_openingBook) {
-        g_bookview.cursor.pageIndex = cachedPage;
-        g_bookview.pages.currentOffset = cachedOffset;
-      }
-    }
-  } else {
-    g_bookview.cursor.pageIndex = loadSavedPage(kv, g_bookview.book.key());
-    if (g_bookview.cursor.pageIndex > 0) {
-      uint32_t cachedOffset = 0;
-      int cachedPage = loadOffsetForPageFromDisk(
-          g_bookview.book.path(), g_bookview.book.size(), layout,
-          g_bookview.cursor.pageIndex, &cachedOffset);
-      if (cachedPage < 0) {
-        cachedPage = 0;
-        cachedOffset = 0;
-      }
-      s_openScanOffset = cachedOffset;
-      s_openScanPage = (uint32_t)cachedPage;
-      rememberPageOffset(s_openScanPage, s_openScanOffset);
-      s_openTargetOffset = (uint32_t)g_bookview.cursor.pageIndex;
-      s_openTargetIsPage = true;
-      s_openingBook = s_openScanPage < s_openTargetOffset;
-      s_lastOpeningPaint = 0;
-      g_bookview.cursor.pageIndex = cachedPage;
-    }
+  const bool hasSavedOffset = savedOffset != kOffsetUnset;
+  const int savedPage = loadSavedPage(kv, g_bookview.book.key());
+  uint32_t cachedOffset = 0;
+  int cachedPage = -1;
+  if ((hasSavedOffset && savedOffset > 0) ||
+      (!hasSavedOffset && savedPage > 0)) {
+    cachedPage = loadOffsetForPageFromDisk(
+        g_bookview.book.path(), g_bookview.book.size(), layout,
+        savedPage, &cachedOffset);
+  }
+
+  const ReaderResumePlan plan = makeReaderResumePlan(
+      hasSavedOffset, savedOffset, savedPage, cachedPage, cachedOffset);
+  g_bookview.cursor.pageIndex = plan.initialPage;
+  g_bookview.pages.currentOffset = plan.initialOffset;
+
+  if (plan.target > 0) {
+    s_openScanOffset = plan.scanOffset;
+    s_openScanPage = plan.scanPage;
+    rememberPageOffset(s_openScanPage, s_openScanOffset);
+    s_openTargetOffset = plan.target;
+    s_openTargetIsPage = plan.targetIsPage;
+    s_openingBook = plan.opening;
+    s_lastOpeningPaint = 0;
   }
   g_bookview.cursor.pageTurnsSinceFull = 0;
   resetSaveThrottle();
@@ -613,16 +592,13 @@ void saveProgressThrottled() {
   s_save.lastSaveMs = now;
 }
 
-// Commit everything the active reader has accumulated to durable storage.
-// Used at every "leaving" moment (sleep, exit-to-home, preview commit) so a
-// later boot or open finds both the latest cursor and a fresh page table.
+// Commit the latest position at every "leaving" moment (sleep, exit-to-home,
+// preview commit). The page-offset cache is already written incrementally by
+// the opening scan and page-turn path, so there is no RAM table to flush here.
 // Mid-session uses `saveProgressThrottled` for cheaper, more frequent writes.
 void persistReaderState() {
   if (!g_bookview.book.isOpen()) return;
   Diagnostics::checkpoint("reader.persist.begin");
   saveProgress();
-  savePageOffsetCacheForBook(g_bookview.book.path(), g_bookview.book.size(),
-                             Font::layoutForCache(),
-                             g_bookview.pages);
   Diagnostics::checkpoint("reader.persist.done");
 }

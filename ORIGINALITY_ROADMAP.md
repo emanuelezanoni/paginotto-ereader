@@ -261,6 +261,17 @@ allow the implementation and internal organisation to be Paginotto-specific.
    hand-off between persistent position, page cache and the active book. This
    is the next functional priority because it can break opening/resuming a
    book even though the pure core and storage layers pass independently.
+   - [x] Extracted and tested the pure resume decision contract: canonical
+     byte offset, legacy page fallback, missing/stale cache and asynchronous
+     scan setup.
+   - [x] Integrated the resolver without changing persistence keys, cache
+     format or public reader APIs.
+   - [x] Fixed legacy resume when the requested page was already cached: the
+     cursor and render offset now advance together.
+   - [x] Corrected the leaving-state documentation and removed the obsolete
+     full-table cache flush call; the cache is streaming and incremental.
+   - [ ] Complete transition tests for scan cancellation, sleep/resume,
+     layout changes, WebUI jumps and forward/backward boundary navigation.
 2. **Hardware boundary classification** — inspect display, input, sleep,
    battery, font and file-stream files and mark each block as external API,
    Paginotto wrapper/policy or inherited implementation. Do this before any
