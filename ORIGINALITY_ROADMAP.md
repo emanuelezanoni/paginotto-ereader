@@ -303,6 +303,71 @@ allow the implementation and internal organisation to be Paginotto-specific.
    Paginotto-authored code, choose the Paginotto license, run the full matrix,
    and prepare the planned `v2.0.0` release.
 
+## Updated execution plan
+
+This is the authoritative order for the remaining work. A phase is complete
+only when its behaviour is tested where practical, `pio check` passes, and
+both firmware environments compile. No phase below requires rewriting vendor
+libraries or changing the already-stable reader/storage formats.
+
+### Phase 1 — Rewrite inherited device logic
+
+**Status: not started.** The boundary audit is complete; the actual clean-room
+rewrites are not.
+
+Work in this order, one bounded subsystem at a time:
+
+1. `file_stream` + `display`: preserve `IReadStream`, framebuffer geometry,
+   rotation and refresh semantics; remove inherited implementation structure.
+2. `input`: preserve ISR safety, event timings and public `ButtonEvent`
+   behaviour; test debounce, overflow, click/hold and wake edges.
+3. `font`: preserve font roles, layout metrics, cache stamps and bionic mode;
+   keep U8g2 as the rendering dependency.
+4. `sleep` + `lock`: preserve NVS keys, wake behaviour, lock lifecycle and
+   radio shutdown; test timeout, wake and unlock paths.
+5. `battery`: preserve board ADC wiring and visible percentage behaviour;
+   test sampling, invalid readings, filtering, hysteresis and UI bounds.
+
+### Phase 2 — Finish Wi-Fi and OTA
+
+**Status: 2A complete; 2B and 2C remain.**
+
+6. Wi-Fi provisioning: host disconnect/timeout, radio ownership during upload,
+   association failures, reconnect and cleanup.
+7. OTA: validate channel and manifest input, handle HTTP/download stalls and
+   truncation, verify partition/image results, add safe rollback-after-boot
+   handling, and keep the update UI in a recoverable state.
+
+### Phase 3 — Finish non-reader UI
+
+**Status: not started as a rewrite.** Audit and rewrite only inherited product
+logic in `screen`, widgets, toast/feedback, lock integration, screensaver
+runtime and screensaver WebUI. The reader path is already complete and is not
+part of this phase.
+
+### Phase 4 — Provenance and licensing closure
+
+**Status: not started.** Complete the manual inventory for all remaining C++,
+HTML, CSS, JavaScript, fonts, icons and generated assets; add the differential
+compatibility oracle; inventory dependency/asset licenses; and write
+`THIRD_PARTY_NOTICES`.
+
+### Phase 5 — Boundary release
+
+**Status: not started.** Update `UPSTREAM.md` and README, state the exact
+boundary between historical upstream code, third-party material and rewritten
+Paginotto code, choose the project license, run the complete verification
+matrix, and prepare `v2.0.0`.
+
+### Explicitly closed and not to be reopened
+
+- paginator, text/UTF-8, library navigation and stream core;
+- filesystem, catalog, metadata, persistent keys and page-cache;
+- reader opening/resume, scan, cancellation, navigation boundaries,
+  sleep/resume intent, layout remapping and WebUI jumps;
+- hardware/vendor boundary classification;
+- Wi-Fi credential validation (2A).
+
 ## Detailed completion checklist
 
 1. **Reader integration and state** — audit `state`, `reader_screen` and the
