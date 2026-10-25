@@ -6,6 +6,7 @@
 #include "src/config.h"
 #include "src/hal/display.h"  // u8g2 instance
 #include "src/state.h"        // prefs
+#include "src/pure/bionic_text.h"
 
 namespace Font {
 
@@ -140,64 +141,8 @@ PageCacheLayout layoutForCache() {
 //  we don't bold things like "—" or "...".
 // ----------------------------------------------------------------------------
 
-static bool isBionicLeadByte(uint8_t b) {
-  return (b >= '0' && b <= '9') ||
-         (b >= 'A' && b <= 'Z') ||
-         (b >= 'a' && b <= 'z') ||
-         (b >= 128);   // any UTF-8 multibyte lead byte
-}
-
-// UTF-8 char length at byte `i` in `s` (assumes well-formed; degenerate
-// 0xF8+ falls through to 1). Local copy so this file doesn't pull in
-// text_util.h — the algorithm is trivial.
-static int utf8Len(uint8_t b) {
-  if (b < 0x80) return 1;
-  if ((b & 0xE0) == 0xC0) return 2;
-  if ((b & 0xF0) == 0xE0) return 3;
-  if ((b & 0xF8) == 0xF0) return 4;
-  return 1;
-}
-
-static int bionicStrongCharCount(int charCount) {
-  if (charCount <= 0) return 0;
-  if (charCount <= 3) return 1;
-  int n = charCount / 2;
-  if (n < 1) n = 1;
-  if (n > 4) n = 4;
-  return n;
-}
-
 int bionicPrefixBytes(const char* word, int byteLen) {
-  if (!word || byteLen <= 0) return 0;
-  if (!isBionicLeadByte((uint8_t)word[0])) return 0;
-
-  // Count UTF-8 chars, then convert "strong char count" back to a byte
-  // offset by walking again. Two passes keep the logic obvious; words are
-  // short so cost is negligible.
-  int chars = 0;
-  for (int i = 0; i < byteLen; ) {
-    int clen = utf8Len((uint8_t)word[i]);
-    if (i + clen > byteLen) break;
-    i += clen;
-    chars++;
-  }
-
-  int strong = bionicStrongCharCount(chars);
-  if (strong <= 0) return 0;
-
-  int byteOff = 0;
-  int seen = 0;
-  while (byteOff < byteLen && seen < strong) {
-    int clen = utf8Len((uint8_t)word[byteOff]);
-    if (byteOff + clen > byteLen) break;
-    byteOff += clen;
-    seen++;
-  }
-  // Reject if the split is degenerate: the whole word would be bolded
-  // (no tail) or nothing would be (no head). Both look worse than
-  // unstyled.
-  if (byteOff <= 0 || byteOff >= byteLen) return 0;
-  return byteOff;
+  return bionicPrefixBytesPure(word, byteLen);
 }
 
 // Largest line the paginator emits in one shot — see kLineMax in
