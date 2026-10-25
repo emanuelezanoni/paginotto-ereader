@@ -255,7 +255,49 @@ allow the implementation and internal organisation to be Paginotto-specific.
 
 ## Current status
 
-## Remaining work — ordered by importance
+### What is complete
+
+- **Core reader:** paginator, text/UTF-8 handling, library navigation and
+  stream contracts are characterized, rewritten or hardened.
+- **Storage and persistence:** paths, filesystem helpers, catalog, metadata,
+  reading position, persistent keys and page-cache integration are complete.
+- **Reader integration:** opening/resume, legacy fallback, incremental scan,
+  cancellation, forward/backward boundaries, sleep/resume intent, layout
+  remapping and WebUI jumps are covered by host tests and firmware builds.
+  No reader rewrite is currently pending.
+- **Verification:** the last reader audit passed 110 tests / 412 checks,
+  `pio check`, and clean builds for `wireless-paper-v1_1` and
+  `wireless-paper-v1_2`.
+- **Hardware boundary classification:** `display`, `file_stream`, `input`,
+  `font`, `sleep`, `battery` and `lock` are repository adapters or product
+  policy, not vendor source. Heltec, Arduino/ESP-IDF, Adafruit GFX, U8g2 and
+  the other declared dependencies remain external.
+
+### What remains — ordered by importance
+
+1. **Targeted rewrite/review of derived device modules.** Rewrite only
+   repository logic still substantially inherited, preserving hardware
+   contracts and user-visible behaviour:
+   `display`/`file_stream`, `input`, `font`, `sleep`, `battery` and `lock`.
+   Each subsystem needs characterization tests where practical, `pio check`,
+   and clean V1.1/V1.2 builds. Vendor APIs and vendor implementations are not
+   rewrite targets.
+2. **Connectivity and maintenance.** Review Wi-Fi provisioning and OTA
+   product logic, including provisioning failure, reconnect, update failure
+   and rollback/error paths. Keep Arduino/ESP-IDF and library code external.
+3. **Remaining UI and screensavers.** Audit `screen`, widgets, toast/feedback,
+   lock integration, screensaver runtime and WebUI. The screensaver runtime
+   and WebUI are the clearest large derived feature outside the reader path.
+4. **Final provenance/licensing audit.** Complete the manual file-by-file
+   inventory, including HTML/CSS/JavaScript, fonts, icons and generated
+   assets; add a differential compatibility oracle; inventory dependency and
+   asset licenses; and write `THIRD_PARTY_NOTICES`.
+5. **Boundary and release.** Update `UPSTREAM.md` and README, document the
+   exact boundary between inherited history, external material and
+   Paginotto-authored code, choose the Paginotto license, run the full matrix,
+   and prepare the planned `v2.0.0` release.
+
+## Detailed completion checklist
 
 1. **Reader integration and state** — audit `state`, `reader_screen` and the
    hand-off between persistent position, page cache and the active book. This
@@ -286,10 +328,10 @@ allow the implementation and internal organisation to be Paginotto-specific.
    battery, font and file-stream files and mark each block as external API,
    Paginotto wrapper/policy or inherited implementation. Do this before any
    rewrite so vendor code is not duplicated and copied product logic is not
-   excused as vendor code. **Blocks 1A and 1B complete:** `display`,
-   `file_stream`, `input` and `font` are classified as derived repository
-   adapters/policy; their vendor dependencies are external and are not
-   candidates for rewriting.
+   excused as vendor code. **Blocks 1A, 1B and 1C complete:** `display`,
+   `file_stream`, `input`, `font`, `sleep`, `battery` and `lock` are
+   classified as derived repository adapters/policy; their vendor
+   dependencies are external and are not candidates for rewriting.
 3. **Reader-facing UI/HAL implementation** — rewrite only the inherited
    product logic found in step 2, preserving the Heltec/ESP32 contracts;
    compile both board variants after each subsystem.
@@ -328,9 +370,9 @@ allow the implementation and internal organisation to be Paginotto-specific.
   `battery`, `lock`) are complete. Vendor APIs remain external; repository
   adapters and product policies are classified as derived where the
   upstream comparison supports that conclusion.
-- [ ] Device UI and hardware adapter review/rewrite. Reader integration is
-  complete; remaining work starts with display/input/sleep/battery/file-stream
-  boundary classification and only then targets inherited product logic.
+- [ ] Device UI and hardware adapter review/rewrite. Boundary classification
+  is complete for display, file-stream, input, font, sleep, battery and lock;
+  targeted rewrites now remain.
 - [ ] Connectivity and maintenance review/rewrite.
 - [ ] Screensaver WebUI rewrite.
 - [ ] Remaining inherited utility review.
