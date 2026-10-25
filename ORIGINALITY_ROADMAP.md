@@ -322,10 +322,12 @@ allow the implementation and internal organisation to be Paginotto-specific.
   layout remapping and WebUI jumps are covered by host tests and firmware CI.
 - [x] Persistence and library storage review/rewrite (paths, catalog,
   metadata and page-cache integration completed).
-- [ ] Classify device UI/HAL files into external API, Paginotto wrapper and
+- [x] Classify device UI/HAL files into external API, Paginotto wrapper and
   inherited implementation before deciding what to rewrite. Blocks 1A
-  (`display`, `file_stream`) and 1B (`input`, `font`) are complete; `sleep`,
-  battery and lock remain.
+  (`display`, `file_stream`), 1B (`input`, `font`) and 1C (`sleep`,
+  `battery`, `lock`) are complete. Vendor APIs remain external; repository
+  adapters and product policies are classified as derived where the
+  upstream comparison supports that conclusion.
 - [ ] Device UI and hardware adapter review/rewrite. Reader integration is
   complete; remaining work starts with display/input/sleep/battery/file-stream
   boundary classification and only then targets inherited product logic.

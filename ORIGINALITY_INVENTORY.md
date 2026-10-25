@@ -108,6 +108,34 @@ that need review even when their score is lower:
   derived. Classify it as **derived UI logic — targeted rewrite or clean-room
   review pending**.
 
+### Hardware boundary audit — block 1C
+
+- `src/ui/sleep.cpp` and `src/ui/sleep.h` are **repository lifecycle policy**,
+  not ESP32, Wi-Fi or Bluetooth vendor source. Platform APIs provide sleep,
+  wake sources and radio shutdown; the firmware owns settings, screensaver
+  selection, lock-on-sleep, screen cleanup, button-edge recovery and shutdown
+  ordering. The implementation is substantially inherited from upstream,
+  with Paginotto-specific reader/screensaver integration changes. Classify it
+  as **derived lifecycle logic — targeted rewrite/review pending**.
+- `src/hal/battery.cpp` and `src/hal/battery.h` are **repository battery
+  policy**, not ESP32 ADC vendor code. Arduino/ESP32 supplies ADC access and
+  attenuation; the firmware owns switched measurement, trimmed sampling,
+  voltage conversion, the LiPo lookup curve, filtering, hysteresis and icon
+  rendering. The implementation is substantially inherited but has materially
+  different calibration, lookup, smoothing and rendering policy. Classify it
+  as **derived hardware service — targeted rewrite/review pending**.
+- `src/ui/lock.cpp` and `src/ui/lock.h` are **repository feature logic**, not
+  board-support code. NVS persistence, lock state and unlock gesture policy
+  belong to Paginotto; preferences and the input event type are dependencies.
+  The implementation is substantially inherited, with changed gesture
+  semantics and lifecycle documentation. Classify it as **derived feature
+  logic — targeted rewrite/review pending**.
+
+The first-pass hardware boundary classification is now complete: vendor APIs
+are external, while display/input/font/sleep/battery/lock remain repository
+adapters or product policy. None of these files should be treated as vendor
+source merely because they call board APIs.
+
 The percentages above were recomputed against the imported commit using a
 line-sequence matcher. They are useful for triage only; a high percentage can
 be caused by a conventional adapter, while a short copied block can be more
