@@ -26,6 +26,19 @@ development history.
 - Give special attention to copied JavaScript, HTML, CSS, comments and assets,
   not only to C++ files.
 
+### First-pass result
+
+- [x] Automated similarity/rename scan completed against upstream commit
+  `2c82e59e0f6e87afd204606b930f15cf7b5b7b8a`.
+- [x] Exact matches and high-similarity files recorded in
+  `ORIGINALITY_INVENTORY.md`.
+- [ ] Manual file-by-file classification completed.
+
+The scan confirms that the screensaver implementation is the main functional
+rewrite target, but also found unchanged or nearly unchanged utility, UI,
+storage and hardware-support files. No licensing conclusion is drawn from the
+similarity percentages alone.
+
 ## 3. Rewrite the remaining derived code
 
 Priority order:
@@ -86,7 +99,8 @@ allow the implementation and internal organisation to be Paginotto-specific.
 
 - [x] Upstream license/assignment check completed.
 - [x] Initial comparison completed.
-- [ ] Full provenance inventory.
+- [x] First-pass automated provenance inventory.
+- [ ] Full manual provenance inventory.
 - [ ] Screensaver WebUI rewrite.
 - [ ] Remaining inherited utility review.
 - [ ] Dependency and asset license inventory.
