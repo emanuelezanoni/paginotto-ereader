@@ -289,9 +289,10 @@ allow the implementation and internal organisation to be Paginotto-specific.
    and channel validation, stalled/truncated downloads, image validation and
    rollback confirmation are covered. Keep Arduino/ESP-IDF and library code
    external.
-3. **Remaining UI and screensavers.** Audit `screen`, widgets, toast/feedback,
-   lock integration, screensaver runtime and WebUI. The screensaver runtime
-   and WebUI are the clearest large derived feature outside the reader path.
+3. **Remaining UI and screensavers — complete as an implementation phase.**
+   The screensaver runtime/editor, slot validation, shared widget list policy
+   and toast deadline policy were refactored and tested. The generic `screen`
+   interface remains an API boundary, not a substantive implementation.
 4. **Final provenance/licensing audit.** Complete the manual file-by-file
    inventory, including HTML/CSS/JavaScript, fonts, icons and generated
    assets; add a differential compatibility oracle; inventory dependency and
@@ -345,10 +346,11 @@ manual provenance/licensing audit, and the boundary/release documentation.
 
 ### Phase 3 — Finish non-reader UI
 
-**Status: not started as a rewrite.** Audit and rewrite only inherited product
-logic in `screen`, widgets, toast/feedback, lock integration, screensaver
-runtime and screensaver WebUI. The reader path is already complete and is not
-part of this phase.
+**Status: complete as an implementation phase.** Screensaver runtime and
+WebUI slot management were rewritten at their product-policy boundaries;
+malformed slot arguments are rejected, uploads are size-checked before
+promotion, and shared widget/toast policies are pure and host-tested. The
+remaining provenance work is the global manual inventory and licensing audit.
 
 ### Phase 4 — Provenance and licensing closure
 
@@ -457,7 +459,10 @@ matrix, and prepare `v2.0.0`.
 - [x] Connectivity and maintenance review/rewrite. Credential validation,
   provisioning lifecycle, upload-radio ownership, OTA channel/manifest/image
   validation, download abort paths and rollback confirmation are complete.
-- [ ] Screensaver WebUI rewrite.
+- [x] Screensaver runtime/WebUI and shared UI policy rewrite. Runtime slot
+  selection, upload/delete argument validation, atomic image promotion,
+  widgets list-window calculation and toast expiry are covered by the current
+  implementation and host tests.
 - [ ] Remaining inherited utility review.
 - [ ] Dependency and asset license inventory.
 - [ ] Provenance-boundary commit.

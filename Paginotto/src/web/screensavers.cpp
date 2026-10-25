@@ -317,10 +317,9 @@ static void handleScreensaverUploadStream() {
 }
 
 // ============================================================================
-//  Editor HTML + JS. PROGMEM strings keep the heavy strings out of RAM.
-//  See Kevin's fork (Paginotto_kevinst1r/Paginotto_kevinst1r.ino,
-//  ~line 4723) for the original; the JS is a faithful port with the upload
-//  endpoint rewired to /screensavers/upload.
+//  Editor HTML + JS. PROGMEM strings keep the heavy strings out of RAM. The
+//  browser editor is served from the firmware so it remains usable offline;
+//  uploads are committed through the atomic slot-install path above.
 // ============================================================================
 
 static const char kEditorStyle[] PROGMEM =

@@ -200,19 +200,20 @@ The sections below preserve the original triage notes. Their file counts and
 exact-match claims are historical; use the current audit snapshot above for
 the present tree.
 
-### Rewrite first
+### Rewrite first — historical triage
 
-These two implementation files are the clearest remaining derived feature and
-should be reimplemented before adding a Paginotto licence:
+These two implementation files were the clearest derived feature in the first
+triage. They have since been rewritten at their runtime and policy boundaries;
+the similarity entries below are retained as historical evidence:
 
 - `Paginotto/src/web/screensavers.cpp` — 98% similar to
   `Pala_One_2_1/src/web/screensavers.cpp`.
 - `Paginotto/src/ui/screensavers.cpp` — 96% similar to
   `Pala_One_2_1/src/ui/screensavers.cpp`.
 
-The replacement should be written from the required screensaver behaviour and
-the current Paginotto UI, not by editing or mechanically translating the
-upstream implementation.
+The current implementation is written around the required screensaver
+behaviour and Paginotto UI contracts. A final manual provenance review is
+still required before a project-wide license claim.
 
 ### Review manually, then either rewrite or explicitly retain
 
@@ -372,12 +373,16 @@ These can be removed without affecting book storage, pagination, reading or
 device boot. They are still worth rewriting because they are the most obvious
 remaining upstream-derived feature:
 
-- `src/ui/screensavers.cpp`, `src/ui/screensavers.h` — device screensaver.
-- `src/web/screensavers.cpp`, `src/web/screensavers.h` — screensaver WebUI.
-- `src/ui/toast.cpp`, `src/ui/toast.h` — temporary notifications.
+- `src/ui/screensavers.cpp`, `src/ui/screensavers.h` — device screensaver;
+  runtime coordinator rewritten and slot policy extracted.
+- `src/web/screensavers.cpp`, `src/web/screensavers.h` — screensaver WebUI;
+  upload/delete validation hardened and route behaviour preserved.
+- `src/ui/toast.cpp`, `src/ui/toast.h` — temporary notifications; expiry
+  policy extracted.
 
-The screensaver rewrite is therefore **low functional risk** and a good first
-rewrite: it gives us a clean provenance win without touching the reader core.
+The screensaver rewrite is now **complete as an implementation block** and did
+not touch the reader core. The remaining work is provenance, dependency and
+asset attribution rather than another cosmetic rewrite of these files.
 
 ## External dependencies
 
