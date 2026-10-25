@@ -12,6 +12,7 @@
 #include "src/ui/font.h"                    // layoutForCache for cache stamping
 #include "src/pure/reader_resume.h"
 #include "src/pure/reader_scan.h"
+#include "src/pure/reader_navigation.h"
 #include "src/ui/screens/library_screen.h"  // navigateToLibraryRoot — fallback on error
 #include "src/ui/text.h"
 #include "src/ui/toast.h"                   // Toast::isActive / Toast::draw
@@ -478,14 +479,19 @@ bool advancePage() {
     return false;
   }
   uint32_t next = nextPageOffset(g_bookview.book.file(), g_bookview.pages.currentOffset);
-  if (next <= g_bookview.pages.currentOffset
-      || next >= (uint32_t)g_bookview.book.size()) {
-    g_bookview.pages.eofReached = true;
+  const ReaderAdvanceDecision decision = decideReaderAdvance(
+      (uint32_t)g_bookview.cursor.pageIndex,
+      g_bookview.pages.currentOffset,
+      next,
+      g_bookview.book.size(),
+      g_bookview.pages.eofReached);
+  if (!decision.moved) {
+    g_bookview.pages.eofReached = decision.eof;
     return false;
   }
-  g_bookview.pages.currentOffset = next;
-  g_bookview.cursor.pageIndex++;
-  rememberPageOffset((uint32_t)g_bookview.cursor.pageIndex, next);
+  g_bookview.pages.currentOffset = decision.offset;
+  g_bookview.cursor.pageIndex = (int)decision.page;
+  rememberPageOffset(decision.page, decision.offset);
   if (((uint32_t)g_bookview.cursor.pageIndex % kPersistentPageStride) == 0) {
     uint32_t batch[kPersistentPageStride];
     uint32_t firstPage = (uint32_t)g_bookview.cursor.pageIndex

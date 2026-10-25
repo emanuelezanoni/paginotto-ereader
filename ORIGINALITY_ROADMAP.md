@@ -274,8 +274,10 @@ allow the implementation and internal organisation to be Paginotto-specific.
      target reached, forward progress and non-progressing EOF/corrupt input.
      The reached page is still appended to the streaming cache before the
      scan completes.
+   - [x] Extracted and integrated forward-navigation boundary decisions for
+     valid pages, empty files, EOF, and non-progressing offsets.
    - [ ] Complete transition tests for scan cancellation, sleep/resume,
-     layout changes, WebUI jumps and forward/backward boundary navigation.
+     layout changes, WebUI jumps and backward-boundary navigation.
 2. **Hardware boundary classification** — inspect display, input, sleep,
    battery, font and file-stream files and mark each block as external API,
    Paginotto wrapper/policy or inherited implementation. Do this before any
