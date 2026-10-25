@@ -8,6 +8,11 @@ static constexpr const char* kKey = "cfg_locked";
 
 static bool s_locked = false;
 
+static void persistLockState(bool locked) {
+  s_locked = locked;
+  prefs.putBool(kKey, locked);
+}
+
 void loadSettings() {
   s_locked = prefs.getBool(kKey, false);
 }
@@ -16,14 +21,12 @@ bool isLocked() { return s_locked; }
 
 void engage() {
   if (s_locked) return;
-  s_locked = true;
-  prefs.putBool(kKey, true);
+  persistLockState(true);
 }
 
 void disengage() {
   if (!s_locked) return;
-  s_locked = false;
-  prefs.putBool(kKey, false);
+  persistLockState(false);
 }
 
 bool isUnlockGesture(const ButtonEvent& ev) {
