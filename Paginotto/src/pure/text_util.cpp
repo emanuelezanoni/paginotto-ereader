@@ -1,39 +1,64 @@
 #include "text_util.h"
 
+namespace {
+
+bool isContinuation(uint8_t b) {
+  return (b & 0xC0) == 0x80;
+}
+
+bool validUtf8At(const char* buf, size_t len, size_t index, int* outLength) {
+  if (index >= len) { *outLength = 0; return false; }
+  const uint8_t b0 = (uint8_t)buf[index];
+  const int width = utf8CharLenFromLead(b0);
+  if (width == 1) { *outLength = 1; return b0 < 0x80; }
+  if (index + (size_t)width > len) { *outLength = 1; return false; }
+
+  const uint8_t b1 = (uint8_t)buf[index + 1];
+  if (!isContinuation(b1) ||
+      (width == 2 && b0 < 0xC2) ||
+      (width == 3 && ((b0 == 0xE0 && b1 < 0xA0) || (b0 == 0xED && b1 > 0x9F))) ||
+      (width == 4 && ((b0 == 0xF0 && b1 < 0x90) || (b0 == 0xF4 && b1 > 0x8F)))) {
+    *outLength = 1;
+    return false;
+  }
+  for (int i = 2; i < width; ++i) {
+    if (!isContinuation((uint8_t)buf[index + (size_t)i])) {
+      *outLength = 1;
+      return false;
+    }
+  }
+  *outLength = width;
+  return true;
+}
+
+}  // namespace
+
 int utf8CharLenFromLead(uint8_t b) {
   if (b < 0x80) return 1;
-  if ((b & 0xE0) == 0xC0) return 2;
-  if ((b & 0xF0) == 0xE0) return 3;
-  if ((b & 0xF8) == 0xF0) return 4;
+  if (b >= 0xC2 && b <= 0xDF) return 2;
+  if (b >= 0xE0 && b <= 0xEF) return 3;
+  if (b >= 0xF0 && b <= 0xF4) return 4;
   return 1;
 }
 
 int utf8SafeCharLenAt(const String& s, int index) {
   if (index < 0 || index >= (int)s.length()) return 0;
-  uint8_t b0 = (uint8_t)s[index];
-  int len = utf8CharLenFromLead(b0);
-  if (index + len > (int)s.length()) return 1;
-  for (int i = 1; i < len; i++) {
-    if (!isUtf8ContinuationByte((uint8_t)s[index + i])) return 1;
-  }
-  return len;
+  int length = 0;
+  validUtf8At(s.c_str(), s.length(), (size_t)index, &length);
+  return length;
 }
 
 int utf8SafeCharLenAt(const char* buf, size_t len, size_t index) {
-  if (index >= len) return 0;
-  uint8_t b0 = (uint8_t)buf[index];
-  int clen = utf8CharLenFromLead(b0);
-  if (index + (size_t)clen > len) return 1;
-  for (int i = 1; i < clen; i++) {
-    if (!isUtf8ContinuationByte((uint8_t)buf[index + i])) return 1;
-  }
-  return clen;
+  if (!buf || index >= len) return 0;
+  int length = 0;
+  validUtf8At(buf, len, index, &length);
+  return length;
 }
 
 String utf8CharAt(const String& s, int index) {
-  int len = utf8SafeCharLenAt(s, index);
-  if (len <= 0) return String("");
-  return s.substring(index, index + len);
+  const int length = utf8SafeCharLenAt(s, index);
+  if (length <= 0) return String("");
+  return s.substring(index, index + length);
 }
 
 bool isBreakableWhitespaceByte(char b) {
@@ -51,48 +76,31 @@ String normalizeTypography(const String& in) {
   size_t i = 0;
 
   while (i < in.length()) {
-    uint8_t b0 = (uint8_t)in[i];
-
-    // UTF-8 BOM
+    const uint8_t b0 = (uint8_t)in[i];
     if (i == 0 && b0 == 0xEF && i + 2 < in.length() &&
         (uint8_t)in[i + 1] == 0xBB && (uint8_t)in[i + 2] == 0xBF) {
       i += 3;
       continue;
     }
-
-    // Non-breaking space -> normal space
-    if (b0 == 0xC2 && i + 1 < in.length() && (uint8_t)in[i + 1] == 0xA0) {
-      out += ' ';
-      i += 2;
-      continue;
-    }
-
-    // 0xC2 0xAB = U+00AB <<  (left guillemet)
-    // 0xC2 0xBB = U+00BB >>  (right guillemet)
     if (b0 == 0xC2 && i + 1 < in.length()) {
-      uint8_t b1 = (uint8_t)in[i + 1];
+      const uint8_t b1 = (uint8_t)in[i + 1];
+      if (b1 == 0xA0) { out += ' '; i += 2; continue; }
       if (b1 == 0xAB || b1 == 0xBB) { out += '"'; i += 2; continue; }
-      // 0x91/0x92 are Windows-1252 smart quotes that sometimes leak through
-      // despite being technically invalid UTF-8; matching them defensively
-      // is harmless.
+      // Defensive handling for Windows-1252 smart quotes mislabelled as UTF-8.
       if (b1 == 0x91 || b1 == 0x92) { out += '\''; i += 2; continue; }
     }
-
-    if (b0 == 0xE2 && i + 2 < in.length()) {
-      uint8_t b1 = (uint8_t)in[i + 1];
-      uint8_t b2 = (uint8_t)in[i + 2];
-      if (b1 == 0x80) {
-        if (b2 == 0x98 || b2 == 0x99 || b2 == 0x9A || b2 == 0x9B) { out += '\''; i += 3; continue; }
-        if (b2 == 0x9C || b2 == 0x9D || b2 == 0x9E || b2 == 0x9F || b2 == 0xB9 || b2 == 0xBA) { out += '"'; i += 3; continue; }
-        if (b2 == 0x93 || b2 == 0x94 || b2 == 0x95) { out += '-'; i += 3; continue; }
-        if (b2 == 0xA6) { out += "..."; i += 3; continue; }
+    if (b0 == 0xE2 && i + 2 < in.length() && (uint8_t)in[i + 1] == 0x80) {
+      const uint8_t b2 = (uint8_t)in[i + 2];
+      if (b2 >= 0x98 && b2 <= 0x9B) { out += '\''; i += 3; continue; }
+      if ((b2 >= 0x9C && b2 <= 0x9F) || b2 == 0xB9 || b2 == 0xBA) {
+        out += '"'; i += 3; continue;
       }
+      if (b2 >= 0x93 && b2 <= 0x95) { out += '-'; i += 3; continue; }
+      if (b2 == 0xA6) { out += "..."; i += 3; continue; }
     }
-
     out += (char)b0;
-    i++;
+    ++i;
   }
-
   return out;
 }
 
@@ -102,24 +110,18 @@ String compactText(const String& in,
                    bool trimTail) {
   String out;
   out.reserve(in.length());
-
   bool lastWasSpace = ioLastWasSpace ? *ioLastWasSpace : false;
   int newlineCount = ioNewlineCount ? *ioNewlineCount : 0;
-  // Length of `out` up to (and including) its last non-space byte —
-  // newlines count as non-space here. Lets newline emission strip
-  // trailing spaces in O(1) without clobbering previously-emitted
-  // newlines (which would break the "collapse runs to two" rule).
   size_t trimAnchor = 0;
 
-  for (size_t i = 0; i < in.length(); i++) {
+  for (size_t i = 0; i < in.length(); ++i) {
     char c = in[i];
-
     if (c == '\r') continue;
     if (c == '\t') c = ' ';
-
     if (c == '\n') {
+      // Keep at most two newlines, and remove spaces immediately before them.
       if (out.length() > trimAnchor) out.remove(trimAnchor);
-      newlineCount++;
+      ++newlineCount;
       if (newlineCount <= 2) {
         out += '\n';
         trimAnchor = out.length();
@@ -127,17 +129,11 @@ String compactText(const String& in,
       lastWasSpace = false;
       continue;
     }
-
     newlineCount = 0;
-
     if (c == ' ') {
-      if (!lastWasSpace) {
-        out += ' ';
-        lastWasSpace = true;
-      }
+      if (!lastWasSpace) { out += ' '; lastWasSpace = true; }
       continue;
     }
-
     lastWasSpace = false;
     out += c;
     trimAnchor = out.length();
@@ -145,15 +141,13 @@ String compactText(const String& in,
 
   if (ioLastWasSpace) *ioLastWasSpace = lastWasSpace;
   if (ioNewlineCount) *ioNewlineCount = newlineCount;
-
   if (trimTail) {
     while (out.length() > 0) {
-      char last = out[out.length() - 1];
+      const char last = out[out.length() - 1];
       if (last != ' ' && last != '\n') break;
       out.remove(out.length() - 1);
     }
   }
-
   return out;
 }
 

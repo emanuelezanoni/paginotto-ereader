@@ -78,7 +78,20 @@ clean provenance decision.
    - [x] Paginator behaviour characterized with additional edge-case tests.
    - [x] `src/pure/paginator.cpp` reimplemented with the existing API and
      offset semantics preserved.
-   - [ ] `text_util` and library navigation review/rewrite.
+   - [x] `text_util.cpp` reviewed and reimplemented with the existing API.
+   - [x] UTF-8 validation strengthened: overlong encodings, surrogate halves,
+     out-of-range code points and invalid lead bytes now fall back safely one
+     byte at a time. Added regression coverage for these cases.
+   - [x] Typography normalization and streaming compaction were kept
+     behaviour-compatible while being simplified and documented.
+   - [ ] `library_nav` and the remaining stream interfaces review/rewrite.
+
+   The streaming compaction API intentionally retains its existing contract:
+   a chunk may return a trailing space when `trimTail=false`. Therefore a
+   space at the end of one independently returned chunk cannot be removed
+   retroactively when the next chunk starts with a newline. Fixing that would
+   require a new buffered-stream API or changing the caller's write model; it
+   is not silently claimed as solved by a source refactor.
 
 2. **Persistence and library storage**
    - `src/storage/fs_util.cpp`

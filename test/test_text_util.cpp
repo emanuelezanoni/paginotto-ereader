@@ -23,6 +23,18 @@ TEST_CASE("utf8SafeCharLenAt handles valid and malformed UTF-8") {
   CHECK_EQ(utf8SafeCharLenAt(t, 0), 1);
 }
 
+TEST_CASE("utf8 helpers reject invalid scalar encodings") {
+  CHECK_EQ(utf8CharLenFromLead(0xC0), 1);  // overlong two-byte lead
+  CHECK_EQ(utf8CharLenFromLead(0xF5), 1);  // above U+10FFFF
+
+  char overlong[] = {(char)0xE0, (char)0x80, (char)0x80, 0};
+  char surrogate[] = {(char)0xED, (char)0xA0, (char)0x80, 0};
+  char outOfRange[] = {(char)0xF4, (char)0x90, (char)0x80, (char)0x80, 0};
+  CHECK_EQ(utf8SafeCharLenAt(overlong, 3, 0), 1);
+  CHECK_EQ(utf8SafeCharLenAt(surrogate, 3, 0), 1);
+  CHECK_EQ(utf8SafeCharLenAt(outOfRange, 4, 0), 1);
+}
+
 TEST_CASE("normalizeTypography strips BOM") {
   char bom[] = {(char)0xEF, (char)0xBB, (char)0xBF, 'H', 'i', 0};
   String s(bom);
