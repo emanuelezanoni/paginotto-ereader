@@ -135,7 +135,8 @@ PageCacheLayout layoutForCache() {
 }
 
 // ----------------------------------------------------------------------------
-//  Bionic helpers — UTF-8-aware. Same prefix policy as Kevin's fork:
+//  Bionic helpers — UTF-8-aware. The prefix policy is part of the Paginotto
+//  typography contract:
 //    chars ≤ 3 → 1 strong char; otherwise chars/2 clamped to [1, 4].
 //  Punctuation-only words (no ASCII alnum / non-ASCII lead byte) get 0 so
 //  we don't bold things like "—" or "...".

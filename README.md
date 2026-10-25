@@ -132,5 +132,12 @@ Paginotto is maintained as its own project for the Paginotto device. The
 repository contains the firmware, embedded WebUI, storage system, OTA support
 and host-side tests in one place.
 
+The repository history originated from Pala One and has been substantially
+modified. See [UPSTREAM.md](UPSTREAM.md) for historical provenance and
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for dependency notices. These
+documents do not grant a blanket license over inherited upstream material; the
+Paginotto licensing boundary is documented separately in the originality
+inventory and remains subject to the final manual review.
+
 The board-specific source tree is under `Paginotto/`; build helpers are under
 `scripts/`; host-side tests are under `test/`.

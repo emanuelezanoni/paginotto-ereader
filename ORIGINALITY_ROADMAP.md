@@ -293,10 +293,12 @@ allow the implementation and internal organisation to be Paginotto-specific.
    The screensaver runtime/editor, slot validation, shared widget list policy
    and toast deadline policy were refactored and tested. The generic `screen`
    interface remains an API boundary, not a substantive implementation.
-4. **Final provenance/licensing audit.** Complete the manual file-by-file
-   inventory, including HTML/CSS/JavaScript, fonts, icons and generated
-   assets; add a differential compatibility oracle; inventory dependency and
-   asset licenses; and write `THIRD_PARTY_NOTICES`.
+4. **Final provenance/licensing audit — in progress.** The dependency
+   inventory and `THIRD_PARTY_NOTICES.md` are now present, and the current
+   source has been rescanned against the imported snapshot. Remaining work is
+   the manual review of every retained interface/asset, an explicit record
+   for the default screensaver artwork, and the differential compatibility
+   oracle.
 5. **Boundary and release.** Update `UPSTREAM.md` and README, document the
    exact boundary between inherited history, external material and
    Paginotto-authored code, choose the Paginotto license, run the full matrix,
@@ -354,10 +356,10 @@ remaining provenance work is the global manual inventory and licensing audit.
 
 ### Phase 4 — Provenance and licensing closure
 
-**Status: not started.** Complete the manual inventory for all remaining C++,
-HTML, CSS, JavaScript, fonts, icons and generated assets; add the differential
-compatibility oracle; inventory dependency/asset licenses; and write
-`THIRD_PARTY_NOTICES`.
+**Status: in progress.** The dependency inventory, QRCode pin and
+`THIRD_PARTY_NOTICES.md` are complete. The manual file/asset classification,
+default screensaver provenance record, differential oracle and final license
+scope are still open.
 
 ### Phase 5 — Boundary release
 
@@ -453,6 +455,9 @@ matrix, and prepare `v2.0.0`.
 - [x] Wi-Fi credential policy extracted and tested; invalid SSIDs and
   passphrases are rejected before persistence, while open-network passwords
   remain supported.
+- [x] Dependency inventory completed for the declared PlatformIO libraries;
+  QRCode is pinned to an immutable commit and `THIRD_PARTY_NOTICES.md` records
+  the applicable package notices.
 - [x] Device UI and hardware adapter review/rewrite. Boundary classification
   and targeted rewrites are complete for display, file-stream, input, font,
   sleep, battery and lock; vendor APIs remain external.
@@ -464,7 +469,8 @@ matrix, and prepare `v2.0.0`.
   widgets list-window calculation and toast expiry are covered by the current
   implementation and host tests.
 - [ ] Remaining inherited utility review.
-- [ ] Dependency and asset license inventory.
+- [ ] Manual asset provenance and complete license inventory, including the
+  default screensaver artwork and all retained dependency notices.
 - [ ] Provenance-boundary commit.
 - [ ] Paginotto license and third-party notices.
 - [ ] Final verification and `v2.0.0` release.

@@ -9,30 +9,30 @@ review before a licensing boundary is declared.
 ## Current audit snapshot — 2026-10-25
 
 The original first-pass lists below were not automatically updated after the
-core rewrites. This section is the authoritative current snapshot and
-supersedes any older file count in this document.
+core and UI rewrites. This section is the authoritative current snapshot and
+supersedes older similarity lists in this document.
 
 ### Current exact matches
 
-Only these four tracked files are still byte-for-byte identical to their
-mapped upstream counterparts:
+Only one current tracked product file is still byte-for-byte identical to its
+mapped upstream counterpart:
 
 - `Paginotto/partitions.csv`
-- `Paginotto/src/hal/display.cpp`
-- `Paginotto/src/storage/fs_util.cpp`
-- `Paginotto/src/ui/toast.cpp`
 
 The core files previously listed as exact matches are no longer exact matches:
 `paginator`, `text_util`, `library_nav` and `stream` have all been changed.
+The former exact-match entries for `display.cpp`, `fs_util.cpp` and
+`toast.cpp` were also changed by the later adapter/UI work.
 
 ### Current high-similarity and adjacent critical files requiring provenance review
 
-These are engineering similarity indicators, not legal conclusions. The list
-contains files at or near 90% line similarity, plus adjacent critical files
-that need review even when their score is lower:
+These are historical engineering similarity indicators from the initial scan,
+not a current exact-match list or legal conclusions. The implementation files
+that were rewrite targets have since been changed; the list is retained for
+traceability while the manual inventory is completed:
 
-- `src/web/screensavers.cpp` — 98.8% — rewrite first
-- `src/ui/screensavers.cpp` — 97.8% — rewrite first
+- `src/web/screensavers.cpp` — 98.8% initial similarity — rewritten/hardened
+- `src/ui/screensavers.cpp` — 97.8% initial similarity — structurally rewritten
 - `src/pure/arduino_compat.h` — 98.2% — review; compatibility shim
 - `src/ui/screensavers.h` — 96.3% — review with screensaver rewrite
 - `src/hal/wifi_provisioning.cpp` — 96.6% — review/rewrite
@@ -70,6 +70,33 @@ that need review even when their score is lower:
 - `src/hal/input.h` — 86.6% — interface review
 - `src/hal/battery.cpp` — 92.8% — hardware service review
 - `src/ui/font.h` — 89.0% — interface plus asset ownership review
+
+### Final audit classification — 2026-10-25
+
+- **Rewritten or materially refactored product logic:** pure reader and
+  storage modules, reader integration, display/file-stream/input/font/sleep/
+  lock/battery adapters, Wi-Fi/OTA services, screensaver runtime/editor, and
+  shared widget/toast policies. Behaviour was frozen with host tests where
+  practical and firmware compatibility was checked separately.
+- **Generic or contract-shaped interfaces retained:** public headers whose
+  shape is dictated by Arduino/ESP32 APIs, the e-ink display contract,
+  persistence keys, file formats, and the existing reader integration API.
+  Similarity here is not, by itself, expressive implementation copying.
+- **External material:** Arduino-ESP32/ESP-IDF, pioarduino, Heltec display
+  support, Adafruit GFX/BusIO, U8g2, Improv WiFi, ArduinoJson and QRCode. They
+  are dependencies, not Paginotto source, and are listed in
+  `THIRD_PARTY_NOTICES.md`.
+- **Current exact-match product file:** `Paginotto/partitions.csv`. It is
+  board configuration, not an implementation module, and remains explicitly
+  attributed to the historical boundary rather than claimed as newly authored.
+- **Asset follow-up:** `default_screensaver.h` is the only standalone embedded
+  product image asset found in the tracked tree. Its artwork provenance still
+  needs a human record before a blanket project license is selected.
+
+This classification is an engineering/provenance conclusion, not a legal
+opinion. The upstream repository has no standard license in the imported
+snapshot, so the final Paginotto license must exclude or separately address
+historical material that cannot be cleanly attributed.
 
 ### Hardware boundary audit — block 1A
 
@@ -400,9 +427,10 @@ from the Paginotto licence:
 - **ArduinoJson 7.2.1** — OTA manifest parsing.
 - **QRCode** from `ricmoo/QRCode` — QR generation for the connection screen.
 
-The QRCode dependency is currently requested as `#master`, so it is not
-actually pinned to a fixed commit despite the nearby comment saying that it
-is fixed. This must be corrected or documented during the dependency audit.
+QRCode is now pinned to commit
+`eafbde494979abc2445c363cc2602230bcbe299c` in `platformio.ini`; the resolved
+package carries the MIT notice for Richard Moore and the derived Project
+Nayuki components.
 
 Framework headers such as `Arduino.h`, `WiFi.h`, `WebServer.h`,
 `Preferences.h`, `LittleFS.h`, `HTTPClient.h` and ESP-IDF headers are covered
@@ -414,14 +442,11 @@ are the files that need provenance decisions.
 
 ## Next review order
 
-1. Reimplement `src/web/screensavers.cpp` and `src/ui/screensavers.cpp` from
-   behaviour and requirements, without using the upstream files as a coding
-   template.
-2. Review the unchanged and highly similar utility/UI files one by one and
+1. Review the remaining unchanged and highly similar utility/UI files one by one and
    mark each as `rewrite`, `retain as generic interface`, or `third-party /
    upstream provenance required`.
-3. Audit HTML, CSS, JavaScript, fonts, icons and generated assets separately.
-4. Only after those reviews, define the exact scope of the Paginotto license.
+2. Audit HTML, CSS, JavaScript, fonts, icons and generated assets separately.
+3. Only after those reviews, define the exact scope of the Paginotto license.
 
 ## Brand cleanup decision
 
