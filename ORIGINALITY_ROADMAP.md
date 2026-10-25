@@ -53,12 +53,77 @@ as a substantive originality rewrite.
 
 ## 3. Rewrite the remaining derived code
 
-Priority order:
+The work is intentionally split into two tracks. The core reader track comes
+first; the cosmetic screensaver track is postponed until the reader core has a
+clean provenance decision.
 
-1. WebUI screensaver editor and slot manager.
-2. Runtime screensaver management where it remains substantially inherited.
-3. Unchanged or nearly unchanged utility modules that are not merely trivial
-   interfaces or standard hardware adapters.
+### Core-first track
+
+1. **Pure reader algorithms**
+   - `src/pure/paginator.cpp`
+   - `src/pure/paginator.h`
+   - `src/pure/text_util.cpp`
+   - `src/pure/text_util.h`
+   - `src/pure/library_nav.cpp`
+   - `src/pure/stream.h`
+   - `src/hal/file_stream.h`
+
+   Freeze the current behaviour in host tests first, then reimplement only
+   the files that retain expressive upstream implementation. The paginator,
+   text normalisation and library-tree rules are the highest-risk part because
+   they directly affect page breaks and navigation.
+
+2. **Persistence and library storage**
+   - `src/storage/fs_util.cpp`
+   - `src/storage/fs_util.h`
+   - `src/storage/kv_store.h`
+   - `src/storage/preferences_store.h`
+   - `src/storage/library.cpp`
+   - `src/storage/library.h`
+   - `src/state.h`
+
+   Preserve on-device paths, keys and file formats unless a migration is
+   explicitly designed. Verify library loading, page cache interaction and
+   existing books after each change.
+
+3. **Device UI and hardware adapters**
+   - `src/hal/display.cpp`
+   - `src/hal/display.h`
+   - `src/ui/screen.h`
+   - `src/ui/screens/library_screen.h`
+   - `src/ui/screens/reader_screen.h`
+   - `src/ui/widgets.cpp`
+   - `src/ui/widgets.h`
+   - `src/ui/sleep.h`
+
+   These should be changed only after the pure and storage layers are stable.
+   Hardware-shaped interfaces may remain structurally conventional; copied
+   implementation logic must still be rewritten or explicitly attributed.
+
+4. **Connectivity and maintenance services**
+   - `src/hal/wifi_provisioning.cpp`
+   - `src/hal/wifi_provisioning.h`
+   - `src/hal/ota.cpp`
+   - `src/ui/lock.h`
+   - `src/hal/battery.h`
+
+   These are important but not prerequisites for local book pagination. They
+   come after the reader core is safe.
+
+### Cosmetic/optional track — postponed
+
+1. WebUI and device screensaver implementations.
+2. Toast/feedback interfaces.
+3. Optional WebUI find/reset interfaces.
+
+Priority order for the eventual full separation:
+
+1. Core reader algorithms.
+2. Persistence and library storage.
+3. Device UI and hardware adapters.
+4. Connectivity and maintenance services.
+5. WebUI screensaver editor and slot manager.
+6. Runtime screensaver management where it remains substantially inherited.
 
 The replacement must be implemented from the required behaviour and public
 interfaces, without copying upstream source structure, comments or distinctive
@@ -113,6 +178,10 @@ allow the implementation and internal organisation to be Paginotto-specific.
 - [x] Initial comparison completed.
 - [x] First-pass automated provenance inventory.
 - [ ] Full manual provenance inventory.
+- [ ] Core reader algorithms review/rewrite.
+- [ ] Persistence and library storage review/rewrite.
+- [ ] Device UI and hardware adapter review/rewrite.
+- [ ] Connectivity and maintenance review/rewrite.
 - [ ] Screensaver WebUI rewrite.
 - [ ] Remaining inherited utility review.
 - [ ] Dependency and asset license inventory.
