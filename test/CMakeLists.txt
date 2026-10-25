@@ -19,6 +19,7 @@ set(SUT_SRC
   ${FW_SRC}/pure/hashing.cpp
   ${FW_SRC}/pure/paginator.cpp
   ${FW_SRC}/pure/library_nav.cpp
+  ${FW_SRC}/pure/library_catalog.cpp
   ${FW_SRC}/pure/hold_gesture.cpp
   ${FW_SRC}/storage/book_metadata.cpp
 )
@@ -30,6 +31,7 @@ set(TEST_SRC
   ${CMAKE_CURRENT_SOURCE_DIR}/test_hashing.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_paginator.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_library_nav.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_library_catalog.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_hold_gesture.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_stream.cpp
 )

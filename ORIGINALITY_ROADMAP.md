@@ -109,8 +109,10 @@ clean provenance decision.
    - [x] Filesystem helpers hardened so existing files are not mistaken for
      directories and `/books` is never removed implicitly.
    - [x] Catalog ordering made deterministic when books share a display name.
-   - [ ] Complete host-testable catalog characterization and verify the
-     LittleFS-backed path in the firmware build.
+   - [x] Catalog insertion, duplicate handling, fixed-buffer truncation and
+     deterministic ordering isolated into `pure/library_catalog.cpp` and
+     covered by host tests.
+   - [x] LittleFS-backed path compiled successfully for both firmware boards.
 
 2. **Persistence and library storage**
    - `src/storage/fs_util.cpp`

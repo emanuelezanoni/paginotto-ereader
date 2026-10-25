@@ -1,6 +1,7 @@
 #include "src/storage/library.h"
 
 #include "src/pure/paths.h"
+#include "src/pure/library_catalog.h"
 #include "src/state.h"                   // FS macro
 #include "src/storage/fs_util.h"         // ensureBooksDir
 
@@ -8,52 +9,6 @@
 // Navigation state (cursor, folder expansion, derived entry list) lives on
 // the library screen — see `ui/screens/library_screen.cpp`.
 Catalog g_library;
-
-static void addFolderIfMissing(const String& folderRel) {
-  if (folderRel.length() == 0) return;
-  for (int i = 0; i < g_library.folderCount; i++) {
-    if (strcmp(g_library.folders[i], folderRel.c_str()) == 0) return;
-  }
-  if (g_library.folderCount < MAX_FOLDERS) {
-    strncpy(g_library.folders[g_library.folderCount], folderRel.c_str(), MAX_FOLDER_PATH);
-    g_library.folders[g_library.folderCount][MAX_FOLDER_PATH] = '\0';
-    g_library.folderCount++;
-  }
-}
-
-static void sortFolders() {
-  constexpr size_t kFolderBuf = MAX_FOLDER_PATH + 1;
-  for (int i = 0; i < g_library.folderCount - 1; i++) {
-    for (int j = i + 1; j < g_library.folderCount; j++) {
-      if (strcmp(g_library.folders[j], g_library.folders[i]) < 0) {
-        char tmp[kFolderBuf];
-        memcpy(tmp, g_library.folders[i], kFolderBuf);
-        memcpy(g_library.folders[i], g_library.folders[j], kFolderBuf);
-        memcpy(g_library.folders[j], tmp, kFolderBuf);
-      }
-    }
-  }
-}
-
-static void sortBooks() {
-  for (int i = 0; i < g_library.bookCount - 1; i++) {
-    for (int j = i + 1; j < g_library.bookCount; j++) {
-      const int byName = strcmp(g_library.books[j].name,
-                                g_library.books[i].name);
-      // Names are shown without their folder. Use the full path as a stable
-      // tie-breaker so equal display names do not depend on LittleFS order.
-      const bool shouldSwap =
-          byName < 0 ||
-          (byName == 0 &&
-           strcmp(g_library.books[j].path, g_library.books[i].path) < 0);
-      if (shouldSwap) {
-        BookInfo tmp = g_library.books[i];
-        g_library.books[i] = g_library.books[j];
-        g_library.books[j] = tmp;
-      }
-    }
-  }
-}
 
 static void scanBooksRecursive(const String& absDir, const String& relDir) {
   File dir = FS.open(absDir);
@@ -67,25 +22,16 @@ static void scanBooksRecursive(const String& absDir, const String& relDir) {
 
     if (f.isDirectory()) {
       String childRel = relDir.length() ? (relDir + "/" + leaf) : leaf;
-      addFolderIfMissing(childRel);
+      addCatalogFolder(g_library, childRel.c_str());
       scanBooksRecursive(absPath, childRel);
     } else if (g_library.bookCount < MAX_BOOKS && absPath.endsWith(".txt")) {
       String relFile = relDir.length() ? (relDir + "/" + leaf) : leaf;
-      BookInfo& b = g_library.books[g_library.bookCount];
-
-      strncpy(b.path, absPath.c_str(), 95);
-      b.path[95] = '\0';
-      strncpy(b.folder, relDir.c_str(), MAX_FOLDER_PATH);
-      b.folder[MAX_FOLDER_PATH] = '\0';
-
       // The folder is metadata, not part of the book title. Keeping it out
       // of BookInfo::name prevents WebUI rename and device labels from
       // becoming "folder / title" for books stored below /books.
       String title = bookLeafLabel(relFile);
-      strncpy(b.name, title.c_str(), 79);
-      b.name[79] = '\0';
-      b.size = f.size();
-      g_library.bookCount++;
+      addCatalogBook(g_library, absPath.c_str(), relDir.c_str(),
+                     title.c_str(), f.size());
     }
 
     f.close();
@@ -96,13 +42,11 @@ static void scanBooksRecursive(const String& absDir, const String& relDir) {
 }
 
 void loadBooks() {
-  g_library.bookCount = 0;
-  g_library.folderCount = 0;
+  resetCatalog(g_library);
 
   ensureBooksDir();
   scanBooksRecursive("/books", "");
-  sortFolders();
-  sortBooks();
+  sortCatalog(g_library);
 }
 
 const char* bookPath(int idx) {
