@@ -280,17 +280,15 @@ allow the implementation and internal organisation to be Paginotto-specific.
 
 ### What remains — ordered by importance
 
-1. **Targeted rewrite/review of derived device modules.** Rewrite only
-   repository logic still substantially inherited, preserving hardware
-   contracts and user-visible behaviour:
-   `display`/`file_stream`, `input`, `font`, `sleep`, `battery` and `lock`.
-   Each subsystem needs characterization tests where practical, `pio check`,
-   and clean V1.1/V1.2 builds. Vendor APIs and vendor implementations are not
-   rewrite targets.
-2. **Connectivity and maintenance.** 2A (credential validation) is complete.
-   Remaining work is the Wi-Fi provisioning lifecycle and OTA product logic,
-   including provisioning failure, reconnect, update failure and
-   rollback/error paths. Keep Arduino/ESP-IDF and library code external.
+1. **Targeted rewrite/review of derived device modules — complete.**
+   `display`/`file_stream`, `input`, `font`, `sleep`, `battery` and `lock`
+   were refactored at their product-policy boundaries while preserving the
+   hardware contracts. Vendor APIs and vendor implementations remain external.
+2. **Connectivity and maintenance — complete.** Credential validation,
+   provisioning ownership/cleanup, association failure handling, OTA manifest
+   and channel validation, stalled/truncated downloads, image validation and
+   rollback confirmation are covered. Keep Arduino/ESP-IDF and library code
+   external.
 3. **Remaining UI and screensavers.** Audit `screen`, widgets, toast/feedback,
    lock integration, screensaver runtime and WebUI. The screensaver runtime
    and WebUI are the clearest large derived feature outside the reader path.
