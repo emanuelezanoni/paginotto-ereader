@@ -173,3 +173,46 @@ TEST_CASE("buildLibraryEntries: books in catalog order under their folder") {
   CHECK_EQ(out[1].ref, 0);   // z added first
   CHECK_EQ(out[2].ref, 1);   // a added second
 }
+
+TEST_CASE("buildLibraryEntries: zero capacity and null output are safe") {
+  Catalog cat;
+  bool expanded[MAX_FOLDERS] = {false};
+  CHECK_EQ(buildLibraryEntries(cat, expanded, nullptr, 0, nullptr, 0), 0);
+  LibEntry out[1] = {};
+  CHECK_EQ(buildLibraryEntries(cat, expanded, nullptr, 0, out, -1), 0);
+}
+
+TEST_CASE("buildLibraryEntries: null expansion state keeps folders collapsed") {
+  Catalog cat;
+  addFolder(cat, "fiction");
+  addBook(cat, "novel.txt", "/books/fiction/novel.txt", "fiction");
+  LibEntry out[MAX_LIBRARY_ENTRIES];
+
+  int n = buildLibraryEntries(cat, nullptr, nullptr, 0,
+                              out, MAX_LIBRARY_ENTRIES);
+  REQUIRE(n == 1);
+  CHECK(out[0].type == LIB_ENTRY_FOLDER);
+  CHECK_EQ(out[0].ref, 0);
+}
+
+TEST_CASE("buildLibraryEntries: malformed empty folders are ignored") {
+  Catalog cat;
+  addFolder(cat, "");
+  addBook(cat, "root.txt", "/books/root.txt", "");
+  bool expanded[MAX_FOLDERS] = {true};
+  LibEntry out[MAX_LIBRARY_ENTRIES];
+
+  int n = buildLibraryEntries(cat, expanded, nullptr, 0,
+                              out, MAX_LIBRARY_ENTRIES);
+  REQUIRE(n == 1);
+  CHECK(out[0].type == LIB_ENTRY_BOOK);
+  CHECK_EQ(out[0].ref, 0);
+}
+
+TEST_CASE("buildLibraryEntries: null system list is ignored") {
+  Catalog cat;
+  bool expanded[MAX_FOLDERS] = {false};
+  LibEntry out[MAX_LIBRARY_ENTRIES];
+  CHECK_EQ(buildLibraryEntries(cat, expanded, nullptr, 2,
+                               out, MAX_LIBRARY_ENTRIES), 0);
+}

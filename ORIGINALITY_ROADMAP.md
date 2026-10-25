@@ -84,7 +84,11 @@ clean provenance decision.
      byte at a time. Added regression coverage for these cases.
    - [x] Typography normalization and streaming compaction were kept
      behaviour-compatible while being simplified and documented.
-   - [ ] `library_nav` and the remaining stream interfaces review/rewrite.
+   - [x] `library_nav.cpp` reviewed and reimplemented with the existing menu
+     ordering and catalog references preserved.
+   - [x] Added defensive handling for null output/state pointers, invalid
+     counts, zero capacity and malformed empty folders.
+   - [ ] Remaining stream interfaces review/rewrite.
 
    The streaming compaction API intentionally retains its existing contract:
    a chunk may return a trailing space when `trimTail=false`. Therefore a
@@ -199,6 +203,8 @@ allow the implementation and internal organisation to be Paginotto-specific.
 - [x] First-pass automated provenance inventory.
 - [ ] Full manual provenance inventory.
 - [x] Paginator characterization and rewrite.
+- [x] Text utility review/rewrite and stricter UTF-8 handling.
+- [x] Library navigation review/rewrite.
 - [ ] Remaining core reader algorithms review/rewrite.
 - [ ] Persistence and library storage review/rewrite.
 - [ ] Device UI and hardware adapter review/rewrite.
