@@ -22,6 +22,7 @@ set(SUT_SRC
   ${FW_SRC}/pure/library_catalog.cpp
   ${FW_SRC}/pure/page_cache_format.cpp
   ${FW_SRC}/pure/reader_resume.cpp
+  ${FW_SRC}/pure/reader_scan.cpp
   ${FW_SRC}/pure/hold_gesture.cpp
   ${FW_SRC}/storage/book_metadata.cpp
 )
@@ -37,6 +38,7 @@ set(TEST_SRC
   ${CMAKE_CURRENT_SOURCE_DIR}/test_book_metadata.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_page_cache_format.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_reader_resume.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_reader_scan.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_hold_gesture.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_stream.cpp
 )

@@ -270,6 +270,10 @@ allow the implementation and internal organisation to be Paginotto-specific.
      cursor and render offset now advance together.
    - [x] Corrected the leaving-state documentation and removed the obsolete
      full-table cache flush call; the cache is streaming and incremental.
+   - [x] Extracted and integrated the pure incremental-scan transitions for
+     target reached, forward progress and non-progressing EOF/corrupt input.
+     The reached page is still appended to the streaming cache before the
+     scan completes.
    - [ ] Complete transition tests for scan cancellation, sleep/resume,
      layout changes, WebUI jumps and forward/backward boundary navigation.
 2. **Hardware boundary classification** — inspect display, input, sleep,

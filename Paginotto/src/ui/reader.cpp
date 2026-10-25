@@ -11,6 +11,7 @@
 
 #include "src/ui/font.h"                    // layoutForCache for cache stamping
 #include "src/pure/reader_resume.h"
+#include "src/pure/reader_scan.h"
 #include "src/ui/screens/library_screen.h"  // navigateToLibraryRoot — fallback on error
 #include "src/ui/text.h"
 #include "src/ui/toast.h"                   // Toast::isActive / Toast::draw
@@ -269,37 +270,41 @@ void serviceBookOpening() {
     batchFirstPage = s_openScanPage + 1;
   };
   for (int i = 0; i < kPagesPerSlice; i++) {
-    bool targetReached = s_openTargetIsPage
-                       ? s_openScanPage >= s_openTargetOffset
-                       : s_openScanOffset >= s_openTargetOffset;
-    if (targetReached) {
+    ReaderScanState scan{s_openScanPage, s_openScanOffset,
+                         s_openTargetOffset, s_openTargetIsPage,
+                         g_bookview.pages.eofReached};
+    const ReaderScanStep step = advanceReaderScan(
+        scan, nextPageOffset(g_bookview.book.file(), s_openScanOffset));
+    if (step == ReaderScanStep::EndOfFile) {
       flushIndexBatch();
-      g_bookview.cursor.pageIndex = (int)s_openScanPage;
-      g_bookview.pages.currentOffset = s_openScanOffset;
+      g_bookview.pages.eofReached = true;
+      g_bookview.pages.currentOffset = scan.offset;
+      g_bookview.cursor.pageIndex = (int)scan.page;
       s_openingBook = false;
       s_openTargetOffset = 0;
       s_openTargetIsPage = false;
       markUserActivity();
       return;
     }
-    uint32_t next = nextPageOffset(g_bookview.book.file(), s_openScanOffset);
-    if (next <= s_openScanOffset) {
+    const bool advanced = scan.offset != s_openScanOffset;
+    if (advanced) {
+      s_openScanOffset = scan.offset;
+      s_openScanPage = scan.page;
+      rememberPageOffset(s_openScanPage, s_openScanOffset);
+      batch[batchCount++] = s_openScanOffset;
+      if (s_openScanOffset >= (uint32_t)g_bookview.book.size()) {
+        g_bookview.pages.eofReached = true;
+      }
+    }
+    if (step == ReaderScanStep::TargetReached) {
       flushIndexBatch();
-      g_bookview.pages.eofReached = true;
-      g_bookview.pages.currentOffset = s_openScanOffset;
-      g_bookview.cursor.pageIndex = (int)s_openScanPage;
+      g_bookview.cursor.pageIndex = (int)scan.page;
+      g_bookview.pages.currentOffset = scan.offset;
       s_openingBook = false;
       s_openTargetOffset = 0;
       s_openTargetIsPage = false;
       markUserActivity();
       return;
-    }
-    s_openScanOffset = next;
-    s_openScanPage++;
-    rememberPageOffset(s_openScanPage, s_openScanOffset);
-    batch[batchCount++] = s_openScanOffset;
-    if (s_openScanOffset >= (uint32_t)g_bookview.book.size()) {
-      g_bookview.pages.eofReached = true;
     }
   }
   flushIndexBatch();
