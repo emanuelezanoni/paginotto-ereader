@@ -99,18 +99,19 @@ that need review even when their score is lower:
   click/hold state machine are product logic. The current implementation is
   substantially derived from upstream, although Paginotto has already changed
   the public event model and removed legacy app-facing counters. Classify it
-  as **derived product logic — targeted rewrite/review pending**. The pure
-  edge/debounce and click-count decisions are now isolated in
-  `src/pure/button_policy.*` and covered by host tests; the ISR frontend and
-  full state-machine rewrite remain pending.
+  as **targeted rewrite/refactor complete**. The pure edge/debounce and
+  click-count decisions are isolated in `src/pure/button_policy.*`; queue
+  consumption, edge transitions and click commits were refactored in the
+  product frontend. The GPIO/ESP-IDF APIs remain external.
 - `src/ui/font.cpp` and `src/ui/font.h` are **repository rendering policy**,
   not U8g2 source. U8g2 supplies font tables and drawing primitives; role
   selection, NVS settings, layout metrics, cache stamping and bionic reading
   belong to the product. The current file is modified from upstream (the
   Paginotto tree removed the upstream OpenDyslexic/statusbar family path), but
   the remaining policy and bionic implementation are still substantially
-  derived. Classify it as **derived UI logic — targeted rewrite or clean-room
-  review pending**.
+  derived. The UTF-8 bionic split policy is now isolated in
+  `src/pure/bionic_text.*`; classify the module as **targeted rewrite/refactor
+  complete**, with U8g2 remaining external.
 
 ### Hardware boundary audit — block 1C
 
@@ -119,21 +120,23 @@ that need review even when their score is lower:
   wake sources and radio shutdown; the firmware owns settings, screensaver
   selection, lock-on-sleep, screen cleanup, button-edge recovery and shutdown
   ordering. The implementation is substantially inherited from upstream,
-  with Paginotto-specific reader/screensaver integration changes. Classify it
-  as **derived lifecycle logic — targeted rewrite/review pending**.
+  with Paginotto-specific reader/screensaver integration changes. The timeout
+  policy is now pure and the lifecycle settings use it; classify it as
+  **targeted rewrite/refactor complete**.
 - `src/hal/battery.cpp` and `src/hal/battery.h` are **repository battery
   policy**, not ESP32 ADC vendor code. Arduino/ESP32 supplies ADC access and
   attenuation; the firmware owns switched measurement, trimmed sampling,
   voltage conversion, the LiPo lookup curve, filtering, hysteresis and icon
   rendering. The implementation is substantially inherited but has materially
-  different calibration, lookup, smoothing and rendering policy. Classify it
-  as **derived hardware service — targeted rewrite/review pending**.
+  different calibration, lookup, smoothing and rendering policy. The voltage
+  curve, display slew and low-battery hysteresis are now pure policies;
+  classify it as **targeted rewrite/refactor complete**.
 - `src/ui/lock.cpp` and `src/ui/lock.h` are **repository feature logic**, not
   board-support code. NVS persistence, lock state and unlock gesture policy
   belong to Paginotto; preferences and the input event type are dependencies.
   The implementation is substantially inherited, with changed gesture
-  semantics and lifecycle documentation. Classify it as **derived feature
-  logic — targeted rewrite/review pending**.
+  semantics and lifecycle documentation. Lock persistence is now centralized;
+  classify it as **targeted rewrite/refactor complete**.
 
 The first-pass hardware boundary classification is now complete: vendor APIs
 are external, while display/input/font/sleep/battery/lock remain repository

@@ -312,9 +312,9 @@ libraries or changing the already-stable reader/storage formats.
 
 ### Phase 1 — Rewrite inherited device logic
 
-**Status: 1A complete; 1B–1E remain.** The boundary audit is complete. The
-`file_stream` and `display` adapters have now been rewritten and verified;
-`input` is the next bounded subsystem.
+**Status: complete.** The derived device modules have been rewritten or
+refactored at their product-policy boundaries. Vendor APIs and board drivers
+remain external dependencies; no vendor library was rewritten.
 
 Work in this order, one bounded subsystem at a time:
 
@@ -322,15 +322,15 @@ Work in this order, one bounded subsystem at a time:
    rotation and refresh semantics; remove inherited implementation structure.
    **`file_stream` and `display` complete.**
 2. `input`: preserve ISR safety, event timings and public `ButtonEvent`
-   behaviour; test debounce, overflow, click/hold and wake edges. The pure
-   edge/debounce and click-count policy is now extracted and tested; the ISR
-   frontend and full classifier rewrite remain.
+   behaviour; pure edge/debounce and click-count policy extracted, queue and
+   classifier transitions refactored.
 3. `font`: preserve font roles, layout metrics, cache stamps and bionic mode;
-   keep U8g2 as the rendering dependency.
+   keep U8g2 as the rendering dependency; bionic UTF-8 policy extracted.
 4. `sleep` + `lock`: preserve NVS keys, wake behaviour, lock lifecycle and
-   radio shutdown; test timeout, wake and unlock paths.
+   radio shutdown; timeout policy and lock persistence centralized.
 5. `battery`: preserve board ADC wiring and visible percentage behaviour;
-   test sampling, invalid readings, filtering, hysteresis and UI bounds.
+   test sampling, invalid readings, filtering, hysteresis and UI bounds; the
+   voltage curve and display slew policy are pure.
 
 ### Phase 2 — Finish Wi-Fi and OTA
 
