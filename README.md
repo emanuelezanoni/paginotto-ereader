@@ -15,6 +15,8 @@ device.
 
 ## Project status
 
+Current project release: **v1.2.0**.
+
 The repository supports two board variants:
 
 - Heltec Wireless Paper V1.1
@@ -40,6 +42,9 @@ matching PlatformIO environment when building or uploading firmware.
 - Device SoftAP WebUI for configuration and file management
 - Custom screensaver upload, preview, deletion and rotation modes
 - Configurable sleep and deep-sleep behaviour
+- Five-minute inactivity return to the library for standalone Wi-Fi selection,
+  network scanning and firmware-update screens
+- LiPo battery percentage estimate using a filtered single-cell voltage curve
 - OTA firmware updates through GitHub Pages
 
 ## Wi-Fi and WebUI
@@ -76,6 +81,12 @@ The update flow is:
 
 There is no hotspot fallback in the firmware-update flow. The normal WebUI
 flow can still use the device SoftAP for initial provisioning.
+
+Standalone Wi-Fi selection, network scanning and firmware-update screens have
+their own five-minute physical-input timeout. On expiry they close the active
+Wi-Fi/scanner session and return to the library, where the normal home sleep
+rules apply. A live browser WebUI session keeps its separate browser-activity
+timeout.
 
 The update screen shows the current firmware version and the status of both
 channels. Dev manifests include the source commit and commit timestamp; a Dev
@@ -150,6 +161,16 @@ ctest --test-dir test/build -C Release --output-on-failure
 ```
 
 See [`test/README.md`](test/README.md) for platform-specific prerequisites.
+
+### Battery estimate
+
+The Wireless Paper has battery charging/protection hardware, but it does not
+provide a fuel-gauge or coulomb counter to the firmware. The battery icon is
+therefore an estimate derived from the single-cell LiPo voltage using a filtered
+lookup curve. It is suitable as an approximate level indicator, not as a
+measurement of remaining mAh. The firmware refreshes the estimate every 60
+seconds and limits per-refresh movement to avoid display noise while the ESP32
+is under load.
 
 ### Large-book navigation
 
