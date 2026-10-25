@@ -334,13 +334,16 @@ Work in this order, one bounded subsystem at a time:
 
 ### Phase 2 — Finish Wi-Fi and OTA
 
-**Status: 2A complete; 2B and 2C remain.**
+**Status: complete.** Credential validation, provisioning lifecycle and OTA
+failure/rollback handling are implemented and tested. Provisioning now keeps
+the upload SoftAP alive while associating on STA, times out deterministically,
+and cleans up failed associations without overwriting saved credentials. OTA
+accepts only known channels, rejects malformed manifests and oversized or
+truncated images, aborts stalled downloads, validates the image through the
+ESP-IDF OTA API, and confirms a successfully booted image for rollback safety.
 
-6. Wi-Fi provisioning: host disconnect/timeout, radio ownership during upload,
-   association failures, reconnect and cleanup.
-7. OTA: validate channel and manifest input, handle HTTP/download stalls and
-   truncation, verify partition/image results, add safe rollback-after-boot
-   handling, and keep the update UI in a recoverable state.
+The remaining work is outside this phase: UI/screensaver provenance, the final
+manual provenance/licensing audit, and the boundary/release documentation.
 
 ### Phase 3 — Finish non-reader UI
 
@@ -409,10 +412,12 @@ matrix, and prepare `v2.0.0`.
    dependencies are external and are not candidates for rewriting.
 3. **Reader-facing UI/HAL implementation** — rewrite only the inherited
    product logic found in step 2, preserving the Heltec/ESP32 contracts;
-   compile both board variants after each subsystem.
+   compile the supported board variants at phase closure. **Complete:**
+   `file_stream`, `display`, `input`, `font`, `sleep`, `lock` and `battery`.
 4. **Connectivity and maintenance** — Wi-Fi provisioning, OTA and lock
-   lifecycle. These are important for the product but do not block local
-   pagination and book reading.
+   lifecycle. **Complete:** credential validation, provisioning ownership and
+   cleanup, OTA validation, stalled/truncated download handling and rollback
+   confirmation.
 5. **Cosmetic/UI remainder** — widgets, toast and screensaver runtime/WebUI.
    Screensavers are the clearest remaining derived feature but are not core
    reader functionality.
@@ -448,11 +453,12 @@ matrix, and prepare `v2.0.0`.
 - [x] Wi-Fi credential policy extracted and tested; invalid SSIDs and
   passphrases are rejected before persistence, while open-network passwords
   remain supported.
-- [ ] Device UI and hardware adapter review/rewrite. Boundary classification
-  is complete for display, file-stream, input, font, sleep, battery and lock;
-  targeted rewrites now remain.
-- [ ] Connectivity and maintenance review/rewrite. Credential validation is
-  complete; provisioning lifecycle and OTA remain.
+- [x] Device UI and hardware adapter review/rewrite. Boundary classification
+  and targeted rewrites are complete for display, file-stream, input, font,
+  sleep, battery and lock; vendor APIs remain external.
+- [x] Connectivity and maintenance review/rewrite. Credential validation,
+  provisioning lifecycle, upload-radio ownership, OTA channel/manifest/image
+  validation, download abort paths and rollback confirmation are complete.
 - [ ] Screensaver WebUI rewrite.
 - [ ] Remaining inherited utility review.
 - [ ] Dependency and asset license inventory.

@@ -90,7 +90,14 @@ static bool connectForProvisioning(const char* ssid, const char* password) {
          static_cast<uint32_t>(millis() - started) < kConnectTimeoutMs) {
     delay(50);
   }
-  return WiFi.status() == WL_CONNECTED;
+  if (WiFi.status() == WL_CONNECTED) return true;
+
+  // A failed association must not leave a stale STA attempt behind. During
+  // upload the SoftAP belongs to UploadScreen, so only disconnect the STA;
+  // outside upload mode the temporary radio session can be shut down fully.
+  WiFi.disconnect(false, false);
+  if (!s_state.uploadSession) WiFi.mode(WIFI_OFF);
+  return false;
 }
 
 void begin() {
