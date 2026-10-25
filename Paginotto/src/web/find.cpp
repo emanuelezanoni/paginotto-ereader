@@ -295,10 +295,13 @@ static const char kReadStyle[] PROGMEM =
   "<style>"
   ".bv-find{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px}"
   ".bv-find input[type=search]{flex:1;min-width:160px}"
-  ".bv-find-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}"
-  ".bv-search-row{margin-top:14px}"
-  "@media(max-width:640px){.bv-search-row{display:grid;grid-template-columns:1fr}.bv-search-row input[type=search]{min-width:0}.bv-search-row .bv-find-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.bv-search-row .bv-find-actions button{width:100%}.bv-search-row #bvJumpBtn{grid-column:1/-1}}"
-  ".bv-find .small{padding:6px 12px;font-size:13px}"
+  ".bv-find-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-items:stretch;width:100%}"
+  ".bv-find-stack{display:grid;gap:8px;min-width:0}"
+  ".bv-find-actions button{width:100%;white-space:nowrap}"
+  ".bv-search-panel{margin-top:14px}"
+  ".bv-find .small{min-height:42px;padding:10px 14px;font-size:14px}"
+  "@media(max-width:640px){.bv-search-panel{position:sticky;top:0;z-index:3;padding:8px 0 10px;background:var(--card);border-bottom:1px solid var(--line-soft)}.bv-search-row{display:grid;grid-template-columns:1fr}.bv-search-row input[type=search]{min-width:0}.bv-find-actions{grid-template-columns:repeat(2,minmax(0,1fr))}}"
+  "@media(max-width:360px){.bv-find-actions{grid-template-columns:1fr}}"
   ".bv-status{margin-top:8px;font-size:13px;color:var(--muted)}"
   ".bv-text{margin-top:14px;max-height:60vh;overflow:auto;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--pre-bg);white-space:pre-wrap;line-height:1.5;font:14px/1.5 system-ui,sans-serif}"
   ".bv-editor{width:100%;min-height:60vh;margin-top:14px;font:14px/1.5 ui-monospace,monospace}"
@@ -454,19 +457,6 @@ static void handleReadView() {
   out += String(savedPage);
   out += "</div>";
 
-  // Search and jump controls stay in one context.
-  out += "<div class='bv-find bv-search-row'>"
-         "<input id='bvFind' type='search' placeholder='" D_WEB_READ_FIND_PLACEHOLDER "' autocomplete='off'>"
-         "<div class='bv-find-actions'>"
-         "<button type='button' class='btn small' id='bvFindBtn'>" D_WEB_READ_FIND_ALL "</button>"
-         "<button type='button' class='btn secondary small' id='bvFindPrev'>&#9650; " D_WEB_READ_FIND_PREV "</button>"
-         "<button type='button' class='btn secondary small' id='bvFindNext'>&#9660; " D_WEB_READ_FIND_NEXT "</button>"
-         "<button type='button' class='btn small' id='bvJumpBtn'>" D_WEB_READ_JUMP_HERE "</button>"
-         "</div>"
-         "</div>"
-         "<div class='bv-status' id='bvFindStat'></div>"
-         "<div class='bv-status' id='bvJumpStat'></div>";
-
   // Jump-by-page form (uses the existing /jumppage route).
   out += "<div style='margin-top:14px;border-top:1px solid var(--line-soft);padding-top:12px'>"
          "<form method='POST' action='/jumppage' class='bv-find'>"
@@ -481,6 +471,25 @@ static void handleReadView() {
   out += "<h2 id='bvEditingTitle' hidden>Editing book text</h2>";
 
   out += "<div id='bvData' data-id='" + String(id) + "' data-edit-only='" + String(editOnly ? "1" : "0") + "'></div>";
+  // Keep find controls immediately next to the text. The sticky panel prevents
+  // the controls from disappearing when the browser scrolls to a match.
+  out += "<div class='bv-search-panel'>"
+         "<div class='bv-find bv-search-row'>"
+         "<input id='bvFind' type='search' placeholder='" D_WEB_READ_FIND_PLACEHOLDER "' autocomplete='off'>"
+         "<div class='bv-find-actions'>"
+         "<div class='bv-find-stack'>"
+         "<button type='button' class='btn small' id='bvFindBtn'>" D_WEB_READ_FIND_ALL "</button>"
+         "<button type='button' class='btn small' id='bvJumpBtn'>Jump here</button>"
+         "</div>"
+         "<div class='bv-find-stack'>"
+         "<button type='button' class='btn secondary small' id='bvFindPrev'>&#9650; " D_WEB_READ_FIND_PREV "</button>"
+         "<button type='button' class='btn secondary small' id='bvFindNext'>&#9660; " D_WEB_READ_FIND_NEXT "</button>"
+         "</div>"
+         "</div>"
+         "</div>"
+         "<div class='bv-status' id='bvFindStat'></div>"
+         "<div class='bv-status' id='bvJumpStat'></div>"
+         "</div>";
   out += "<div id='bvText' class='bv-text'></div>";
   out += "<textarea id='bvEditor' class='bv-editor' hidden spellcheck='false'></textarea>";
   out += "<div id='bvEditWarning' class='banner-warn' hidden>" D_WEB_READ_EDIT_WARNING " <a class='link' href='/download-book?id=" + String(id) + "' download>" D_WEB_READ_DOWNLOAD_BACKUP "</a></div>";

@@ -52,7 +52,7 @@ static const char kStyleCss[] PROGMEM =
   ".book-title-line,.book-title-view{display:flex;align-items:flex-start;gap:8px;justify-content:space-between}"
   ".book-title-view h3{min-width:0;flex:1}"
   ".book-title,.book-title-view h3,.card h2{overflow-wrap:anywhere;word-break:break-word}"
-  ".icon-btn{padding:5px 8px;background:transparent;color:var(--link);font-size:18px;line-height:1;border:1px solid var(--line);flex:none}"
+  ".icon-btn{min-width:42px;min-height:42px;padding:10px;background:transparent;color:var(--link);font-size:18px;line-height:20px;border:1px solid var(--line);flex:none}"
   ".book-actions{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-top:auto;padding-top:14px;border-top:1px solid var(--line-soft)}"
   ".book-actions-left,.book-actions-right{display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-width:0}"
   ".book-folder-form{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:0}"
@@ -64,11 +64,11 @@ static const char kStyleCss[] PROGMEM =
   ".tree-label span:last-child{min-width:0;overflow-wrap:anywhere;word-break:break-word}"
   ".tree-mark{color:var(--link);font-weight:400;flex:none}"
   ".tree-children{padding:0 12px 10px 30px}"
-  ".tree-book{display:flex;align-items:baseline;justify-content:flex-start;gap:10px;padding:6px 0;border-top:1px solid var(--line-soft)}"
+  ".tree-book{display:grid;grid-template-columns:18px minmax(0,1fr) minmax(0,8.5em);align-items:start;gap:8px;padding:6px 0;border-top:1px solid var(--line-soft)}"
   ".tree-book-mark{display:inline-block;width:18px;height:1em;flex:none;position:relative;color:var(--link);transform-origin:center}"
   ".tree-book-mark::before{content:'';position:absolute;left:5px;top:.28em;border-top:.34em solid transparent;border-bottom:.34em solid transparent;border-left:.48em solid currentColor}"
   ".tree-book:hover .tree-book-mark,.tree-book:focus-within .tree-book-mark{transform:scale(1.08)}"
-  ".tree-book .muted{margin-left:auto}"
+  ".tree-book .muted{margin-left:0;text-align:right;overflow-wrap:anywhere;word-break:break-word}"
   ".tree-book a{min-width:0;color:var(--link);overflow-wrap:anywhere;word-break:break-word;text-decoration:none}"
   ".tree-book a:hover{text-decoration:underline}"
   ".tree-empty{padding:6px 0;color:var(--muted);font-size:13px}"
@@ -114,9 +114,9 @@ static const char kStyleCss[] PROGMEM =
   ".operation-dialog .operation-status{margin:0 0 22px;color:var(--muted);font-size:14px;min-height:20px}"
   ".wifi-scan-list{display:grid;gap:8px;margin-top:10px}"
   ".wifi-scan-item{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid var(--line-soft);border-radius:10px;background:var(--stat-bg)}"
-  "button,.btn{display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:10px;background:var(--btn-bg);color:var(--btn-fg);padding:10px 14px;font:600 14px system-ui,sans-serif;text-decoration:none;cursor:pointer}"
+  "button,.btn{display:inline-flex;align-items:center;justify-content:center;min-height:42px;box-sizing:border-box;border:0;border-radius:10px;background:var(--btn-bg);color:var(--btn-fg);padding:10px 14px;font:600 14px/20px system-ui,sans-serif;text-decoration:none;cursor:pointer}"
   ".btn.secondary{background:var(--btn-sec-bg);color:var(--btn-sec-fg);border:1px solid var(--btn-sec-bd)}"
-  "input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea{width:100%;box-sizing:border-box;border:1px solid var(--inp-bd);border-radius:10px;background:var(--inp-bg);color:var(--text);padding:10px;font:inherit}"
+  "input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea{width:100%;min-height:42px;box-sizing:border-box;border:1px solid var(--inp-bd);border-radius:10px;background:var(--inp-bg);color:var(--text);padding:10px;font:inherit}"
   "input[type=checkbox],input[type=radio]{accent-color:var(--link)}"
   ".nav a.active{font-weight:700;color:var(--text);text-decoration:underline;text-underline-offset:3px}"
   "[hidden]{display:none!important}"
@@ -150,7 +150,7 @@ String webPageStart(const String& title, const String& subtitle,
   out = "<!doctype html><html><head><meta charset='utf-8'>"
         "<meta name='viewport' content='width=device-width,initial-scale=1'>"
         "<meta name='color-scheme' content='light'>"
-        "<link rel='stylesheet' href='/style.css?v=6'>";
+        "<link rel='stylesheet' href='/style.css?v=7'>";
   out += "<title>";
   out += title;
   out += "</title></head><body><div class='wrap";
