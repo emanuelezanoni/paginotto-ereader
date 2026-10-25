@@ -211,6 +211,12 @@ allow the implementation and internal organisation to be Paginotto-specific.
 - [x] Text utility review/rewrite and stricter UTF-8 handling.
 - [x] Library navigation review/rewrite.
 - [x] Stream contract characterization and pure adapter tests.
+- [x] Audit fix in paginator: invalid starting offsets and zero-line layouts
+  now terminate safely instead of reading from an unintended cursor position.
+- [x] Core/provenance audit performed; stale inventory counts corrected and
+  remaining high-similarity modules listed explicitly.
+- [ ] Differential oracle against the imported implementation (needed for
+  stronger historical-behaviour compatibility evidence).
 - [ ] Remaining core reader algorithms review/rewrite.
 - [ ] Persistence and library storage review/rewrite.
 - [ ] Device UI and hardware adapter review/rewrite.

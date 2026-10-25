@@ -16,7 +16,10 @@ uint32_t paginatePage(IReadStream& in,
                       const LayoutMetrics& m,
                       const MeasureFn& measure,
                       const LineCallback& onLine) {
-  in.seek(startPos);
+  const uint32_t total = (uint32_t)in.size();
+  if (m.maxLines <= 0) return startPos <= total ? startPos : total;
+  if (startPos > total) return total;
+  if (!in.seek(startPos)) return total;
 
   int linesUsed = 0;
   size_t lineLen = 0;

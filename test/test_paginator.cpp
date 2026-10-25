@@ -132,3 +132,9 @@ TEST_CASE("paginator supports measuring without a line callback") {
   uint32_t next = paginatePage(in, 0, m(7, 2), byteWidth, nullptr);
   CHECK(next > 0u);
 }
+
+TEST_CASE("paginator handles invalid starts and zero line capacity safely") {
+  StringReadStream in("hello");
+  CHECK_EQ(paginatePage(in, 99, m(50, 3), byteWidth, nullptr), 5u);
+  CHECK_EQ(paginatePage(in, 2, m(50, 0), byteWidth, nullptr), 2u);
+}

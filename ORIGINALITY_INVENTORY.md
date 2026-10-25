@@ -6,7 +6,97 @@ It is a provenance aid, not a legal determination. Similarity percentages
 come from Git's rename/similarity detection and must be followed by a manual
 review before a licensing boundary is declared.
 
-## Action summary
+## Current audit snapshot — 2026-10-25
+
+The original first-pass lists below were not automatically updated after the
+core rewrites. This section is the authoritative current snapshot and
+supersedes any older file count in this document.
+
+### Current exact matches
+
+Only these four tracked files are still byte-for-byte identical to their
+mapped upstream counterparts:
+
+- `Paginotto/partitions.csv`
+- `Paginotto/src/hal/display.cpp`
+- `Paginotto/src/storage/fs_util.cpp`
+- `Paginotto/src/ui/toast.cpp`
+
+The core files previously listed as exact matches are no longer exact matches:
+`paginator`, `text_util`, `library_nav` and `stream` have all been changed.
+
+### Current high-similarity and adjacent critical files requiring provenance review
+
+These are engineering similarity indicators, not legal conclusions. The list
+contains files at or near 90% line similarity, plus adjacent critical files
+that need review even when their score is lower:
+
+- `src/web/screensavers.cpp` — 98.8% — rewrite first
+- `src/ui/screensavers.cpp` — 97.8% — rewrite first
+- `src/pure/arduino_compat.h` — 98.2% — review; compatibility shim
+- `src/ui/screensavers.h` — 96.3% — review with screensaver rewrite
+- `src/hal/wifi_provisioning.cpp` — 96.6% — review/rewrite
+- `src/storage/library.cpp` — 96.8% — important storage logic; review carefully
+- `src/hal/ota.cpp` — 95.1% — maintenance service; review/rewrite
+- `src/hal/wifi_provisioning.h` — 92.7% — interface/adapter review
+- `src/ui/toast.h` — 92.7% — small interface; low functional risk
+- `src/ui/font.cpp` — 93.3% — rendering adapter; audit assets and licenses
+- `src/ui/lock.cpp` — 94.1% — feature service; review
+- `src/ui/sleep.h` — 92.3% — interface; review with sleep implementation
+- `src/ui/widgets.cpp` — 97.6% — shared UI implementation; review/rewrite
+- `src/ui/widgets.h` — 91.5% — interface review
+- `src/state.h` — 85.7% by the broad line matcher, but central and must be
+  reviewed because it carries shared architecture and configuration
+- `src/hal/display.h` — 93.2% — hardware interface; audit, not blind rewrite
+- `src/hal/file_stream.h` — 88.0% — thin hardware adapter; not core algorithm
+- `src/pure/stream.h` — 94.2% before the current test characterization;
+  interface is generic, implementation is now explicitly tested
+- `src/pure/text_util.h` — 93.1% — declarations and contracts; review is
+  sufficient unless distinctive implementation comments remain
+- `src/pure/paginator.h` — 92.5% — public API; implementation was rewritten
+- `src/pure/library_nav.h` — 89.1% — data/API declarations; implementation
+  was rewritten
+- `src/storage/kv_store.h` — 88.5% — persistence contract; audit carefully
+- `src/storage/preferences_store.h` — 91.9% — persistence contract
+- `src/storage/library.h` — 91.4% — storage API review
+- `src/ui/screen.h` — 90.6% — generic UI interface review
+- `src/ui/screens/library_screen.h` — 88.0% — screen interface review
+- `src/ui/screens/reader_screen.h` — 92.0% — reader screen interface review
+- `src/ui/lock.h` — 90.5% — feature interface review
+- `src/ui/sleep.cpp` — 86.1% — lifecycle implementation review
+- `src/ui/text.cpp` — 90.1% — rendering/text integration review
+- `src/hal/input.cpp` — 90.4% — input implementation review
+- `src/hal/input.h` — 86.6% — interface review
+- `src/hal/battery.cpp` — 92.8% — hardware service review
+- `src/ui/font.h` — 89.0% — interface plus asset ownership review
+
+The percentages above were recomputed against the imported commit using a
+line-sequence matcher. They are useful for triage only; a high percentage can
+be caused by a conventional adapter, while a short copied block can be more
+important than a large generic header.
+
+### Core audit conclusion
+
+- The pure reader core has been rewritten or characterized: paginator,
+  `text_util`, `library_nav` and the `StringReadStream` contract.
+- Functional preservation is supported by the host suite, now **64 tests and
+  227 checks**, including malformed UTF-8, pagination boundaries, invalid
+  starts, catalog bounds, EOF and seek behavior.
+- This is not yet a full differential test against the old implementation:
+  the tests specify the intended/current contract, but we have not generated a
+  side-by-side oracle for every historical behavior. That remains a quality
+  gap, especially for storage and UI integration.
+- The licensing/originality problem is **not solved globally**. The core is in
+  much better shape, but storage (`library.cpp`, persistence headers), shared
+  UI/widgets, connectivity/OTA, HAL and screensavers still require review or
+  clean-room-style rewrites before a Paginotto-only license can honestly cover
+  the whole current source tree.
+
+## Historical first-pass action summary
+
+The sections below preserve the original triage notes. Their file counts and
+exact-match claims are historical; use the current audit snapshot above for
+the present tree.
 
 ### Rewrite first
 
@@ -35,10 +125,11 @@ decision before the Paginotto-only licence is declared:
 - **mark as third-party/upstream** if it cannot be cleanly attributed to
   Paginotto.
 
-## Unchanged or byte-for-byte-renamed files
+## Historical unchanged or byte-for-byte-renamed files
 
-These files currently match an upstream file byte for byte, even where the
-path or project name changed. The upstream counterpart is shown after `←`.
+These were reported as byte-for-byte matches by the first-pass scan. The
+current exact-match list is in the audit snapshot above; this historical list
+is retained to show how the initial triage was produced.
 
 - `Paginotto/partitions.csv` ← `Pala_One_2_1/partitions.csv`
 - `src/hal/battery.h` ← `Pala_One_2_1/src/hal/battery.h`
@@ -67,14 +158,15 @@ path or project name changed. The upstream counterpart is shown after `←`.
 - `src/web/screensavers.h` ← `Pala_One_2_1/src/web/screensavers.h`
 - `src/web/web.h` ← `Pala_One_2_1/src/web/web.h`
 
-These are provenance-review candidates. Some are small interfaces or hardware
+These were provenance-review candidates at the initial scan. Some are small interfaces or hardware
 adapters, so byte identity alone does not mean that every line needs a
 creative rewrite; it does mean they cannot yet be covered automatically by a
 new Paginotto-only copyright notice.
 
-## Substantially similar files to inspect or modify
+## Historical substantially similar files to inspect or modify
 
-Git detected the following files as largely derived from upstream:
+The initial Git scan detected the following files as largely derived from
+upstream. The current recomputed list is in the audit snapshot above:
 
 - `src/web/screensavers.cpp` ← `Pala_One_2_1/src/web/screensavers.cpp` — 98% — **rewrite first**
 - `src/ui/screensavers.cpp` ← `Pala_One_2_1/src/ui/screensavers.cpp` — 96% — **rewrite first**
