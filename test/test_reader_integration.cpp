@@ -23,11 +23,13 @@ TEST_CASE("layout changes preserve the byte position but require remapping") {
   const ReaderLayoutDecision decision =
       decideReaderLayoutRemap(true, true, 7, 123456u);
   CHECK(decision.remap);
+  CHECK(decision.invalidateRecentOffsets);
   CHECK(decision.savedOffset == 123456u);
 }
 
 TEST_CASE("layout remapping is not requested for inactive or invalid views") {
   CHECK(!decideReaderLayoutRemap(false, true, 2, 10).remap);
+  CHECK(!decideReaderLayoutRemap(false, true, 2, 10).invalidateRecentOffsets);
   CHECK(!decideReaderLayoutRemap(true, false, 2, 10).remap);
   CHECK(!decideReaderLayoutRemap(true, true, -1, 10).remap);
 }

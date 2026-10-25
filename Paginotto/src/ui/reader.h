@@ -61,6 +61,7 @@ extern BookView g_bookview;
 bool openBookByIndex(int idx);
 void renderCurrentPage();
 void forceNextRenderFull();  // one-shot: next renderCurrentPage() does a full refresh
+void invalidateRecentReaderOffsets();  // layout change invalidates volatile page hints
 
 // Large books may need a long scan to resolve a saved byte offset. Opening is
 // therefore serviced incrementally by the main loop so the display can show

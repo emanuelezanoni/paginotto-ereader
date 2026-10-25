@@ -87,6 +87,10 @@ static void drawOpeningProgress() {
 
 void forceNextRenderFull() { s_forceNextFull = true; }
 
+void invalidateRecentReaderOffsets() {
+  s_recentCount = 0;
+}
+
 // Fixed reader footer. This is intentionally independent from the removed
 // reader menu: the page number and progress indicator are part of the reading
 // view itself, not an optional settings/status menu.

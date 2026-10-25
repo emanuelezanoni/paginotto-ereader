@@ -280,7 +280,8 @@ allow the implementation and internal organisation to be Paginotto-specific.
      navigation boundary decisions; both are covered by host tests.
    - [x] Complete transition tests for sleep/resume, layout changes and
      WebUI jumps. Wake intent is single-shot, layout changes preserve the
-     canonical byte offset, and WebUI jumps normalize signed/oversized input.
+     canonical byte offset, invalidate stale volatile page hints, and WebUI
+     jumps normalize signed/oversized input.
 2. **Hardware boundary classification** — inspect display, input, sleep,
    battery, font and file-stream files and mark each block as external API,
    Paginotto wrapper/policy or inherited implementation. Do this before any

@@ -21,6 +21,7 @@ ReaderWakeDecision decideReaderWake(const char* wakePath, bool bookExists);
 
 struct ReaderLayoutDecision {
   bool remap = false;
+  bool invalidateRecentOffsets = false;
   uint32_t savedOffset = 0;
 };
 

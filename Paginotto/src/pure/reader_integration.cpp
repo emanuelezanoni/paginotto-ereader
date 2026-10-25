@@ -20,6 +20,7 @@ ReaderLayoutDecision decideReaderLayoutRemap(bool readerActive,
   ReaderLayoutDecision decision;
   decision.savedOffset = savedOffset;
   decision.remap = readerActive && layoutChanged && currentPage >= 0;
+  decision.invalidateRecentOffsets = decision.remap;
   return decision;
 }
 

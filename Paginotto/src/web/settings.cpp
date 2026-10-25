@@ -200,6 +200,7 @@ static void handleSettingsPost() {
       readerActive, layoutChanged, g_bookview.cursor.pageIndex,
       g_bookview.pages.currentOffset);
   if (remap.remap) {
+    if (remap.invalidateRecentOffsets) invalidateRecentReaderOffsets();
     g_bookview.pages.currentOffset = 0;
     g_bookview.pages.eofReached = false;
     int newPage = findPageForOffset(remap.savedOffset);
