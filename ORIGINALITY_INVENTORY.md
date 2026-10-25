@@ -107,6 +107,94 @@ details. The suggested action above is provisional until that review is done.
 - Third-party libraries, board support packages, fonts and assets require a
   separate license/asset audit.
 
+## Functional criticality of the flagged files
+
+“Critical” here means critical to the firmware feature set, not “legally
+owned by upstream”. A critical file can still be rewritten without changing
+the product behaviour.
+
+### Critical to the core reader
+
+- `src/state.h` — central firmware state, filesystem, web server and settings.
+- `src/hal/display.cpp`, `src/hal/display.h` — display and graphics backend.
+- `src/hal/file_stream.h`, `src/pure/stream.h` — book/file streaming.
+- `src/pure/paginator.cpp`, `src/pure/paginator.h` — page layout and pagination.
+- `src/pure/text_util.cpp`, `src/pure/text_util.h` — text normalisation and
+  pagination helpers.
+- `src/pure/library_nav.cpp` — library tree and entry navigation.
+- `src/storage/fs_util.cpp`, `src/storage/fs_util.h` — filesystem operations.
+- `src/storage/kv_store.h`, `src/storage/preferences_store.h` — persistent
+  settings storage.
+- `src/storage/library.cpp`, `src/storage/library.h` — book catalogue and
+  library state.
+- `src/ui/screen.h`, `src/ui/screens/library_screen.h` — screen framework and
+  library screen interface.
+- `src/ui/screens/reader_screen.h` — reader screen interface.
+
+These files are operationally important, but the simple headers and hardware
+adapters should be reviewed first to determine whether their contents are
+generic/functional or contain copied expressive implementation.
+
+### Critical to connectivity and updates
+
+- `src/hal/wifi_provisioning.cpp`, `src/hal/wifi_provisioning.h` — Wi-Fi
+  provisioning.
+- `src/hal/ota.cpp` — firmware update download and installation.
+- `src/ui/sleep.h` — sleep/wake interface; the implementation is also coupled
+  to the board's power behaviour.
+
+### Critical to the current UI, but not to the reader engine
+
+- `src/ui/widgets.cpp`, `src/ui/widgets.h` — shared UI controls and layout.
+- `src/ui/lock.h` — lock-state interface; removable as a feature, but used by
+  the reader UI.
+- `src/ui/screensavers.cpp`, `src/ui/screensavers.h` — screensaver runtime.
+- `src/ui/toast.cpp`, `src/ui/toast.h` — notifications.
+- `src/web/screensavers.cpp`, `src/web/screensavers.h` — screensaver WebUI.
+- `src/web/find.h`, `src/web/reset.h`, `src/web/web.h` — WebUI route and
+  feature interfaces.
+
+### Important but comparatively easy to replace
+
+- `src/hal/battery.h` — battery API; the current battery implementation is
+  Paginotto-specific, while this header is an inherited interface.
+- `src/pure/arduino_compat.h` — compatibility aliases used throughout the
+  host tests and firmware.
+- `src/ui/screensavers.h`, `src/ui/screen.h` and the small WebUI headers —
+  mostly interfaces, provided their declarations are rewritten where they
+  retain upstream structure.
+- `Paginotto/partitions.csv` — flash layout, not application logic; it must be
+  preserved or deliberately replaced because changing it can invalidate
+  installed data.
+
+## External dependencies
+
+The following are declared in `platformio.ini` and do not belong to Paul or
+to Paginotto. Their source and licence notices must be treated separately
+from the Paginotto licence:
+
+- **pioarduino `platform-espressif32` 55.03.38-1** — Arduino-ESP32 framework,
+  ESP-IDF, board support and bundled framework components.
+- **Heltec E-Ink Modules v4.6.0** — Heltec display/board support.
+- **Adafruit GFX Library 1.12.6** — graphics primitives.
+- **U8g2 for Adafruit GFX 1.8.0** — font/rendering integration.
+- **Improv WiFi Library** at commit
+  `e37c244e0080349e191252acf4bce146eca118e0` — Wi-Fi provisioning protocol.
+- **ArduinoJson 7.2.1** — OTA manifest parsing.
+- **QRCode** from `ricmoo/QRCode` — QR generation for the connection screen.
+
+The QRCode dependency is currently requested as `#master`, so it is not
+actually pinned to a fixed commit despite the nearby comment saying that it
+is fixed. This must be corrected or documented during the dependency audit.
+
+Framework headers such as `Arduino.h`, `WiFi.h`, `WebServer.h`,
+`Preferences.h`, `LittleFS.h`, `HTTPClient.h` and ESP-IDF headers are covered
+by the selected Arduino/ESP32 framework rather than being Paginotto source.
+
+No file listed above as “identical” or “highly similar” is an external
+library: those are files copied or derived into this repository and therefore
+are the files that need provenance decisions.
+
 ## Next review order
 
 1. Reimplement `src/web/screensavers.cpp` and `src/ui/screensavers.cpp` from
