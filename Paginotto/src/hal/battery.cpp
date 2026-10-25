@@ -75,12 +75,14 @@ static float readBatteryVoltageRaw() {
 
 static int batteryPercentFromOCV(float v) {
   struct BatPoint { float v; int pct; };
+  // Typical single-cell LiPo resting-voltage curve. This is deliberately a
+  // coarse estimate: without a coulomb counter it cannot know state of charge
+  // accurately while the ESP32 is under load.
   static const BatPoint lut[] = {
-    {4.20f, 100}, {4.15f, 95}, {4.11f, 90}, {4.08f, 85},
-    {4.05f, 80},  {4.02f, 75}, {3.99f, 70}, {3.96f, 62},
-    {3.93f, 55},  {3.90f, 48}, {3.87f, 40}, {3.84f, 32},
-    {3.81f, 24},  {3.78f, 18}, {3.75f, 13}, {3.72f, 9},
-    {3.69f, 6},   {3.65f, 4},  {3.55f, 2},  {3.40f, 0}
+    {4.20f, 100}, {4.15f, 95}, {4.10f, 90}, {4.05f, 80},
+    {4.00f, 70},  {3.95f, 60}, {3.90f, 50}, {3.85f, 40},
+    {3.80f, 30},  {3.75f, 20}, {3.70f, 15}, {3.65f, 10},
+    {3.60f, 5},   {3.50f, 2},  {3.30f, 0}
   };
 
   if (v >= lut[0].v) return 100;
@@ -117,7 +119,7 @@ void updateBatteryCached(bool force) {
   if (s_battery.filteredV <= 0.0f) {
     s_battery.filteredV = raw;
   } else {
-    const float alpha = 0.22f;
+    const float alpha = 0.35f;
     s_battery.filteredV = (alpha * raw) + ((1.0f - alpha) * s_battery.filteredV);
   }
   s_battery.filteredV = clampf(s_battery.filteredV, 3.0f, 4.25f);
@@ -126,11 +128,12 @@ void updateBatteryCached(bool force) {
   if (force) {
     s_battery.pctShown = s_battery.pctRaw;
   } else {
-    if (s_battery.pctRaw < s_battery.pctShown) {
-      s_battery.pctShown--;
-    } else if (s_battery.pctRaw > s_battery.pctShown + 2) {
-      s_battery.pctShown++;
-    }
+    // Follow real changes within a few refreshes, while still suppressing
+    // one-sample jumps caused by Wi-Fi/display load.
+    int delta = s_battery.pctRaw - s_battery.pctShown;
+    if (delta < -3) delta = -3;
+    if (delta > 3) delta = 3;
+    s_battery.pctShown += delta;
   }
 
   if (s_battery.pctShown < 0) s_battery.pctShown = 0;

@@ -99,7 +99,9 @@ static const uint32_t UPLOAD_INACTIVITY_TIMEOUT_MS = 5UL * 60UL * 1000UL;
 // Standalone Wi-Fi picker/update screens return to the library after five
 // minutes without a physical-button interaction.
 static const uint32_t WIFI_SCREEN_INACTIVITY_TIMEOUT_MS = 5UL * 60UL * 1000UL;
-static const uint32_t BAT_CACHE_MS = 180000; // 3 min — battery changes slowly
+// A LiPo voltage estimate is cheap but load-dependent; refresh it often enough
+// to follow the pack without making the ADC read part of every redraw.
+static const uint32_t BAT_CACHE_MS = 60000; // 1 min
 
 static const int FULL_REFRESH_EVERY_N_PAGES = 100;
 static const int MENU_FULL_REFRESH_EVERY = 60;
