@@ -104,3 +104,31 @@ TEST_CASE("paginator handles UTF-8 multibyte characters without splitting them")
   REQUIRE(lines.size() == 1u);
   CHECK_EQ(lines[0], String("café"));
 }
+
+TEST_CASE("paginator treats tabs and CRLF as ordinary layout whitespace") {
+  auto lines = linesOf("one\t two\r\nthree", m(50, 4));
+  REQUIRE(lines.size() == 2u);
+  CHECK_EQ(lines[0], String("one two"));
+  CHECK_EQ(lines[1], String("three"));
+}
+
+TEST_CASE("paginator preserves explicit blank lines") {
+  auto lines = linesOf("top\n\nbottom", m(50, 4));
+  REQUIRE(lines.size() == 3u);
+  CHECK_EQ(lines[0], String("top"));
+  CHECK_EQ(lines[1], String(""));
+  CHECK_EQ(lines[2], String("bottom"));
+}
+
+TEST_CASE("paginator hard-breaks UTF-8 only at character boundaries") {
+  auto lines = linesOf("abécd", m(4, 4));
+  REQUIRE(lines.size() == 2u);
+  CHECK_EQ(lines[0], String("abé"));
+  CHECK_EQ(lines[1], String("cd"));
+}
+
+TEST_CASE("paginator supports measuring without a line callback") {
+  StringReadStream in("one two three");
+  uint32_t next = paginatePage(in, 0, m(7, 2), byteWidth, nullptr);
+  CHECK(next > 0u);
+}

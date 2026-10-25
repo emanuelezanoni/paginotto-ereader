@@ -4,12 +4,12 @@
 
 #include "text_util.h"
 
-// Fixed scratch buffers for the paginator's working state. Sized for
-// "any line that could possibly fit on the display" + "any reasonable
-// word/URL length" with margin. Stays on the call stack — no heap.
-static constexpr size_t kLineMax   = 256;
-static constexpr size_t kTokenMax  = 512;
-static constexpr size_t kScratchMax = kLineMax + kTokenMax + 1;
+// The reader deliberately avoids allocating while laying out a page. The
+// buffers are bounded by the largest line we can render and by a long
+// unbroken token (for example, a URL).
+static constexpr size_t kLineCapacity = 256;
+static constexpr size_t kTokenCapacity = 512;
+static constexpr size_t kCandidateCapacity = kLineCapacity + kTokenCapacity + 1;
 
 uint32_t paginatePage(IReadStream& in,
                       uint32_t startPos,
@@ -19,132 +19,102 @@ uint32_t paginatePage(IReadStream& in,
   in.seek(startPos);
 
   int linesUsed = 0;
-  char line[kLineMax];      size_t lineLen = 0;
-  char token[kTokenMax] = {}; size_t tokLen  = 0;
-  char scratch[kScratchMax];
+  size_t lineLen = 0;
+  size_t tokenLen = 0;
+  char line[kLineCapacity] = {};
+  char token[kTokenCapacity] = {};
+  char candidate[kCandidateCapacity] = {};
+  uint32_t tokenStart = startPos;
 
-  uint32_t lineStartPos  = startPos;
-  uint32_t tokenStartPos = startPos;
-
-  auto trimTrailing = [](const char* buf, size_t& len) {
-    while (len > 0 && buf[len - 1] == ' ') len--;
+  auto nextOffset = [&](uint32_t offset) -> uint32_t {
+    if (offset <= startPos) offset = startPos + 1;
+    const size_t total = in.size();
+    if (total != 0 && offset > total) offset = (uint32_t)total;
+    return offset;
   };
 
-  auto trimLeading = [](char* buf, size_t& len) {
-    size_t i = 0;
-    while (i < len && buf[i] == ' ') i++;
-    if (i > 0) {
-      memmove(buf, buf + i, len - i);
-      len -= i;
-    }
-  };
+  auto publish = [&](const char* text, size_t length) {
+    while (length > 0 && text[length - 1] == ' ') --length;
+    if (length >= kLineCapacity) length = kLineCapacity - 1;
 
-  auto emit = [&](const char* buf, size_t len) {
-    linesUsed++;
-    if (onLine) onLine(buf, len);
+    char output[kLineCapacity];
+    if (length != 0) memcpy(output, text, length);
+    output[length] = '\0';
+    ++linesUsed;
+    if (onLine) onLine(output, length);
   };
 
   auto flushLine = [&]() {
-    trimTrailing(line, lineLen);
-    line[lineLen] = 0;
-    emit(line, lineLen);
+    publish(line, lineLen);
     lineLen = 0;
+    line[0] = '\0';
   };
 
-  auto safeReturn = [&](uint32_t off) -> uint32_t {
-    if (off <= startPos) off = startPos + 1;
-    size_t sz = in.size();
-    if (sz > 0 && off > sz) off = (uint32_t)sz;
-    return off;
-  };
+  auto splitToken = [&]() -> uint32_t {
+    while (tokenLen != 0) {
+      size_t pieceLen = 0;
+      while (pieceLen < tokenLen && pieceLen < kLineCapacity - 1) {
+        const int charLen = utf8SafeCharLenAt(token, tokenLen, pieceLen);
+        if (charLen <= 0 || pieceLen + (size_t)charLen > tokenLen) break;
 
-  auto lineEndsWithSpace = [&]() -> bool {
-    return lineLen > 0 && line[lineLen - 1] == ' ';
-  };
-
-  // Hard-break the token buffer: emit prefix-by-prefix lines, each as wide
-  // as fits at the current font, until the token is consumed. Updates
-  // `tokenStartPos` as bytes leave so safeReturn can compute the correct
-  // resume offset on early-out.
-  auto hardBreakToken = [&]() -> uint32_t {
-    while (tokLen > 0) {
-      size_t fitLen = 0;
-      while (fitLen < tokLen) {
-        int clen = utf8SafeCharLenAt(token, tokLen, fitLen);
-        if (clen <= 0) break;
-        if (fitLen + (size_t)clen > tokLen) break;
-        char saved = token[fitLen + clen];
-        token[fitLen + clen] = 0;
-        bool fits = measure(token) <= m.maxWidth;
-        token[fitLen + clen] = saved;
+        const char saved = token[pieceLen + (size_t)charLen];
+        token[pieceLen + (size_t)charLen] = '\0';
+        const bool fits = measure(token) <= m.maxWidth;
+        token[pieceLen + (size_t)charLen] = saved;
         if (!fits) break;
-        fitLen += (size_t)clen;
-      }
-      if (fitLen == 0) {
-        int clen = utf8SafeCharLenAt(token, tokLen, 0);
-        if (clen <= 0) clen = 1;
-        if ((size_t)clen > tokLen) clen = (int)tokLen;
-        fitLen = (size_t)clen;
+        pieceLen += (size_t)charLen;
       }
 
-      char saved = token[fitLen];
-      token[fitLen] = 0;
-      emit(token, fitLen);
-      token[fitLen] = saved;
+      if (pieceLen == 0) {
+        int charLen = utf8SafeCharLenAt(token, tokenLen, 0);
+        if (charLen <= 0) charLen = 1;
+        pieceLen = (size_t)charLen > tokenLen ? tokenLen : (size_t)charLen;
+      }
 
+      publish(token, pieceLen);
       if (linesUsed >= m.maxLines)
-        return safeReturn(tokenStartPos + (uint32_t)fitLen);
+        return nextOffset(tokenStart + (uint32_t)pieceLen);
 
-      memmove(token, token + fitLen, tokLen - fitLen);
-      tokLen -= fitLen;
-      tokenStartPos += (uint32_t)fitLen;
+      memmove(token, token + pieceLen, tokenLen - pieceLen);
+      tokenLen -= pieceLen;
+      tokenStart += (uint32_t)pieceLen;
     }
     return 0;
   };
 
-  // Try to append the current token to the line. Flushes the line first if
-  // the combined width would overflow; falls into hardBreakToken if even a
-  // standalone token won't fit. Clears `tokLen` on success.
-  auto appendTokenToLine = [&]() -> uint32_t {
-    if (tokLen == 0) return 0;
+  std::function<uint32_t()> placeToken = [&]() -> uint32_t {
+    if (tokenLen == 0) return 0;
 
     if (lineLen == 0) {
-      trimLeading(token, tokLen);
-      if (tokLen == 0) return 0;
-      token[tokLen] = 0;
-      if (measure(token) > m.maxWidth) {
-        return hardBreakToken();
+      token[tokenLen] = '\0';
+      if (tokenLen < kLineCapacity && measure(token) <= m.maxWidth) {
+        memcpy(line, token, tokenLen);
+        lineLen = tokenLen;
+        tokenLen = 0;
+        return 0;
       }
-      memcpy(line, token, tokLen);
-      lineLen = tokLen;
-      lineStartPos = tokenStartPos;
-      tokLen = 0;
-      return 0;
+      return splitToken();
     }
 
-    trimLeading(token, tokLen);
-    if (tokLen == 0) return 0;
-
-    memcpy(scratch, line, lineLen);
-    memcpy(scratch + lineLen, token, tokLen);
-    scratch[lineLen + tokLen] = 0;
-
-    if (measure(scratch) > m.maxWidth) {
+    if (lineLen + tokenLen >= kCandidateCapacity) {
       flushLine();
-      if (linesUsed >= m.maxLines) return safeReturn(tokenStartPos);
-
-      token[tokLen] = 0;
-      if (measure(token) > m.maxWidth) {
-        return hardBreakToken();
-      }
-      memcpy(line, token, tokLen);
-      lineLen = tokLen;
-      lineStartPos = tokenStartPos;
-    } else {
-      memcpy(line + lineLen, token, tokLen);
-      lineLen += tokLen;
+      if (linesUsed >= m.maxLines) return nextOffset(tokenStart);
+      return placeToken();
     }
-    tokLen = 0;
+
+    memcpy(candidate, line, lineLen);
+    memcpy(candidate + lineLen, token, tokenLen);
+    candidate[lineLen + tokenLen] = '\0';
+
+    if (lineLen + tokenLen >= kLineCapacity || measure(candidate) > m.maxWidth) {
+      flushLine();
+      if (linesUsed >= m.maxLines) return nextOffset(tokenStart);
+      return placeToken();
+    }
+
+    memcpy(line, candidate, lineLen + tokenLen);
+    lineLen += tokenLen;
+    tokenLen = 0;
     return 0;
   };
 
@@ -156,45 +126,43 @@ uint32_t paginatePage(IReadStream& in,
     if (c == '\r') continue;
 
     if (c == '\n') {
-      uint32_t forcedNext = appendTokenToLine();
+      uint32_t forcedNext = placeToken();
       if (forcedNext != 0) return forcedNext;
       flushLine();
-      if (linesUsed >= m.maxLines) return safeReturn(in.position());
-      lineStartPos = in.position();
+      if (linesUsed >= m.maxLines) return nextOffset(in.position());
       continue;
     }
 
     if (isBreakableWhitespaceByte(c)) {
-      uint32_t forcedNext = appendTokenToLine();
+      uint32_t forcedNext = placeToken();
       if (forcedNext != 0) return forcedNext;
-      if (lineLen > 0 && !lineEndsWithSpace() && lineLen < kLineMax - 1) {
+      if (lineLen > 0 && line[lineLen - 1] != ' ' && lineLen < kLineCapacity - 1) {
         line[lineLen++] = ' ';
       }
       continue;
     }
 
-    // Defensive: if the token buffer is full (degenerate input — a long
-    // run of non-breakable bytes), force a flush before appending. Normal
-    // text never reaches this branch.
-    if (tokLen >= kTokenMax - 1) {
-      uint32_t forcedNext = appendTokenToLine();
+    // A token longer than the scratch buffer is handled in pieces. This keeps
+    // malformed or generated input from overflowing the fixed buffers.
+    if (tokenLen >= kTokenCapacity - 1) {
+      uint32_t forcedNext = placeToken();
       if (forcedNext != 0) return forcedNext;
     }
-    if (tokLen == 0) tokenStartPos = charPos;
-    token[tokLen++] = c;
+    if (tokenLen == 0) tokenStart = charPos;
+    token[tokenLen++] = c;
 
     if (isBreakablePunctuationByte(c)) {
-      uint32_t forcedNext = appendTokenToLine();
+      uint32_t forcedNext = placeToken();
       if (forcedNext != 0) return forcedNext;
     }
   }
 
-  uint32_t forcedNext = appendTokenToLine();
+  uint32_t forcedNext = placeToken();
   if (forcedNext != 0) return forcedNext;
 
   if (linesUsed < m.maxLines && lineLen > 0) {
     flushLine();
   }
 
-  return safeReturn(in.position());
+  return nextOffset(in.position());
 }

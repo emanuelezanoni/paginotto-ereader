@@ -73,6 +73,13 @@ clean provenance decision.
    text normalisation and library-tree rules are the highest-risk part because
    they directly affect page breaks and navigation.
 
+   Current progress:
+
+   - [x] Paginator behaviour characterized with additional edge-case tests.
+   - [x] `src/pure/paginator.cpp` reimplemented with the existing API and
+     offset semantics preserved.
+   - [ ] `text_util` and library navigation review/rewrite.
+
 2. **Persistence and library storage**
    - `src/storage/fs_util.cpp`
    - `src/storage/fs_util.h`
@@ -178,7 +185,8 @@ allow the implementation and internal organisation to be Paginotto-specific.
 - [x] Initial comparison completed.
 - [x] First-pass automated provenance inventory.
 - [ ] Full manual provenance inventory.
-- [ ] Core reader algorithms review/rewrite.
+- [x] Paginator characterization and rewrite.
+- [ ] Remaining core reader algorithms review/rewrite.
 - [ ] Persistence and library storage review/rewrite.
 - [ ] Device UI and hardware adapter review/rewrite.
 - [ ] Connectivity and maintenance review/rewrite.
