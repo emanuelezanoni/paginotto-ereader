@@ -6,6 +6,8 @@
 struct OtaCheckResult {
   bool   updateAvailable = false;
   bool   reachable       = false;
+  bool   invalidChannel   = false;
+  bool   invalidManifest  = false;
   String remoteVersion;
   String remoteCommit;
   uint32_t remoteCommitTimestamp = 0;
@@ -14,6 +16,8 @@ struct OtaCheckResult {
 struct OtaDownloadResult {
   bool success           = false;
   bool partitionTooSmall = false;
+  bool invalidChannel     = false;
+  bool truncated          = false;
 };
 
 // Callback fired during OTA::download() with progress 0–100.

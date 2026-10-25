@@ -7,6 +7,7 @@
 #include <esp_ota_ops.h>
 
 #include "src/config.h"
+#include "src/pure/ota_policy.h"
 
 // Built-in Mozilla root bundle embedded in libmbedtls.a by the IDF.
 // setCACertBundle requires both start pointer and byte length (arduino-esp32 >= 3.0.4).
@@ -59,6 +60,10 @@ bool OTA::isUpdateServerReachable() {
 
 OtaCheckResult OTA::checkAvailable(const String& channel) {
   OtaCheckResult result;
+  if (!validOtaChannel(channel.c_str())) {
+    result.invalidChannel = true;
+    return result;
+  }
 
   String url = String(kOtaBaseUrl) + channel + "/manifest-"
                + kBoardToken + ".json";
@@ -91,10 +96,16 @@ OtaCheckResult OTA::checkAvailable(const String& channel) {
   http.end();
   delete client;
 
-  if (err) return result;
+  if (err) {
+    result.invalidManifest = true;
+    return result;
+  }
 
   const char* ver = doc["version"];
-  if (!ver || ver[0] == '\0') return result;
+  if (!ver || ver[0] == '\0') {
+    result.invalidManifest = true;
+    return result;
+  }
 
   result.remoteVersion   = ver;
   const char* commit = doc["commit"];
@@ -112,6 +123,10 @@ OtaCheckResult OTA::checkAvailable(const String& channel) {
 
 OtaDownloadResult OTA::download(const String& channel, OtaProgressFn progressCb) {
   OtaDownloadResult result;
+  if (!validOtaChannel(channel.c_str())) {
+    result.invalidChannel = true;
+    return result;
+  }
 
   String url = String(kOtaBaseUrl) + channel + "/firmware-"
                + kBoardToken + ".bin";
@@ -140,7 +155,7 @@ OtaDownloadResult OTA::download(const String& channel, OtaProgressFn progressCb)
   // Reject before writing a single byte if the reported size already exceeds
   // the partition. Unknown size (-1) passes here and is caught by esp_ota_end
   // if the image turns out to be too large.
-  if (contentLength > 0 && (size_t)contentLength > target->size) {
+  if (!otaContentLengthFits(contentLength, target->size)) {
     http.end();
     delete client;
     result.partitionTooSmall = true;
@@ -165,7 +180,7 @@ OtaDownloadResult OTA::download(const String& channel, OtaProgressFn progressCb)
   // Static buffer keeps 4 KB off the loopTask stack. Safe: download() is
   // never called re-entrantly — it blocks the main loop for its duration.
   static uint8_t buf[4096];
-  int      written     = 0;
+  size_t   written     = 0;
   int      remaining   = contentLength;
   int      lastPct     = -1;
   uint32_t lastDataMs  = millis();
@@ -186,7 +201,7 @@ OtaDownloadResult OTA::download(const String& channel, OtaProgressFn progressCb)
         delete client;
         return result;
       }
-      written += len;
+      written += static_cast<size_t>(len);
       if (remaining > 0) {
         remaining -= len;
         if (remaining == 0) break;
@@ -211,6 +226,12 @@ OtaDownloadResult OTA::download(const String& channel, OtaProgressFn progressCb)
 
   http.end();
   delete client;
+
+  if (!otaDownloadComplete(contentLength, written)) {
+    esp_ota_abort(handle);
+    result.truncated = true;
+    return result;
+  }
 
   // esp_ota_end validates the image (descriptor, SHA-256 if secure boot is
   // enabled). A truncated or corrupted binary will be rejected here. The
