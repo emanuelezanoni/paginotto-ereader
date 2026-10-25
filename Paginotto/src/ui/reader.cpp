@@ -243,11 +243,14 @@ int findPageForOffset(uint32_t targetOffset) {
 bool isOpeningBook() { return s_openingBook; }
 
 void cancelBookOpening() {
+  ReaderScanState scan{s_openScanPage, s_openScanOffset,
+                       s_openTargetOffset, s_openTargetIsPage, false};
+  cancelReaderScan(scan);
   s_openingBook = false;
-  s_openTargetOffset = 0;
-  s_openScanOffset = 0;
-  s_openScanPage = 0;
-  s_openTargetIsPage = false;
+  s_openTargetOffset = scan.target;
+  s_openScanOffset = scan.offset;
+  s_openScanPage = scan.page;
+  s_openTargetIsPage = scan.targetIsPage;
 }
 
 void serviceBookOpening() {
@@ -515,11 +518,13 @@ bool advancePage() {
 
 bool retreatPage() {
   Diagnostics::trace("reader.page.previous");
-  if (g_bookview.cursor.pageIndex <= 0) {
+  const ReaderRetreatDecision decision =
+      decideReaderRetreat(g_bookview.cursor.pageIndex);
+  if (!decision.moved) {
     Diagnostics::trace("reader.page.first");
     return false;
   }
-  const uint32_t targetPage = (uint32_t)(g_bookview.cursor.pageIndex - 1);
+  const uint32_t targetPage = (uint32_t)decision.targetPage;
   uint32_t offset = 0;
   int startPage = -1;
   if (recentOffsetForPage(targetPage, offset)) startPage = (int)targetPage;

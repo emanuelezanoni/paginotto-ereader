@@ -39,3 +39,15 @@ TEST_CASE("reader advance handles empty files safely") {
   CHECK(!d.moved);
   CHECK(d.eof);
 }
+
+TEST_CASE("reader retreat stops at the first page") {
+  const ReaderRetreatDecision d = decideReaderRetreat(0);
+  CHECK(!d.moved);
+  CHECK(d.targetPage == 0);
+}
+
+TEST_CASE("reader retreat selects the previous page") {
+  const ReaderRetreatDecision d = decideReaderRetreat(7);
+  CHECK(d.moved);
+  CHECK(d.targetPage == 6);
+}

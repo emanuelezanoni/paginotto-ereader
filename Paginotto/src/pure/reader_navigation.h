@@ -11,6 +11,11 @@ struct ReaderAdvanceDecision {
   uint32_t offset = 0;
 };
 
+struct ReaderRetreatDecision {
+  bool moved = false;
+  int  targetPage = 0;
+};
+
 // Decide whether a forward page turn is valid. The actual paginator remains
 // outside this module: callers provide the candidate next-page offset.
 ReaderAdvanceDecision decideReaderAdvance(uint32_t currentPage,
@@ -18,5 +23,7 @@ ReaderAdvanceDecision decideReaderAdvance(uint32_t currentPage,
                                           uint32_t nextOffset,
                                           size_t fileSize,
                                           bool alreadyAtEof);
+
+ReaderRetreatDecision decideReaderRetreat(int currentPage);
 
 #endif  // PAGINOTTO_PURE_READER_NAVIGATION_H

@@ -17,3 +17,10 @@ ReaderScanStep advanceReaderScan(ReaderScanState& state, uint32_t nextOffset) {
   if (readerScanTargetReached(state)) return ReaderScanStep::TargetReached;
   return ReaderScanStep::Continue;
 }
+
+void cancelReaderScan(ReaderScanState& state) {
+  state.page = 0;
+  state.offset = 0;
+  state.target = 0;
+  state.targetIsPage = false;
+}

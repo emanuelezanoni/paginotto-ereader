@@ -20,3 +20,11 @@ ReaderAdvanceDecision decideReaderAdvance(uint32_t currentPage,
   decision.offset = nextOffset;
   return decision;
 }
+
+ReaderRetreatDecision decideReaderRetreat(int currentPage) {
+  ReaderRetreatDecision decision;
+  if (currentPage <= 0) return decision;
+  decision.moved = true;
+  decision.targetPage = currentPage - 1;
+  return decision;
+}

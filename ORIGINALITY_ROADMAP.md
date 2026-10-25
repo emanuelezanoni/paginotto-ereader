@@ -276,8 +276,10 @@ allow the implementation and internal organisation to be Paginotto-specific.
      scan completes.
    - [x] Extracted and integrated forward-navigation boundary decisions for
      valid pages, empty files, EOF, and non-progressing offsets.
-   - [ ] Complete transition tests for scan cancellation, sleep/resume,
-     layout changes, WebUI jumps and backward-boundary navigation.
+   - [x] Added explicit scan-cancellation reset semantics and backward
+     navigation boundary decisions; both are covered by host tests.
+   - [ ] Complete transition tests for sleep/resume, layout changes and
+     WebUI jumps.
 2. **Hardware boundary classification** — inspect display, input, sleep,
    battery, font and file-stream files and mark each block as external API,
    Paginotto wrapper/policy or inherited implementation. Do this before any

@@ -39,3 +39,13 @@ TEST_CASE("reader scan never accepts a backward offset") {
   CHECK(state.eof);
   CHECK(state.offset == 400u);
 }
+
+TEST_CASE("reader scan cancellation clears only transient scan state") {
+  ReaderScanState state{4, 400, 900, false, true};
+  cancelReaderScan(state);
+  CHECK(state.page == 0u);
+  CHECK(state.offset == 0u);
+  CHECK(state.target == 0u);
+  CHECK(!state.targetIsPage);
+  CHECK(state.eof);
+}
