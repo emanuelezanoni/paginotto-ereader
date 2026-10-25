@@ -1,5 +1,6 @@
 #include "src/storage/wifi_creds.h"
 
+#include "src/pure/wifi_credentials.h"
 #include "src/state.h"  // prefs
 
 namespace WifiCreds {
@@ -41,6 +42,10 @@ Network network(uint8_t index) {
 }
 
 bool add(const String& inSsid, const String& inPass) {
+  if (!WifiCredentialPolicy::validSsid(inSsid)
+      || !WifiCredentialPolicy::validPassword(inPass)) {
+    return false;
+  }
   uint8_t n = count();
   uint8_t slot = n;
   for (uint8_t i = 0; i < n; i++) if (network(i).ssid == inSsid) { slot = i; break; }

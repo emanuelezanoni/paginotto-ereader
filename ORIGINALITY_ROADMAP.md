@@ -272,6 +272,11 @@ allow the implementation and internal organisation to be Paginotto-specific.
   `font`, `sleep`, `battery` and `lock` are repository adapters or product
   policy, not vendor source. Heltec, Arduino/ESP-IDF, Adafruit GFX, U8g2 and
   the other declared dependencies remain external.
+- **Connectivity 2A:** Wi-Fi credential validation is now a pure, tested
+  policy. Empty/oversized SSIDs and oversized WPA passphrases are rejected
+  before NVS writes; open-network empty passwords remain valid. Host tests
+  pass 112 tests / 418 checks, `pio check` is clean, and both board builds
+  pass.
 
 ### What remains — ordered by importance
 
@@ -282,9 +287,10 @@ allow the implementation and internal organisation to be Paginotto-specific.
    Each subsystem needs characterization tests where practical, `pio check`,
    and clean V1.1/V1.2 builds. Vendor APIs and vendor implementations are not
    rewrite targets.
-2. **Connectivity and maintenance.** Review Wi-Fi provisioning and OTA
-   product logic, including provisioning failure, reconnect, update failure
-   and rollback/error paths. Keep Arduino/ESP-IDF and library code external.
+2. **Connectivity and maintenance.** 2A (credential validation) is complete.
+   Remaining work is the Wi-Fi provisioning lifecycle and OTA product logic,
+   including provisioning failure, reconnect, update failure and
+   rollback/error paths. Keep Arduino/ESP-IDF and library code external.
 3. **Remaining UI and screensavers.** Audit `screen`, widgets, toast/feedback,
    lock integration, screensaver runtime and WebUI. The screensaver runtime
    and WebUI are the clearest large derived feature outside the reader path.
@@ -370,10 +376,14 @@ allow the implementation and internal organisation to be Paginotto-specific.
   `battery`, `lock`) are complete. Vendor APIs remain external; repository
   adapters and product policies are classified as derived where the
   upstream comparison supports that conclusion.
+- [x] Wi-Fi credential policy extracted and tested; invalid SSIDs and
+  passphrases are rejected before persistence, while open-network passwords
+  remain supported.
 - [ ] Device UI and hardware adapter review/rewrite. Boundary classification
   is complete for display, file-stream, input, font, sleep, battery and lock;
   targeted rewrites now remain.
-- [ ] Connectivity and maintenance review/rewrite.
+- [ ] Connectivity and maintenance review/rewrite. Credential validation is
+  complete; provisioning lifecycle and OTA remain.
 - [ ] Screensaver WebUI rewrite.
 - [ ] Remaining inherited utility review.
 - [ ] Dependency and asset license inventory.
