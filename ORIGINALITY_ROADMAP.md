@@ -312,13 +312,15 @@ libraries or changing the already-stable reader/storage formats.
 
 ### Phase 1 — Rewrite inherited device logic
 
-**Status: not started.** The boundary audit is complete; the actual clean-room
-rewrites are not.
+**Status: 1A complete; 1B–1E remain.** The boundary audit is complete. The
+`file_stream` adapter has now been rewritten and verified without changing the
+`IReadStream` contract; `display` is still pending.
 
 Work in this order, one bounded subsystem at a time:
 
 1. `file_stream` + `display`: preserve `IReadStream`, framebuffer geometry,
    rotation and refresh semantics; remove inherited implementation structure.
+   **`file_stream` complete; `display` pending.**
 2. `input`: preserve ISR safety, event timings and public `ButtonEvent`
    behaviour; test debounce, overflow, click/hold and wake edges.
 3. `font`: preserve font roles, layout metrics, cache stamps and bionic mode;

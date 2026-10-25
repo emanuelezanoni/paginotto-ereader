@@ -82,10 +82,11 @@ that need review even when their score is lower:
   third-party code.
 - `src/hal/file_stream.h` is a **thin repository adapter** from Arduino
   `File` to the pure `IReadStream` contract. It is not supplied by Heltec or
-  Arduino as a Paginotto component, and its current implementation is
-  substantially inherited. It is classified as **derived adapter — rewrite
-  only if needed after the hardware contract audit**; no new algorithm is
-  required.
+  Arduino as a Paginotto component. Its implementation has now been rewritten
+  with explicit invalid-handle, EOF and position semantics while preserving
+  the public contract; it is classified as **targeted rewrite complete**.
+  Host tests, static analysis and both firmware environments pass. No new
+  algorithm or vendor code was introduced.
 - The included `Adafruit_GFX`, `U8g2`, Heltec and Arduino/ESP-IDF APIs remain
   third-party dependencies and must not be counted as copied repository
   implementation.
