@@ -5,6 +5,7 @@
 #include "src/config.h"
 #include "src/state.h"
 #include "src/pure/hashing.h"             // prefKeyForBook
+#include "src/pure/reader_integration.h"
 #include "src/storage/book_metadata.h"
 #include "src/storage/fs_util.h"
 #include "src/storage/page_cache.h"
@@ -251,12 +252,12 @@ static void handleJumpOffset() {
     return;
   }
   size_t fileSize = f.size();
-  long requested = server.arg("offset").toInt();
-  if (requested < 0) requested = 0;
-  if ((size_t)requested >= fileSize) requested = (long)(fileSize > 0 ? fileSize - 1 : 0);
+  const ReaderJumpDecision jump =
+      decideReaderJump(parseReaderJumpOffset(server.arg("offset").c_str()),
+                       fileSize);
 
   PreferencesStore kv(prefs);
-  saveSavedOffset(kv, key, (uint32_t)requested);
+  saveSavedOffset(kv, key, jump.offset);
   if (server.hasArg("anchor") && server.hasArg("anchorAt")) {
     uint32_t anchorAt = (uint32_t)server.arg("anchorAt").toInt();
     saveSavedAnchor(kv, key, server.arg("anchor"), anchorAt);
@@ -273,7 +274,7 @@ static void handleJumpOffset() {
       g_bookview.book.path() == path;
 
   if (activeOnThisBook) {
-    int newPage = findPageForOffset((uint32_t)requested);
+    int newPage = findPageForOffset(jump.offset);
     g_bookview.cursor.pageIndex = newPage;
     saveSavedPage(kv, key, newPage);
   }

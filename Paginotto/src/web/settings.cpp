@@ -7,6 +7,7 @@
 #include "src/storage/page_cache.h"       // deletePageCacheForBook
 #include "src/storage/preferences_store.h"
 #include "src/ui/font.h"
+#include "src/pure/reader_integration.h"
 #include "src/ui/reader.h"                // g_bookview, findPageForOffset, renderCurrentPage
 #include "src/ui/reader_actions.h"        // ButtonAction + Gestures
 #include "src/ui/screens/reader_screen.h" // g_readerScreen — active-reader check
@@ -187,11 +188,6 @@ static void handleSettingsPost() {
   bool readerActive =
       (g_currentScreen == &g_readerScreen) &&
       g_bookview.book.isOpen();
-  uint32_t savedByte = 0;
-  if (readerActive && g_bookview.cursor.pageIndex >= 0) {
-    savedByte = g_bookview.pages.currentOffset;
-  }
-
   bool layoutChanged = applySettingsForm();
 
   // Layout shifted under our feet — the in-memory page table no longer
@@ -200,10 +196,13 @@ static void handleSettingsPost() {
   // layout-stamp mismatch) and re-locate the cursor on the page that
   // contains the saved byte offset. Then render so the user sees the new
   // layout immediately when they return to the device.
-  if (readerActive && layoutChanged) {
+  const ReaderLayoutDecision remap = decideReaderLayoutRemap(
+      readerActive, layoutChanged, g_bookview.cursor.pageIndex,
+      g_bookview.pages.currentOffset);
+  if (remap.remap) {
     g_bookview.pages.currentOffset = 0;
     g_bookview.pages.eofReached = false;
-    int newPage = findPageForOffset(savedByte);
+    int newPage = findPageForOffset(remap.savedOffset);
     if (newPage < 0) newPage = 0;
     g_bookview.cursor.pageIndex = newPage;
     g_bookview.cursor.pageTurnsSinceFull = 0;

@@ -10,6 +10,7 @@
 #include "src/hal/input.h"                  // markUserActivity during long opens
 
 #include "src/ui/font.h"                    // layoutForCache for cache stamping
+#include "src/pure/reader_integration.h"
 #include "src/pure/reader_resume.h"
 #include "src/pure/reader_scan.h"
 #include "src/pure/reader_navigation.h"
@@ -453,7 +454,9 @@ bool tryRestoreReadingSession() {
   // re-arms it on its way into deep sleep.
   String wp = prefs.getString("wake_path", "");
   clearResumeOnWake();
-  if (wp.length() == 0) {
+  const ReaderWakeDecision wake =
+      decideReaderWake(wp.c_str(), wp.length() > 0 && bookIndexForPath(wp) >= 0);
+  if (wake.action == ReaderWakeAction::None) {
     Diagnostics::trace("reader.restore.none");
     return false;
   }

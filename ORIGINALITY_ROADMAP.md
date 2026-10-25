@@ -278,8 +278,9 @@ allow the implementation and internal organisation to be Paginotto-specific.
      valid pages, empty files, EOF, and non-progressing offsets.
    - [x] Added explicit scan-cancellation reset semantics and backward
      navigation boundary decisions; both are covered by host tests.
-   - [ ] Complete transition tests for sleep/resume, layout changes and
-     WebUI jumps.
+   - [x] Complete transition tests for sleep/resume, layout changes and
+     WebUI jumps. Wake intent is single-shot, layout changes preserve the
+     canonical byte offset, and WebUI jumps normalize signed/oversized input.
 2. **Hardware boundary classification** — inspect display, input, sleep,
    battery, font and file-stream files and mark each block as external API,
    Paginotto wrapper/policy or inherited implementation. Do this before any
