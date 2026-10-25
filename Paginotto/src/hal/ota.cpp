@@ -39,6 +39,12 @@ static void configureClient(WiFiClientSecure& client) {
 
 // ----------------------------------------------------------------------------
 
+bool OTA::confirmRunningFirmware() {
+  return esp_ota_mark_app_valid_cancel_rollback() == ESP_OK;
+}
+
+// ----------------------------------------------------------------------------
+
 bool OTA::isUpdateServerReachable() {
   // Heap-allocate WiFiClientSecure — its TLS context setup uses significant
   // stack even for failed connections, which overflows the 8 KB loopTask stack.

@@ -24,6 +24,7 @@
 #include "src/hal/battery.h"
 #include "src/hal/display.h"
 #include "src/hal/input.h"
+#include "src/hal/ota.h"
 #include "src/hal/wifi_provisioning.h"
 #include "src/pure/hashing.h"
 #include "src/storage/fs_util.h"
@@ -63,6 +64,9 @@ Screen* g_currentScreen = &g_libraryScreen;
 void setup() {
   Serial.begin(115200);
   delay(200);
+  if (!OTA::confirmRunningFirmware()) {
+    Serial.println("[ota] no pending rollback confirmation");
+  }
   Serial.printf("[boot] wake cause: %d\n", esp_sleep_get_wakeup_cause());
   setCpuFrequencyMhz(240); // full speed for init; lowered to 80 MHz at end of setup
 

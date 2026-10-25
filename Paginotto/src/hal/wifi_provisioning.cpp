@@ -107,11 +107,9 @@ void begin() {
   // error back to the browser and the saved creds stay untouched, which is
   // exactly what we want (don't poison NVS with bad creds).
   //
-  // Known edge case (only when an upload session is active): the library
-  // calls WiFi.mode(WIFI_STA)+begin() internally, which kills the upload
-  // session's SoftAP and disconnects any phone mid-upload. Considered narrow
-  // enough to defer; fix would be `setCustomConnectWiFi(...)` to bypass the
-  // lib's connect while a session is up and just save creds.
+  // The custom connector below is important while an upload session is
+  // active: the library's default connector switches to WIFI_STA and would
+  // kill the upload SoftAP. The wrapper preserves AP+STA ownership instead.
   s_state.lib.onImprovConnected([](const char* ssid, const char* password) {
     WifiCreds::save(ssid, password);
     if (!s_state.uploadSession) {

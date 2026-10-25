@@ -27,6 +27,10 @@ using OtaProgressFn = void (*)(int percent);
 
 class OTA {
 public:
+  // Confirm the currently running image after boot when ESP-IDF rollback is
+  // enabled. Returns false when the bootloader has no pending rollback state.
+  static bool confirmRunningFirmware();
+
   // HTTPS HEAD probe to the firmware distribution root.
   // Blocks for up to 5 s. Call only when Wi-Fi STA is connected.
   static bool isUpdateServerReachable();
