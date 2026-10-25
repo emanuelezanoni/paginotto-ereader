@@ -2,6 +2,8 @@
 
 #include "src/pure/hashing.h"   // prefKeyForBook
 
+#include <limits>
+
 // ============================================================================
 //  On-disk page-offset cache
 //
@@ -94,6 +96,8 @@ static bool writeCacheHeader(File& f, size_t fileSize,
 
 static bool createPageOffsetCache(const String& path, size_t fileSize,
                                   const PageCacheLayout& layout) {
+  if (fileSize > std::numeric_limits<uint32_t>::max()) return false;
+
   String cachePath = pageCachePathForBook(path);
   if (FS.exists(cachePath)) FS.remove(cachePath);
   File f = FS.open(cachePath, "w");

@@ -132,6 +132,10 @@ clean provenance decision.
    - [x] Malformed cache sizes, stale layout stamps, null output pointers and
      self-renames are handled safely.
    - [x] Cache integration compiled successfully for both firmware boards.
+   - [x] Final audit completed: the cache writer now rejects source files too
+     large for its fixed-width on-disk size field instead of truncating the
+     value during serialization.
+   - [x] Clean rebuild verified both firmware environments after the audit.
 
 2. **Persistence and library storage**
    - `src/storage/fs_util.cpp`

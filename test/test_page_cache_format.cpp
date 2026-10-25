@@ -1,6 +1,8 @@
 #include "test_framework.h"
 #include "src/pure/page_cache_format.h"
 
+#include <limits>
+
 TEST_CASE("page cache layout encoding is deterministic") {
   PageCacheLayout layout{10, 2, 1};
   CHECK(encodePageCacheLayout(layout) == 0x0001020Au);
@@ -28,6 +30,17 @@ TEST_CASE("page cache header rejects stale or malformed files") {
   CHECK(!validatePageCacheHeader(pageCacheMagic(), encoded, 4096,
                                  4096, 15, layout, count));
   CHECK(count == 77u);
+}
+
+TEST_CASE("page cache header rejects source sizes that do not fit the format") {
+  if (std::numeric_limits<size_t>::max() > std::numeric_limits<uint32_t>::max()) {
+    PageCacheLayout layout{12, 0, 0};
+    uint32_t count = 11;
+    const size_t tooLarge = static_cast<size_t>(std::numeric_limits<uint32_t>::max()) + 1u;
+    CHECK(!validatePageCacheHeader(pageCacheMagic(), encodePageCacheLayout(layout),
+                                   0, tooLarge, 16, layout, count));
+    CHECK(count == 11u);
+  }
 }
 
 TEST_CASE("page cache layout changes invalidate the stamp") {
