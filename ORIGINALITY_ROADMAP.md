@@ -286,7 +286,9 @@ allow the implementation and internal organisation to be Paginotto-specific.
    battery, font and file-stream files and mark each block as external API,
    Paginotto wrapper/policy or inherited implementation. Do this before any
    rewrite so vendor code is not duplicated and copied product logic is not
-   excused as vendor code.
+   excused as vendor code. **Block 1A complete:** `display` and
+   `file_stream` are classified as derived repository adapters; their vendor
+   dependencies are external and are not candidates for rewriting.
 3. **Reader-facing UI/HAL implementation** — rewrite only the inherited
    product logic found in step 2, preserving the Heltec/ESP32 contracts;
    compile both board variants after each subsystem.
@@ -320,7 +322,9 @@ allow the implementation and internal organisation to be Paginotto-specific.
 - [x] Persistence and library storage review/rewrite (paths, catalog,
   metadata and page-cache integration completed).
 - [ ] Classify device UI/HAL files into external API, Paginotto wrapper and
-  inherited implementation before deciding what to rewrite.
+  inherited implementation before deciding what to rewrite. Block 1A
+  (`display`, `file_stream`) is complete; `input`, `font`, `sleep`, battery
+  and lock remain.
 - [ ] Device UI and hardware adapter review/rewrite. Reader integration is
   complete; remaining work starts with display/input/sleep/battery/file-stream
   boundary classification and only then targets inherited product logic.

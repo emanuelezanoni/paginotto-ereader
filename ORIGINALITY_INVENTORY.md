@@ -57,6 +57,7 @@ that need review even when their score is lower:
 - `src/pure/library_nav.h` — 89.1% — data/API declarations; implementation
   was rewritten
 - `src/storage/kv_store.h` — 88.5% — persistence contract; audit carefully
+
 - `src/storage/preferences_store.h` — 91.9% — persistence contract
 - `src/storage/library.h` — 91.4% — storage API review
 - `src/ui/screen.h` — 90.6% — generic UI interface review
@@ -69,6 +70,25 @@ that need review even when their score is lower:
 - `src/hal/input.h` — 86.6% — interface review
 - `src/hal/battery.cpp` — 92.8% — hardware service review
 - `src/ui/font.h` — 89.0% — interface plus asset ownership review
+
+### Hardware boundary audit — block 1A
+
+- `src/hal/display.cpp` and `src/hal/display.h` are **repository adapter
+  code**, not vendor source. They depend on Heltec E-Ink, Adafruit GFX and
+  U8g2, but the adapter class, rotation policy and canvas setup belong to the
+  firmware. The current implementation is functionally useful but remains
+  substantially inherited from the upstream display adapter; it is therefore
+  classified as **derived adapter — targeted rewrite pending**, not as
+  third-party code.
+- `src/hal/file_stream.h` is a **thin repository adapter** from Arduino
+  `File` to the pure `IReadStream` contract. It is not supplied by Heltec or
+  Arduino as a Paginotto component, and its current implementation is
+  substantially inherited. It is classified as **derived adapter — rewrite
+  only if needed after the hardware contract audit**; no new algorithm is
+  required.
+- The included `Adafruit_GFX`, `U8g2`, Heltec and Arduino/ESP-IDF APIs remain
+  third-party dependencies and must not be counted as copied repository
+  implementation.
 
 The percentages above were recomputed against the imported commit using a
 line-sequence matcher. They are useful for triage only; a high percentage can
