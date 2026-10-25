@@ -7,25 +7,30 @@
 #include "src/config.h"
 #include "src/state.h"
 
-// ============================================================================
-//  Display adapter — wraps the Heltec EInk display so Adafruit_GFX can draw
-//  to it. Rotates the screen 180° because of the panel orientation.
-// ============================================================================
+// Product-owned bridge between Adafruit_GFX and the Heltec panel. The panel
+// driver remains a third-party dependency; this class owns only the firmware's
+// coordinate and monochrome-colour policy.
 class HeltecGFXAdapter : public Adafruit_GFX {
 public:
-  explicit HeltecGFXAdapter(EInkDisplay& d)
-    : Adafruit_GFX(SCREEN_W, SCREEN_H), disp(d) {}
+  explicit HeltecGFXAdapter(EInkDisplay& panel)
+      : Adafruit_GFX(SCREEN_W, SCREEN_H), panel_(panel) {}
 
   void drawPixel(int16_t x, int16_t y, uint16_t color) override {
-    if (x < 0 || y < 0 || x >= SCREEN_W || y >= SCREEN_H) return;
-    uint16_t c = color ? BLACK : WHITE;
-    int16_t xx = (SCREEN_W - 1) - x;
-    int16_t yy = (SCREEN_H - 1) - y;
-    disp.drawPixel(xx, yy, c);
+    if (!inside(x, y)) return;
+
+    // The physical panel is mounted upside down relative to the logical GFX
+    // coordinate system. Keep the transform here so all callers share it.
+    const int16_t panelX = static_cast<int16_t>(SCREEN_W - 1 - x);
+    const int16_t panelY = static_cast<int16_t>(SCREEN_H - 1 - y);
+    panel_.drawPixel(panelX, panelY, color == 0 ? WHITE : BLACK);
   }
 
 private:
-  EInkDisplay& disp;
+  static bool inside(int16_t x, int16_t y) {
+    return x >= 0 && y >= 0 && x < SCREEN_W && y < SCREEN_H;
+  }
+
+  EInkDisplay& panel_;
 };
 
 extern HeltecGFXAdapter gfx;

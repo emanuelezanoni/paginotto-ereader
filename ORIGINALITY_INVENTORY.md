@@ -76,10 +76,10 @@ that need review even when their score is lower:
 - `src/hal/display.cpp` and `src/hal/display.h` are **repository adapter
   code**, not vendor source. They depend on Heltec E-Ink, Adafruit GFX and
   U8g2, but the adapter class, rotation policy and canvas setup belong to the
-  firmware. The current implementation is functionally useful but remains
-  substantially inherited from the upstream display adapter; it is therefore
-  classified as **derived adapter — targeted rewrite pending**, not as
-  third-party code.
+  firmware. The adapter has now been rewritten with the same framebuffer,
+  rotation, clipping, monochrome-colour and U8g2 canvas semantics; it is
+  classified as **targeted rewrite complete**, not as third-party code. The
+  Heltec, Adafruit GFX and U8g2 APIs remain external dependencies.
 - `src/hal/file_stream.h` is a **thin repository adapter** from Arduino
   `File` to the pure `IReadStream` contract. It is not supplied by Heltec or
   Arduino as a Paginotto component. Its implementation has now been rewritten
