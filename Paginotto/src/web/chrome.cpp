@@ -81,7 +81,7 @@ static const char kStyleCss[] PROGMEM =
   ".meta{color:var(--muted);font-size:13px}"
   ".pill{display:inline-block;background:var(--pill-bg);color:var(--pill-fg);border-radius:999px;padding:3px 8px;font-size:12px}"
   ".pre{white-space:pre-wrap;line-height:1.45;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--pre-bg)}"
-  ".btn.danger,.btn-icon.danger{background:var(--danger);color:#fff}"
+  ".btn.danger,button.danger,.btn-icon.danger{background:var(--danger);color:#fff}"
   ".banner-ok{background:var(--okbg);color:var(--ok);border:1px solid var(--ban-ok-bd);border-radius:12px;padding:12px 13px;margin-bottom:14px}"
   ".banner-warn{background:var(--warnbg);color:var(--warn);border:1px solid var(--ban-warn-bd);border-radius:12px;padding:12px 13px;margin-bottom:14px}"
   ".stats{display:grid;gap:10px;grid-template-columns:repeat(2,minmax(0,1fr));margin-top:12px}"
@@ -151,7 +151,7 @@ String webPageStart(const String& title, const String& subtitle,
   out = "<!doctype html><html><head><meta charset='utf-8'>"
         "<meta name='viewport' content='width=device-width,initial-scale=1'>"
         "<meta name='color-scheme' content='light'>"
-        "<link rel='stylesheet' href='/style.css?v=8'>";
+        "<link rel='stylesheet' href='/style.css?v=9'>";
   out += "<title>";
   out += title;
   out += "</title></head><body><div class='wrap";
