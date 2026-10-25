@@ -116,7 +116,7 @@ static const char kStyleCss[] PROGMEM =
   ".wifi-scan-item{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid var(--line-soft);border-radius:10px;background:var(--stat-bg)}"
   "button,.btn{display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:10px;background:var(--btn-bg);color:var(--btn-fg);padding:10px 14px;font:600 14px system-ui,sans-serif;text-decoration:none;cursor:pointer}"
   ".btn.secondary{background:var(--btn-sec-bg);color:var(--btn-sec-fg);border:1px solid var(--btn-sec-bd)}"
-  "input[type=text],input[type=number],input[type=file],input[type=search],input[type=url],input[type=password],select,textarea{width:100%;box-sizing:border-box;border:1px solid var(--inp-bd);border-radius:10px;background:var(--inp-bg);color:var(--text);padding:10px;font:inherit}"
+  "input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea{width:100%;box-sizing:border-box;border:1px solid var(--inp-bd);border-radius:10px;background:var(--inp-bg);color:var(--text);padding:10px;font:inherit}"
   "input[type=checkbox],input[type=radio]{accent-color:var(--link)}"
   ".nav a.active{font-weight:700;color:var(--text);text-decoration:underline;text-underline-offset:3px}"
   "[hidden]{display:none!important}"
@@ -150,7 +150,7 @@ String webPageStart(const String& title, const String& subtitle,
   out = "<!doctype html><html><head><meta charset='utf-8'>"
         "<meta name='viewport' content='width=device-width,initial-scale=1'>"
         "<meta name='color-scheme' content='light'>"
-        "<link rel='stylesheet' href='/style.css?v=5'>";
+        "<link rel='stylesheet' href='/style.css?v=6'>";
   out += "<title>";
   out += title;
   out += "</title></head><body><div class='wrap";
