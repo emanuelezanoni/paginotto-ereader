@@ -1,158 +1,124 @@
-# Paginotto firmware
+# Paginotto
 
-Firmware for the Paginotto pocket e-book reader, built around the Heltec
-Wireless Paper display.
+Paginotto is a compact pocket e-book reader built around the Heltec Wireless
+Paper e-ink board. Books are stored locally, reading position is remembered,
+and the device can be managed from a browser when needed.
 
-Paginotto is a compact TXT reader with an e-ink UI, local storage, a browser
-WebUI and wireless firmware updates. The firmware is built with PlatformIO.
+Current release: **v1.3.0**
 
-Paginotto started from the Pala One firmware project by **Paul Lagier**. Since
-the initial import, it has become a substantially different project: the code
-was heavily debloated, the UI and reader interaction model were redesigned,
-the storage and library systems were reworked, and a new WebUI, folder-based
-navigation and GitHub Pages OTA pipeline were developed for the Paginotto
-device.
-
-## Project status
-
-Current project release: **v1.2.0**.
-
-The repository supports two board variants:
+Supported boards:
 
 - Heltec Wireless Paper V1.1
 - Heltec Wireless Paper V1.2
 
-The display revision is normally printed on the back of the board. Select the
-matching PlatformIO environment when building or uploading firmware.
+## Reading books
 
-## What is included
+Books are organised in a simple library with optional folders. The device
+remembers the current position of every book, including after a restart or
+standby.
 
-- TXT reading with adjustable font size and line spacing
-- Reading progress persistence
-- Persistent page-offset index on LittleFS with bounded RAM usage, so large
-  books are not capped by an arbitrary in-memory page-count limit
-- Incremental book opening with progress feedback; the index is extended in
-  batches and reused for later opens, page turns and bookmarks
-- Bionic reading mode
-- Button gesture navigation and configurable reader actions
-- Library tree with folders and book management
-- Browser-side book reading, text search and editing
-- WebUI book upload, download, rename, move and deletion
-- Wi-Fi provisioning through Improv Serial
-- Device SoftAP WebUI for configuration and file management
-- Custom screensaver upload, preview, deletion and rotation modes
-- Configurable sleep and deep-sleep behaviour
-- Five-minute inactivity return to the library for standalone Wi-Fi selection,
-  network scanning and firmware-update screens
-- LiPo battery percentage estimate using a filtered single-cell voltage curve
-- OTA firmware updates through GitHub Pages
+### Library navigation
 
-## Wi-Fi and WebUI
+- **Short press** — move to the next item.
+- **Double press** — open the selected book or folder.
+- **Triple press** — leave the current folder and return to the library root.
+- **Hold** — lock the device by default.
 
-The device WebUI can be reached through the device SoftAP or through a saved
-network. It provides pages for:
+Inside a folder, the same controls are used. The selected row is shown on the
+display before opening it.
 
-- books and folders;
-- book reading, search and editing;
-- Wi-Fi configuration and saved credentials;
-- device settings;
-- screensaver management.
+### Reader navigation
 
-Wi-Fi credentials can also be provisioned through Improv Serial over USB-CDC.
-Saved credentials are stored on the device and are used by the firmware-update
-flow.
+- **Short press** — next page.
+- **Double press** — previous page.
+- **Triple press** — return to the library.
+- **Hold** — lock the reader and enter standby.
 
-## OTA firmware updates
+The hold gestures can be configured from the WebUI. A click-then-hold gesture
+is also available and can be left unassigned.
 
-The device has two OTA channels:
+When a large book is opened for the first time, Paginotto may need to build
+its page index. The display shows the progress and the operation does not
+enter the screensaver. Later openings, bookmarks and backward page turns use
+the saved index instead of scanning the whole book again. The index is stored
+on the device and does not impose a fixed page-count limit through RAM.
 
-- **Stable** — firmware published from a `vX.Y.Z` Git tag;
-- **Dev** — firmware published from the `dev` branch.
+## Standby and screensaver
 
-The update flow is:
+The normal library and reading screens follow the sleep timeout selected in
+**Settings**. Any physical input resets the inactivity timer.
 
-1. Open **Firmware Update** from the library.
-2. Select a nearby network whose credentials are already stored on the device.
-3. Connect to it. The screen performs one automatic update check after the
-   connection succeeds.
-4. Select **Stable** or **Dev** from the resulting list.
-5. Double-press an available channel to download and install it.
-6. Double-press at the reboot prompt to start the new firmware.
+Depending on the settings, the device can:
 
-There is no hotspot fallback in the firmware-update flow. The normal WebUI
-flow can still use the device SoftAP for initial provisioning.
+- enter light sleep while waiting for input;
+- show the selected screensaver after the configured timeout;
+- enter deep sleep to preserve battery;
+- lock itself when it enters sleep.
 
-Standalone Wi-Fi selection, network scanning and firmware-update screens have
-their own five-minute physical-input timeout. On expiry they close the active
-Wi-Fi/scanner session and return to the library, where the normal home sleep
-rules apply. A live browser WebUI session keeps its separate browser-activity
-timeout.
+Book indexing temporarily keeps the device awake. Standalone Wi-Fi selection,
+network scanning and firmware-update screens have a separate five-minute
+timeout. When it expires, the active Wi-Fi session is closed and the device
+returns to the library; the normal library sleep rules then apply.
 
-The update screen shows the current firmware version and the status of both
-channels. Dev manifests include the source commit and commit timestamp; a Dev
-update is offered only when its commit timestamp is newer than the timestamp
-embedded in the running firmware. This prevents the device from accepting an
-older development build after local, not-yet-pushed work.
+## Battery
 
-OTA files are served from:
+Paginotto is designed for a single 3.7 V LiPo battery. The board provides the
+charging and battery-protection hardware.
 
-```text
-https://emanuelezanoni.github.io/paginotto-ereader/<channel>/
-```
+The battery percentage shown by the firmware is an estimate based on battery
+voltage. It is filtered to avoid sudden jumps while the ESP32 is working, but
+it is not a measurement of remaining mAh: this board does not provide a
+dedicated fuel gauge or coulomb counter.
 
-Each channel contains one manifest and one firmware binary for each display
-variant. The firmware downloads over HTTPS and writes to the inactive OTA
-partition. The image is validated before it is selected for the next boot.
+## WebUI
 
-### GitHub Actions publishing
+The WebUI is available through the device hotspot or through a configured Wi-Fi
+network. It is designed to work on both desktop and mobile browsers.
 
-`.github/workflows/publish-ota.yml` builds both board variants and publishes
-firmware-only bundles to the `gh-pages` branch.
+Open the WebUI to:
 
-- Push to `dev` publishes the `dev` channel.
-- Push a `v*` tag to `main` publishes the `stable` channel and creates a
-  matching GitHub Release.
-- `workflow_dispatch` can publish a selected channel manually.
-- A failed build does not publish a new OTA bundle.
+- browse the library and folders;
+- upload TXT books or convert EPUB books in the browser;
+- rename, move, download or delete books;
+- search inside a book and jump to a match or page;
+- edit and save book text;
+- configure font size, line spacing, bionic reading and sleep behaviour;
+- configure button gestures;
+- upload, preview, rotate and delete custom screensavers;
+- configure Wi-Fi and inspect diagnostics;
+- install firmware updates.
 
-`.github/workflows/static-analysis.yml` runs `cppcheck` through PlatformIO on
-every push and pull request.
+The mobile layout keeps search controls together, prevents the browser from
+jumping away from the active controls, and uses a consistent size for text
+fields and buttons. Text fields use a mobile-safe font size so iOS does not
+zoom the page when the keyboard opens.
 
-For the device to use OTA, the repository must be public and GitHub Pages must
-serve the `gh-pages` branch from its root directory. GitHub Actions also needs
-write permission for repository contents so it can update that branch.
+## Firmware updates
 
-## Building with PlatformIO
+From the library, open **Firmware Update**, choose a saved Wi-Fi network and
+select the desired channel:
 
-Install PlatformIO Core, then run commands from the repository root:
+- **Stable** — recommended releases;
+- **Dev** — latest development firmware.
+
+The update is downloaded over HTTPS and installed in the inactive OTA
+partition. The device validates the image before rebooting.
+
+For first-time setup, Wi-Fi can be configured through the device hotspot or
+provisioned over USB with Improv Serial.
+
+## Installing from source
+
+The normal installation path is OTA. Developers can build and upload the
+firmware with PlatformIO:
 
 ```bash
-# Build V1.2
 pio run -e wireless-paper-v1_2
-
-# Build V1.1
-pio run -e wireless-paper-v1_1
-
-# Upload over USB
 pio run -e wireless-paper-v1_2 -t upload
-pio run -e wireless-paper-v1_1 -t upload
-
-# Serial monitor
-pio device monitor
-
-# Static analysis
-pio check -e wireless-paper-v1_2 --fail-on-defect low
 ```
 
-The two environments share the source tree, libraries and OTA-capable
-partition table. `scripts/build_info.py` injects the firmware version, source
-commit and commit timestamp at build time.
-
-## Host-side tests
-
-The pure firmware modules and selected storage code have host-side tests under
-`test/`. They use CMake and a C++17 compiler; no ESP32 or PlatformIO toolchain
-is required for these tests.
+Use `wireless-paper-v1_1` for a V1.1 board. Host-side tests can be run without
+the ESP32 toolchain:
 
 ```bash
 cmake -S test -B test/build
@@ -160,59 +126,11 @@ cmake --build test/build --config Release
 ctest --test-dir test/build -C Release --output-on-failure
 ```
 
-See [`test/README.md`](test/README.md) for platform-specific prerequisites.
+## Project notes
 
-### Battery estimate
+Paginotto is maintained as its own project for the Paginotto device. The
+repository contains the firmware, embedded WebUI, storage system, OTA support
+and host-side tests in one place.
 
-The Wireless Paper has battery charging/protection hardware, but it does not
-provide a fuel-gauge or coulomb counter to the firmware. The battery icon is
-therefore an estimate derived from the single-cell LiPo voltage using a filtered
-lookup curve. It is suitable as an approximate level indicator, not as a
-measurement of remaining mAh. The firmware refreshes the estimate every 60
-seconds and limits per-refresh movement to avoid display noise while the ESP32
-is under load.
-
-### Large-book navigation
-
-The reader does not keep a page-offset table proportional to the book size in
-RAM. It stores page offsets in a per-book LittleFS index and keeps only a fixed
-recent-page window in memory. The first open of a book may therefore spend time
-building the index, but the work is incremental, visible on the display, and
-does not enter the screensaver. Once the requested range has been indexed,
-reopening the book from its bookmark and moving backward can seek directly to
-the saved offsets instead of rescanning the book from byte zero.
-
-The current reading position (byte offset and page hint) is persisted on every
-page turn. The larger textual bookmark anchor is throttled separately so that
-the exact position is not lost without forcing a full text-anchor rewrite on
-every click.
-
-## Repository layout
-
-```text
-Paginotto/
-├── Paginotto.ino          # firmware entry point
-├── partitions.csv         # OTA-capable ESP32 partition table
-└── src/
-    ├── config.h           # compile-time configuration
-    ├── hal/                # display, input, Wi-Fi and OTA adapters
-    ├── pure/               # host-testable logic
-    ├── storage/            # filesystem and persistent data
-    ├── ui/                 # reader, menus, screens and widgets
-    └── web/                # embedded WebUI and HTTP routes
-scripts/                   # PlatformIO build and OTA helpers
-test/                      # CMake host-side tests
-```
-
-## Origin and licensing
-
-Paginotto started from the Pala One firmware project by Paul Lagier. The
-upstream repository, imported commit and provenance are documented in
-[`UPSTREAM.md`](UPSTREAM.md). Since that import, the codebase has been heavily
-debloated and substantially redesigned for the Paginotto device.
-
-This repository does not currently contain a standard MIT, GPL or Apache
-license. The upstream project does not provide one, so the complete derivative
-cannot be relicensed as if all of its code were new. The repository is intended
-to be used and forked as an independent Paginotto project; changes belonging to
-another version should live in that user's fork or repository.
+The board-specific source tree is under `Paginotto/`; build helpers are under
+`scripts/`; host-side tests are under `test/`.
