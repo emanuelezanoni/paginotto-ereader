@@ -305,9 +305,11 @@ static const char kReadStyle[] PROGMEM =
   ".bv-find .small{min-height:42px;padding:10px 14px;font-size:14px}"
   "@media(max-width:640px){.bv-search-panel{position:sticky;top:0;z-index:3;padding:8px 0 10px;background:var(--card);border-bottom:1px solid var(--line-soft)}.bv-search-row{display:grid;grid-template-columns:1fr}.bv-search-row input[type=search]{min-width:0}.bv-find-actions{grid-template-columns:repeat(2,minmax(0,1fr))}}"
   "@media(max-width:360px){.bv-find-actions{grid-template-columns:1fr}}"
+  "@media(max-width:640px){.bv-editor{height:calc(100dvh - 210px);min-height:280px;font-size:16px;line-height:1.5}.bv-edit-actions{position:sticky;bottom:0;z-index:2;padding:10px 0;background:var(--card);border-top:1px solid var(--line-soft)}}"
   ".bv-status{margin-top:8px;font-size:13px;color:var(--muted)}"
   ".bv-text{margin-top:14px;max-height:60vh;overflow:auto;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--pre-bg);white-space:pre-wrap;line-height:1.5;font:14px/1.5 system-ui,sans-serif}"
-  ".bv-editor{width:100%;min-height:60vh;margin-top:14px;font:14px/1.5 ui-monospace,monospace}"
+  ".bv-editor{width:100%;min-height:60vh;max-height:none;margin-top:14px;resize:vertical;overflow:auto;overscroll-behavior:contain;font:14px/1.5 ui-monospace,monospace}"
+  ".bv-edit-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}"
   ".find-hit{background:#fff4a3;color:#1f2328;padding:0 1px;border-radius:3px}"
   ".find-cur{background:#ff9c2b;color:#1f2328}"
   "</style>";
@@ -334,12 +336,13 @@ static const char kReadScript[] PROGMEM =
   "elBrowse=document.getElementById('bvBrowseUi'),elEditingTitle=document.getElementById('bvEditingTitle'),"
   "elBtnAll=document.getElementById('bvFindBtn'),elNext=document.getElementById('bvFindNext'),"
   "elPrev=document.getElementById('bvFindPrev'),elStat=document.getElementById('bvFindStat'),"
-  "elEditor=document.getElementById('bvEditor'),elEdit=document.getElementById('bvEditBtn'),"
+  "elEditor=document.getElementById('bvEditor'),elEdit=document.getElementById('bvEditBtn'),elSearchPanel=document.querySelector('.bv-search-panel'),"
   "elSave=document.getElementById('bvSaveBtn'),elCancel=document.getElementById('bvCancelBtn'),"
   "elWarning=document.getElementById('bvEditWarning'),"
   "elJump=document.getElementById('bvJumpBtn'),elJumpStat=document.getElementById('bvJumpStat');"
   "var rawText='',hits=[],curHit=-1,normCache=null;"
-  "function setEdit(on){elBrowse.hidden=on;elEditingTitle.hidden=!on;elEditor.hidden=!on;elText.hidden=on;elSave.hidden=!on;elCancel.hidden=!on;elEdit.hidden=on;elWarning.hidden=!on;if(on)elEditor.value=rawText;}"
+  "function setEdit(on){elBrowse.hidden=on;elEditingTitle.hidden=!on;elSearchPanel.hidden=on;elEditor.hidden=!on;elText.hidden=on;elSave.hidden=!on;elCancel.hidden=!on;elEdit.hidden=on;elWarning.hidden=!on;if(on){elEditor.value=rawText;setTimeout(keepEditorVisible,80);}}"
+  "function keepEditorVisible(){if(elEditor.hidden||document.activeElement!==elEditor)return;var top=elEditor.getBoundingClientRect().top+window.scrollY-12;window.scrollTo({top:Math.max(0,top),behavior:'smooth'});}"
   "function esc(s){return s.replace(/[&<>]/g,function(c){return c==='&'?'&amp;':c==='<'?'&lt;':'&gt;'});}"
   "var TYPO={'‘':\"'\",'’':\"'\",'‚':\"'\",'‛':\"'\",'“':'\"','”':'\"','„':'\"','‟':'\"','‹':'\"','›':'\"','«':'\"','»':'\"','–':'-','—':'-','―':'-','…':'...','\\u00A0':' '};"
   "function normTextMap(s){"
@@ -402,6 +405,8 @@ static const char kReadScript[] PROGMEM =
   "elNext.addEventListener('click',function(){if(hits.length)gotoHit(curHit+1);});"
   "elPrev.addEventListener('click',function(){if(hits.length)gotoHit(curHit-1);});"
   "elText.addEventListener('click',function(e){var t=e.target;if(t.classList&&t.classList.contains('find-hit')){var idx=parseInt(t.dataset.i,10);if(!isNaN(idx))gotoHit(idx);}});"
+  "elEditor.addEventListener('focus',function(){setTimeout(keepEditorVisible,120);});"
+  "if(window.visualViewport)window.visualViewport.addEventListener('resize',function(){if(document.activeElement===elEditor)setTimeout(keepEditorVisible,80);});"
   "elEdit.addEventListener('click',function(){setEdit(true);});"
   "elCancel.addEventListener('click',function(){var returnTo=new URLSearchParams(window.location.search).get('return');window.paginottoDirty=false;if(returnTo==='/upload-review')window.location.href='/upload-review';else setEdit(false);});"
   "elEditor.addEventListener('input',function(){window.paginottoDirty=true;});"
@@ -496,7 +501,7 @@ static void handleReadView() {
   out += "<div id='bvText' class='bv-text'></div>";
   out += "<textarea id='bvEditor' class='bv-editor' hidden spellcheck='false'></textarea>";
   out += "<div id='bvEditWarning' class='banner-warn' hidden>" D_WEB_READ_EDIT_WARNING " <a class='link' href='/download-book?id=" + String(id) + "' download>" D_WEB_READ_DOWNLOAD_BACKUP "</a></div>";
-  out += "<div class='actions' style='margin-top:10px'><button type='button' class='btn small' id='bvSaveBtn' hidden>Save &amp; repaginate</button><button type='button' class='btn secondary small' id='bvCancelBtn' hidden>Cancel editing</button></div>";
+  out += "<div class='bv-edit-actions'><button type='button' class='btn small' id='bvSaveBtn' hidden>Save &amp; repaginate</button><button type='button' class='btn secondary small' id='bvCancelBtn' hidden>Cancel editing</button></div>";
   out += "</div>";
   out += "</div>";
 
