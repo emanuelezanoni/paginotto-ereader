@@ -299,6 +299,9 @@ static const char kReadStyle[] PROGMEM =
   ".bv-find-stack{display:grid;gap:8px;min-width:0}"
   ".bv-find-actions button{width:100%;white-space:nowrap}"
   ".bv-search-panel{margin-top:14px}"
+  ".bv-book-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-top:14px}"
+  ".bv-book-heading h2{min-width:0;margin:0;overflow-wrap:anywhere;word-break:break-word}"
+  ".bv-book-heading .bv-edit-link{flex:none;white-space:nowrap}"
   ".bv-find .small{min-height:42px;padding:10px 14px;font-size:14px}"
   "@media(max-width:640px){.bv-search-panel{position:sticky;top:0;z-index:3;padding:8px 0 10px;background:var(--card);border-bottom:1px solid var(--line-soft)}.bv-search-row{display:grid;grid-template-columns:1fr}.bv-search-row input[type=search]{min-width:0}.bv-find-actions{grid-template-columns:repeat(2,minmax(0,1fr))}}"
   "@media(max-width:360px){.bv-find-actions{grid-template-columns:1fr}}"
@@ -447,9 +450,10 @@ static void handleReadView() {
   out += webBackLink("/books", D_WEB_BACK_TO_BOOKS);
   out += "</div>";
 
-  out += "<h2>";
+  out += "<div class='bv-book-heading'><h2>";
   out += htmlEscape(String(g_library.books[id].name));
-  out += "</h2><div class='meta'>";
+  out += "</h2><button type='button' class='btn secondary small bv-edit-link' id='bvEditBtn'>" D_WEB_READ_EDIT_TEXT "</button></div>"
+          "<div class='meta'>";
   out += String((int)g_library.books[id].size);
   out += " " D_WEB_READ_BYTES_LABEL " (";
   out += String((float)g_library.books[id].size / 1000.0f, 1);
@@ -466,7 +470,6 @@ static void handleReadView() {
          "<span class='muted small'>" D_WEB_READ_JUMP_HINT "</span>"
          "</form></div>";
 
-  out += "<div class='actions' style='margin-top:14px;border-top:1px solid var(--line-soft);padding-top:12px'><button type='button' class='btn secondary small' id='bvEditBtn'>" D_WEB_READ_EDIT_TEXT "</button></div>";
   out += "</div>";
   out += "<h2 id='bvEditingTitle' hidden>Editing book text</h2>";
 
