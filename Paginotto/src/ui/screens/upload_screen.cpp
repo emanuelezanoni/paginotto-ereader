@@ -162,6 +162,7 @@ void UploadScreen::beginSession() {
 
   sessionActive_ = false;
   exitRequested_ = false;
+  screenActivityMs_ = millis();
   phase_ = Phase::Ready;
   net_ = WifiSession{};
   net_.mode = WifiMode::AccessPoint;
@@ -229,6 +230,7 @@ void UploadScreen::returnToSelection(WifiStaResult result) {
   net_ = WifiSession{};
   net_.mode = WifiMode::AccessPoint;
   phase_ = Phase::Ready;
+  screenActivityMs_ = millis();
   connectionFailed_ = result != WifiStaResult::Connected;
   connectionFailure_ = result;
   connectionFailedUntilMs_ = connectionFailed_ ? millis() + 5000UL : 0;
@@ -272,6 +274,10 @@ void UploadScreen::beginGoodbye() {
 void UploadScreen::onButton(const ButtonEvent& e) {
   if (!e.any()) return;
 
+  // The standalone picker/connection screen has its own five-minute budget.
+  // Active WebUI sessions use the browser-activity timer instead.
+  screenActivityMs_ = millis();
+
   if (phase_ == Phase::Goodbye) return;
 
   if (phase_ == Phase::ConnectingSta) {
@@ -314,6 +320,11 @@ void UploadScreen::onIdleTick() {
   }
   if (phase_ == Phase::Goodbye) {
     if ((uint32_t)(millis() - goodbyeStartedMs_) >= 1200) stopSessionToLibrary();
+    return;
+  }
+  if (!sessionActive_
+      && (uint32_t)(millis() - screenActivityMs_) >= WIFI_SCREEN_INACTIVITY_TIMEOUT_MS) {
+    stopSessionToLibrary();
     return;
   }
   if (phase_ == Phase::ConnectingSta) {

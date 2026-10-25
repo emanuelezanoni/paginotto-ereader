@@ -61,6 +61,7 @@ void UpdateScreen::exitToLibrary() {
 //  Lifecycle
 // ----------------------------------------------------------------------------
 void UpdateScreen::onEnter() {
+  screenActivityMs_ = millis();
   loadChannel();
   focusItem_     = 0;
   stableVersion_ = "";
@@ -110,6 +111,12 @@ void UpdateScreen::checkForUpdates() {
   else phase_ = Phase::UpToDate;
   clearButtonQueue();
   draw();
+}
+
+void UpdateScreen::onIdleTick() {
+  if ((uint32_t)(millis() - screenActivityMs_) >= WIFI_SCREEN_INACTIVITY_TIMEOUT_MS) {
+    exitToLibrary();
+  }
 }
 
 // ----------------------------------------------------------------------------
@@ -202,6 +209,8 @@ void UpdateScreen::draw() {
 // ----------------------------------------------------------------------------
 void UpdateScreen::onButton(const ButtonEvent& e) {
   if (!e.any()) return;
+
+  screenActivityMs_ = millis();
 
   // Reboot prompt — only 2x is accepted; device has no manual reboot option.
   if (phase_ == Phase::RebootPrompt) {

@@ -10,6 +10,7 @@ public:
   void onEnter() override;
   void onButton(const ButtonEvent& e) override;
   void draw() override;
+  void onIdleTick() override;
 
   // Block sleep only while the Wi-Fi session is active; once wifiEnd() is
   // called (after flash or on exit) the device may sleep normally.
@@ -49,6 +50,7 @@ private:
   bool        stableReachable_ = false;
   bool        devReachable_ = false;
   int         progress_      = 0;
+  uint32_t    screenActivityMs_ = 0;
 
   void loadChannel();
   void saveChannel();

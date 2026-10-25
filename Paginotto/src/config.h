@@ -96,6 +96,9 @@ static const uint32_t DEBOUNCE_MS = 14;
 static const uint32_t SAVE_EVERY_MS = 7000;
 static const uint32_t TOAST_MS = 650;
 static const uint32_t UPLOAD_INACTIVITY_TIMEOUT_MS = 5UL * 60UL * 1000UL;
+// Standalone Wi-Fi picker/update screens return to the library after five
+// minutes without a physical-button interaction.
+static const uint32_t WIFI_SCREEN_INACTIVITY_TIMEOUT_MS = 5UL * 60UL * 1000UL;
 static const uint32_t BAT_CACHE_MS = 180000; // 3 min — battery changes slowly
 
 static const int FULL_REFRESH_EVERY_N_PAGES = 100;

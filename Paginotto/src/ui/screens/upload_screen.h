@@ -34,6 +34,7 @@ private:
   bool firmwareMode_ = false;
   bool exitRequested_ = false;
   uint32_t goodbyeStartedMs_ = 0;
+  uint32_t screenActivityMs_ = 0;
 
   void beginSession();
   void enterReady();
