@@ -90,6 +90,24 @@ that need review even when their score is lower:
   third-party dependencies and must not be counted as copied repository
   implementation.
 
+### Hardware boundary audit — block 1B
+
+- `src/hal/input.cpp` and `src/hal/input.h` are **repository input logic**,
+  not Arduino/ESP-IDF vendor code. GPIO and timer calls are external API;
+  the ISR ring buffer, timestamp handling, debounce, overflow recovery and
+  click/hold state machine are product logic. The current implementation is
+  substantially derived from upstream, although Paginotto has already changed
+  the public event model and removed legacy app-facing counters. Classify it
+  as **derived product logic — targeted rewrite/review pending**.
+- `src/ui/font.cpp` and `src/ui/font.h` are **repository rendering policy**,
+  not U8g2 source. U8g2 supplies font tables and drawing primitives; role
+  selection, NVS settings, layout metrics, cache stamping and bionic reading
+  belong to the product. The current file is modified from upstream (the
+  Paginotto tree removed the upstream OpenDyslexic/statusbar family path), but
+  the remaining policy and bionic implementation are still substantially
+  derived. Classify it as **derived UI logic — targeted rewrite or clean-room
+  review pending**.
+
 The percentages above were recomputed against the imported commit using a
 line-sequence matcher. They are useful for triage only; a high percentage can
 be caused by a conventional adapter, while a short copied block can be more
