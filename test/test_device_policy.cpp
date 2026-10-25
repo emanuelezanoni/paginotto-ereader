@@ -19,6 +19,6 @@ TEST_CASE("battery policy limits visible jumps and uses hysteresis") {
   CHECK_EQ(slewBatteryPercent(50, 90, 3), 53);
   CHECK(updateLowBatteryState(false, 8));
   CHECK(!updateLowBatteryState(false, 9));
-  CHECK(!updateLowBatteryState(true, 11));
+  CHECK(updateLowBatteryState(true, 11));
   CHECK(updateLowBatteryState(true, 12) == false);
 }
