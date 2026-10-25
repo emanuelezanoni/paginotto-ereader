@@ -339,8 +339,8 @@ static const char kIconTrash[] PROGMEM =
 
 static const char kEditorScript[] PROGMEM =
   "<script>(function(){"
-  "if(window.__palaSleepEditorInit)return;"
-  "window.__palaSleepEditorInit=1;"
+  "if(window.__paginottoSleepEditorInit)return;"
+  "window.__paginottoSleepEditorInit=1;"
   "var W=250,H=122,ROW=32,TOTAL=H*ROW;"
   "var fileInput=document.getElementById('ssEditFile');"
   "var tol=document.getElementById('ssTolerance');"

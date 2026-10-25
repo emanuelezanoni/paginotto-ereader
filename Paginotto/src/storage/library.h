@@ -1,5 +1,5 @@
-#ifndef PALA_STORAGE_LIBRARY_H
-#define PALA_STORAGE_LIBRARY_H
+#ifndef PAGINOTTO_STORAGE_LIBRARY_H
+#define PAGINOTTO_STORAGE_LIBRARY_H
 
 #include "src/pure/arduino_compat.h"
 #include "src/pure/library_nav.h"  // Catalog, BookInfo, LibraryEntryType, LibEntry
@@ -32,4 +32,4 @@ const char* bookPath(int idx);
 // no book with that path exists in the current catalog.
 int bookIndexForPath(const String& path);
 
-#endif  // PALA_STORAGE_LIBRARY_H
+#endif  // PAGINOTTO_STORAGE_LIBRARY_H

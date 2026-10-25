@@ -1,5 +1,5 @@
-#ifndef PALA_HAL_WIFI_PROVISIONING_H
-#define PALA_HAL_WIFI_PROVISIONING_H
+#ifndef PAGINOTTO_HAL_WIFI_PROVISIONING_H
+#define PAGINOTTO_HAL_WIFI_PROVISIONING_H
 
 #include <Arduino.h>
 
@@ -38,4 +38,4 @@ void notifyUploadSession(bool active);
 
 }  // namespace WifiProvisioning
 
-#endif  // PALA_HAL_WIFI_PROVISIONING_H
+#endif  // PAGINOTTO_HAL_WIFI_PROVISIONING_H

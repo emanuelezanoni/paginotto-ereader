@@ -1,7 +1,7 @@
-#ifndef PALA_WEB_RESET_H
-#define PALA_WEB_RESET_H
+#ifndef PAGINOTTO_WEB_RESET_H
+#define PAGINOTTO_WEB_RESET_H
 
 // Mounts /reset (GET = confirm prompt, POST = perform).
 void registerResetRoutes();
 
-#endif  // PALA_WEB_RESET_H
+#endif  // PAGINOTTO_WEB_RESET_H

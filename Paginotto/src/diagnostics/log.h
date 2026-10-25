@@ -1,5 +1,5 @@
-#ifndef PALA_DIAGNOSTICS_LOG_H
-#define PALA_DIAGNOSTICS_LOG_H
+#ifndef PAGINOTTO_DIAGNOSTICS_LOG_H
+#define PAGINOTTO_DIAGNOSTICS_LOG_H
 
 #include <Arduino.h>
 
@@ -18,4 +18,4 @@ void clearRuntime();
 
 }  // namespace Diagnostics
 
-#endif  // PALA_DIAGNOSTICS_LOG_H
+#endif  // PAGINOTTO_DIAGNOSTICS_LOG_H

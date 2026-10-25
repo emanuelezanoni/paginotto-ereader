@@ -1,5 +1,5 @@
-#ifndef PALA_STORAGE_KV_STORE_H
-#define PALA_STORAGE_KV_STORE_H
+#ifndef PAGINOTTO_STORAGE_KV_STORE_H
+#define PAGINOTTO_STORAGE_KV_STORE_H
 
 #include "src/pure/arduino_compat.h"
 
@@ -23,4 +23,4 @@ public:
   virtual void   clear() = 0;
 };
 
-#endif  // PALA_STORAGE_KV_STORE_H
+#endif  // PAGINOTTO_STORAGE_KV_STORE_H

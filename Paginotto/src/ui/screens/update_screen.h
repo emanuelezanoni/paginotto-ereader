@@ -1,5 +1,5 @@
-#ifndef PALA_UI_SCREENS_UPDATE_SCREEN_H
-#define PALA_UI_SCREENS_UPDATE_SCREEN_H
+#ifndef PAGINOTTO_UI_SCREENS_UPDATE_SCREEN_H
+#define PAGINOTTO_UI_SCREENS_UPDATE_SCREEN_H
 
 #include <Arduino.h>
 #include "src/hal/wifi.h"
@@ -61,4 +61,4 @@ private:
 
 extern UpdateScreen g_updateScreen;
 
-#endif  // PALA_UI_SCREENS_UPDATE_SCREEN_H
+#endif  // PAGINOTTO_UI_SCREENS_UPDATE_SCREEN_H

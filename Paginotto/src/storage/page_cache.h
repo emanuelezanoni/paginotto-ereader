@@ -1,5 +1,5 @@
-#ifndef PALA_STORAGE_PAGE_CACHE_H
-#define PALA_STORAGE_PAGE_CACHE_H
+#ifndef PAGINOTTO_STORAGE_PAGE_CACHE_H
+#define PAGINOTTO_STORAGE_PAGE_CACHE_H
 
 #include "src/config.h"
 #include "src/state.h"
@@ -83,4 +83,4 @@ void deletePageCacheForBook(const String& path);
 // no source file). If a stale destination exists, it's removed first.
 void renamePageCacheForBook(const String& oldPath, const String& newPath);
 
-#endif  // PALA_STORAGE_PAGE_CACHE_H
+#endif  // PAGINOTTO_STORAGE_PAGE_CACHE_H

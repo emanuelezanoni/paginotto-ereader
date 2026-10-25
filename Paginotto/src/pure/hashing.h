@@ -1,5 +1,5 @@
-#ifndef PALA_PURE_HASHING_H
-#define PALA_PURE_HASHING_H
+#ifndef PAGINOTTO_PURE_HASHING_H
+#define PAGINOTTO_PURE_HASHING_H
 
 #include "arduino_compat.h"
 
@@ -12,4 +12,4 @@ uint32_t hashPath32(const String& path);
 String prefKeyForBook(const String& path);
 
 
-#endif  // PALA_PURE_HASHING_H
+#endif  // PAGINOTTO_PURE_HASHING_H

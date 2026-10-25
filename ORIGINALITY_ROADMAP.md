@@ -39,6 +39,18 @@ rewrite target, but also found unchanged or nearly unchanged utility, UI,
 storage and hardware-support files. No licensing conclusion is drawn from the
 similarity percentages alone.
 
+### Brand and namespace cleanup
+
+- [x] Replace inherited `PALA_*` include-guard names in active source with
+  `PAGINOTTO_*`.
+- [x] Replace the inherited screensaver JavaScript flag name with a Paginotto
+  namespace.
+- [x] Keep upstream names in `UPSTREAM.md` and provenance reports only, where
+  they are required for attribution and history.
+
+This cleanup removes old branding from the product source, but is not counted
+as a substantive originality rewrite.
+
 ## 3. Rewrite the remaining derived code
 
 Priority order:

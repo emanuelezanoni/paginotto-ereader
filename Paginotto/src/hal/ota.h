@@ -1,5 +1,5 @@
-#ifndef PALA_HAL_OTA_H
-#define PALA_HAL_OTA_H
+#ifndef PAGINOTTO_HAL_OTA_H
+#define PAGINOTTO_HAL_OTA_H
 
 #include <Arduino.h>
 
@@ -40,4 +40,4 @@ public:
                                     OtaProgressFn progressCb = nullptr);
 };
 
-#endif  // PALA_HAL_OTA_H
+#endif  // PAGINOTTO_HAL_OTA_H

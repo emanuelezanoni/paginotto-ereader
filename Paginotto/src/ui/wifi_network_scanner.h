@@ -1,5 +1,5 @@
-#ifndef PALA_UI_WIFI_NETWORK_SCANNER_H
-#define PALA_UI_WIFI_NETWORK_SCANNER_H
+#ifndef PAGINOTTO_UI_WIFI_NETWORK_SCANNER_H
+#define PAGINOTTO_UI_WIFI_NETWORK_SCANNER_H
 
 #include <Arduino.h>
 
@@ -33,4 +33,4 @@ private:
   bool scanInProgress_ = false;
 };
 
-#endif  // PALA_UI_WIFI_NETWORK_SCANNER_H
+#endif  // PAGINOTTO_UI_WIFI_NETWORK_SCANNER_H

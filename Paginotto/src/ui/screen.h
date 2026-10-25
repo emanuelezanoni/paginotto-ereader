@@ -1,5 +1,5 @@
-#ifndef PALA_UI_SCREEN_H
-#define PALA_UI_SCREEN_H
+#ifndef PAGINOTTO_UI_SCREEN_H
+#define PAGINOTTO_UI_SCREEN_H
 
 #include "src/hal/input.h"           // ButtonState + ButtonEvent
 #include "src/state.h"
@@ -29,4 +29,4 @@ public:
 
 extern Screen* g_currentScreen;
 
-#endif  // PALA_UI_SCREEN_H
+#endif  // PAGINOTTO_UI_SCREEN_H

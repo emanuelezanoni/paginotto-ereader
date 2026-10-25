@@ -1,5 +1,5 @@
-#ifndef PALA_PURE_HOLD_GESTURE_H
-#define PALA_PURE_HOLD_GESTURE_H
+#ifndef PAGINOTTO_PURE_HOLD_GESTURE_H
+#define PAGINOTTO_PURE_HOLD_GESTURE_H
 
 #include "src/pure/arduino_compat.h"  // uint32_t, uint8_t
 #include "src/config.h"               // CLICK_HOLD_MS
@@ -17,4 +17,4 @@ enum HoldGestureKind {
 // Any release before threshold remains normal click-sequence input.
 HoldGestureKind classifyHoldInProgress(uint32_t held_ms, uint8_t click_count);
 
-#endif  // PALA_PURE_HOLD_GESTURE_H
+#endif  // PAGINOTTO_PURE_HOLD_GESTURE_H

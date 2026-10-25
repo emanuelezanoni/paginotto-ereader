@@ -1,5 +1,5 @@
-#ifndef PALA_HAL_WIFI_H
-#define PALA_HAL_WIFI_H
+#ifndef PAGINOTTO_HAL_WIFI_H
+#define PAGINOTTO_HAL_WIFI_H
 
 #include <Arduino.h>
 
@@ -75,4 +75,4 @@ WifiSession   wifiBeginAccessPoint();
 // Tears down whichever mode is active and drops CPU back to 80 MHz.
 void          wifiEnd();
 
-#endif  // PALA_HAL_WIFI_H
+#endif  // PAGINOTTO_HAL_WIFI_H

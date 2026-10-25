@@ -1,5 +1,5 @@
-#ifndef PALA_PURE_PAGE_OFFSET_TABLE_H
-#define PALA_PURE_PAGE_OFFSET_TABLE_H
+#ifndef PAGINOTTO_PURE_PAGE_OFFSET_TABLE_H
+#define PAGINOTTO_PURE_PAGE_OFFSET_TABLE_H
 
 #include "arduino_compat.h"
 #include "../config.h"
@@ -12,4 +12,4 @@ struct PageOffsetTable {
   bool eofReached = false;
 };
 
-#endif  // PALA_PURE_PAGE_OFFSET_TABLE_H
+#endif  // PAGINOTTO_PURE_PAGE_OFFSET_TABLE_H

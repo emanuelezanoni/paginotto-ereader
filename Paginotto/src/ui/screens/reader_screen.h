@@ -1,5 +1,5 @@
-#ifndef PALA_UI_SCREENS_READER_SCREEN_H
-#define PALA_UI_SCREENS_READER_SCREEN_H
+#ifndef PAGINOTTO_UI_SCREENS_READER_SCREEN_H
+#define PAGINOTTO_UI_SCREENS_READER_SCREEN_H
 
 #include "src/ui/screen.h"
 
@@ -14,4 +14,4 @@ public:
 
 extern ReaderScreen g_readerScreen;
 
-#endif  // PALA_UI_SCREENS_READER_SCREEN_H
+#endif  // PAGINOTTO_UI_SCREENS_READER_SCREEN_H

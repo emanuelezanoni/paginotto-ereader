@@ -1,5 +1,5 @@
-#ifndef PALA_PURE_TEXT_UTIL_H
-#define PALA_PURE_TEXT_UTIL_H
+#ifndef PAGINOTTO_PURE_TEXT_UTIL_H
+#define PAGINOTTO_PURE_TEXT_UTIL_H
 
 #include "arduino_compat.h"
 
@@ -55,4 +55,4 @@ String compactText(const String& in,
                    int* ioNewlineCount,
                    bool trimTail);
 
-#endif  // PALA_PURE_TEXT_UTIL_H
+#endif  // PAGINOTTO_PURE_TEXT_UTIL_H

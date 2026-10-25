@@ -1,5 +1,5 @@
-#ifndef PALA_WEB_FIND_H
-#define PALA_WEB_FIND_H
+#ifndef PAGINOTTO_WEB_FIND_H
+#define PAGINOTTO_WEB_FIND_H
 
 // Mounts the in-browser book reader + find/jump routes:
 //
@@ -12,4 +12,4 @@
 // live in /jumppage (src/web/files.cpp).
 void registerFindRoutes();
 
-#endif  // PALA_WEB_FIND_H
+#endif  // PAGINOTTO_WEB_FIND_H

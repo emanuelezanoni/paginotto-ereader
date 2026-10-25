@@ -1,5 +1,5 @@
-#ifndef PALA_PURE_PAGINATOR_H
-#define PALA_PURE_PAGINATOR_H
+#ifndef PAGINOTTO_PURE_PAGINATOR_H
+#define PAGINOTTO_PURE_PAGINATOR_H
 
 #include <functional>
 
@@ -37,4 +37,4 @@ uint32_t paginatePage(IReadStream& in,
                       const MeasureFn& measure,
                       const LineCallback& onLine = nullptr);
 
-#endif  // PALA_PURE_PAGINATOR_H
+#endif  // PAGINOTTO_PURE_PAGINATOR_H

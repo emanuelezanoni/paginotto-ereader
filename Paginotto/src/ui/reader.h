@@ -1,5 +1,5 @@
-#ifndef PALA_UI_READER_H
-#define PALA_UI_READER_H
+#ifndef PAGINOTTO_UI_READER_H
+#define PAGINOTTO_UI_READER_H
 
 #include "src/config.h"
 #include "src/state.h"  // File, FS macro
@@ -125,4 +125,4 @@ void saveProgressThrottled();
 // no book is open.
 void persistReaderState();
 
-#endif  // PALA_UI_READER_H
+#endif  // PAGINOTTO_UI_READER_H

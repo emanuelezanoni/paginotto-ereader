@@ -1,5 +1,5 @@
-#ifndef PALA_UI_WIDGETS_H
-#define PALA_UI_WIDGETS_H
+#ifndef PAGINOTTO_UI_WIDGETS_H
+#define PAGINOTTO_UI_WIDGETS_H
 
 #include <functional>
 
@@ -70,4 +70,4 @@ void drawScrollableList(int contentTopY,
 // Leftmost x for menu rows.
 static const int UI_LIST_LEFT = MARGIN_X + 4;
 
-#endif  // PALA_UI_WIDGETS_H
+#endif  // PAGINOTTO_UI_WIDGETS_H

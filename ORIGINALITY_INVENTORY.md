@@ -223,3 +223,28 @@ are the files that need provenance decisions.
    upstream provenance required`.
 3. Audit HTML, CSS, JavaScript, fonts, icons and generated assets separately.
 4. Only after those reviews, define the exact scope of the Paginotto license.
+
+## Brand cleanup decision
+
+The active Paginotto source previously retained the upstream prefix `PALA_` in
+many include guards and one browser-side initialisation flag:
+
+- C/C++ include guards such as `PALA_PURE_PAGINATOR_H`.
+- JavaScript flag `window.__palaSleepEditorInit` in the screensaver editor.
+
+These names are historical residue, not independent external dependencies.
+They have been renamed mechanically to the Paginotto namespace:
+
+- `PALA_*` → `PAGINOTTO_*`.
+- `__palaSleepEditorInit` → `__paginottoSleepEditorInit`.
+
+This is a namespace/branding cleanup only. It does not by itself make an
+implementation original and does not replace the provenance review above.
+The upstream name remains intentionally present in `UPSTREAM.md` and this
+inventory, where it documents historical provenance. It is not present in the
+active product source, comments or identifiers after this cleanup.
+
+Header similarity is handled proportionally: declarations, include guards,
+plain data types and hardware-shaped interfaces may legitimately remain close
+to an upstream API; copied implementation logic, distinctive comments and
+product behaviour still require review or a clean rewrite.

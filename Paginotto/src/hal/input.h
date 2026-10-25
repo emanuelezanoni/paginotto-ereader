@@ -1,5 +1,5 @@
-#ifndef PALA_HAL_INPUT_H
-#define PALA_HAL_INPUT_H
+#ifndef PAGINOTTO_HAL_INPUT_H
+#define PAGINOTTO_HAL_INPUT_H
 
 #include <Arduino.h>
 
@@ -168,4 +168,4 @@ uint32_t userIdleMs();
 // is fresh whenever the app returns to the host.
 ButtonEvent waitForNextEvent();
 
-#endif  // PALA_HAL_INPUT_H
+#endif  // PAGINOTTO_HAL_INPUT_H

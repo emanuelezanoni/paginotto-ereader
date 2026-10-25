@@ -1,5 +1,5 @@
-#ifndef PALA_UI_LOCK_H
-#define PALA_UI_LOCK_H
+#ifndef PAGINOTTO_UI_LOCK_H
+#define PAGINOTTO_UI_LOCK_H
 
 #include "src/hal/input.h"   // ButtonEvent
 
@@ -39,4 +39,4 @@ bool isUnlockGesture(const ButtonEvent& ev);
 
 }  // namespace Lock
 
-#endif  // PALA_UI_LOCK_H
+#endif  // PAGINOTTO_UI_LOCK_H

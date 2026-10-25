@@ -1,5 +1,5 @@
-#ifndef PALA_STATE_H
-#define PALA_STATE_H
+#ifndef PAGINOTTO_STATE_H
+#define PAGINOTTO_STATE_H
 
 #include <Arduino.h>
 #include <heltec-eink-modules.h>
@@ -36,4 +36,4 @@ bool saveHotspotConfig(const String& ssid, const String& pass);
 
 extern EInkDisplay display;
 
-#endif  // PALA_STATE_H
+#endif  // PAGINOTTO_STATE_H

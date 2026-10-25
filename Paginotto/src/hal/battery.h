@@ -1,5 +1,5 @@
-#ifndef PALA_HAL_BATTERY_H
-#define PALA_HAL_BATTERY_H
+#ifndef PAGINOTTO_HAL_BATTERY_H
+#define PAGINOTTO_HAL_BATTERY_H
 
 #include "src/config.h"
 #include "src/state.h"
@@ -10,4 +10,4 @@ void updateBatteryCached(bool force = false);
 void drawBatteryTopRight();
 #endif
 
-#endif  // PALA_HAL_BATTERY_H
+#endif  // PAGINOTTO_HAL_BATTERY_H

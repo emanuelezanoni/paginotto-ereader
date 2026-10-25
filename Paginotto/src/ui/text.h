@@ -1,5 +1,5 @@
-#ifndef PALA_UI_TEXT_H
-#define PALA_UI_TEXT_H
+#ifndef PAGINOTTO_UI_TEXT_H
+#define PAGINOTTO_UI_TEXT_H
 
 #include "src/config.h"
 #include "src/state.h"
@@ -38,4 +38,4 @@ uint32_t nextPageOffset(File& f, uint32_t startPos);
 // `nextPageOffset` if the requested page is past the cached portion.
 uint32_t pageOffsetForPage(File& f, const String& path, int page);
 
-#endif  // PALA_UI_TEXT_H
+#endif  // PAGINOTTO_UI_TEXT_H

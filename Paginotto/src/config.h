@@ -1,5 +1,5 @@
-#ifndef PALA_CONFIG_H
-#define PALA_CONFIG_H
+#ifndef PAGINOTTO_CONFIG_H
+#define PAGINOTTO_CONFIG_H
 
 // ============================================================================
 //  Project-wide compile-time configuration.
@@ -135,4 +135,4 @@ static const bool ENABLE_DEEP_SLEEP = true;
 // safe.
 #include "src/lang/lang.h"
 
-#endif  // PALA_CONFIG_H
+#endif  // PAGINOTTO_CONFIG_H

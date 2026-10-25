@@ -1,5 +1,5 @@
-#ifndef PALA_WEB_UPLOAD_H
-#define PALA_WEB_UPLOAD_H
+#ifndef PAGINOTTO_WEB_UPLOAD_H
+#define PAGINOTTO_WEB_UPLOAD_H
 
 #include <stdint.h>
 
@@ -19,4 +19,4 @@ void resetSleepUpload();
 void notifyUploadActivity();
 uint32_t uploadLastActivityMs();
 
-#endif  // PALA_WEB_UPLOAD_H
+#endif  // PAGINOTTO_WEB_UPLOAD_H

@@ -1,5 +1,5 @@
-#ifndef PALA_WEB_SCREENSAVERS_H
-#define PALA_WEB_SCREENSAVERS_H
+#ifndef PAGINOTTO_WEB_SCREENSAVERS_H
+#define PAGINOTTO_WEB_SCREENSAVERS_H
 
 // Mounts the in-firmware screensaver editor + slot manager:
 //
@@ -19,4 +19,4 @@ void registerScreensaverRoutes();
 // can't leak through.
 void resetScreensaverUpload();
 
-#endif  // PALA_WEB_SCREENSAVERS_H
+#endif  // PAGINOTTO_WEB_SCREENSAVERS_H

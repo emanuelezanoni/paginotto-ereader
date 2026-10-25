@@ -1,5 +1,5 @@
-#ifndef PALA_STORAGE_BOOK_METADATA_H
-#define PALA_STORAGE_BOOK_METADATA_H
+#ifndef PAGINOTTO_STORAGE_BOOK_METADATA_H
+#define PAGINOTTO_STORAGE_BOOK_METADATA_H
 
 #include "src/storage/kv_store.h"
 #include <stdint.h>
@@ -55,4 +55,4 @@ void migrateBookMetadata(const String& oldPath, const String& newPath);
 
 #endif  // ARDUINO
 
-#endif  // PALA_STORAGE_BOOK_METADATA_H
+#endif  // PAGINOTTO_STORAGE_BOOK_METADATA_H

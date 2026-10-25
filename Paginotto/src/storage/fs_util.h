@@ -1,5 +1,5 @@
-#ifndef PALA_STORAGE_FS_UTIL_H
-#define PALA_STORAGE_FS_UTIL_H
+#ifndef PAGINOTTO_STORAGE_FS_UTIL_H
+#define PAGINOTTO_STORAGE_FS_UTIL_H
 
 #include "src/config.h"
 #include "src/state.h"
@@ -14,4 +14,4 @@ void   ensureBooksDir();
 bool   ensureDirRecursive(const String& path);
 bool   isDirEmpty(const String& path);
 
-#endif  // PALA_STORAGE_FS_UTIL_H
+#endif  // PAGINOTTO_STORAGE_FS_UTIL_H

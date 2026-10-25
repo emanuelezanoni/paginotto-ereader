@@ -1,5 +1,5 @@
-#ifndef PALA_UI_SCREENS_UPLOAD_SCREEN_H
-#define PALA_UI_SCREENS_UPLOAD_SCREEN_H
+#ifndef PAGINOTTO_UI_SCREENS_UPLOAD_SCREEN_H
+#define PAGINOTTO_UI_SCREENS_UPLOAD_SCREEN_H
 
 #include "src/hal/wifi.h"    // WifiSession (cached for draw())
 #include "src/ui/screen.h"
@@ -48,4 +48,4 @@ private:
 
 extern UploadScreen g_uploadScreen;
 
-#endif  // PALA_UI_SCREENS_UPLOAD_SCREEN_H
+#endif  // PAGINOTTO_UI_SCREENS_UPLOAD_SCREEN_H

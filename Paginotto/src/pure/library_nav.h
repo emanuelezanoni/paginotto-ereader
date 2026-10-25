@@ -1,5 +1,5 @@
-#ifndef PALA_PURE_LIBRARY_NAV_H
-#define PALA_PURE_LIBRARY_NAV_H
+#ifndef PAGINOTTO_PURE_LIBRARY_NAV_H
+#define PAGINOTTO_PURE_LIBRARY_NAV_H
 
 #include "arduino_compat.h"
 #include "../config.h"
@@ -63,4 +63,4 @@ int buildLibraryEntries(
     const LibraryEntryType* systemEntries, int systemCount,
     LibEntry* out, int outCap);
 
-#endif  // PALA_PURE_LIBRARY_NAV_H
+#endif  // PAGINOTTO_PURE_LIBRARY_NAV_H

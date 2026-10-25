@@ -1,5 +1,5 @@
-#ifndef PALA_LANG_H
-#define PALA_LANG_H
+#ifndef PAGINOTTO_LANG_H
+#define PAGINOTTO_LANG_H
 
 // ============================================================================
 //  String table — included transitively via src/config.h, so every
@@ -24,4 +24,4 @@
 
 #include "src/lang/strings.h"
 
-#endif  // PALA_LANG_H
+#endif  // PAGINOTTO_LANG_H

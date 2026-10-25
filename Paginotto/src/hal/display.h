@@ -1,5 +1,5 @@
-#ifndef PALA_HAL_DISPLAY_H
-#define PALA_HAL_DISPLAY_H
+#ifndef PAGINOTTO_HAL_DISPLAY_H
+#define PAGINOTTO_HAL_DISPLAY_H
 
 #include <Adafruit_GFX.h>
 #include <U8g2_for_Adafruit_GFX.h>
@@ -41,4 +41,4 @@ extern U8G2_FOR_ADAFRUIT_GFX u8g2;
 // prepareMenuFrame in ui/widgets.h) call this internally.
 void beginPageCanvas(bool clearMem = true);
 
-#endif  // PALA_HAL_DISPLAY_H
+#endif  // PAGINOTTO_HAL_DISPLAY_H

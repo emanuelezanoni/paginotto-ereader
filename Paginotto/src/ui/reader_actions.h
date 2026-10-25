@@ -1,5 +1,5 @@
-#ifndef PALA_UI_READER_ACTIONS_H
-#define PALA_UI_READER_ACTIONS_H
+#ifndef PAGINOTTO_UI_READER_ACTIONS_H
+#define PAGINOTTO_UI_READER_ACTIONS_H
 
 #include "src/hal/input.h"  // ButtonEvent::Kind
 
@@ -42,4 +42,4 @@ ButtonAction actionFor(ButtonEvent::Kind kind);
 
 }  // namespace Gestures
 
-#endif  // PALA_UI_READER_ACTIONS_H
+#endif  // PAGINOTTO_UI_READER_ACTIONS_H

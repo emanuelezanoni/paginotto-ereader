@@ -1,5 +1,5 @@
-#ifndef PALA_HAL_FILE_STREAM_H
-#define PALA_HAL_FILE_STREAM_H
+#ifndef PAGINOTTO_HAL_FILE_STREAM_H
+#define PAGINOTTO_HAL_FILE_STREAM_H
 
 #include "src/state.h"
 #include "src/pure/stream.h"
@@ -22,4 +22,4 @@ private:
   File& f_;
 };
 
-#endif  // PALA_HAL_FILE_STREAM_H
+#endif  // PAGINOTTO_HAL_FILE_STREAM_H

@@ -1,5 +1,5 @@
-#ifndef PALA_UI_SCREENSAVERS_H
-#define PALA_UI_SCREENSAVERS_H
+#ifndef PAGINOTTO_UI_SCREENSAVERS_H
+#define PAGINOTTO_UI_SCREENSAVERS_H
 
 #include "src/pure/arduino_compat.h"  // uint8_t, size_t
 
@@ -78,4 +78,4 @@ String slotPath(int slot);
 
 }  // namespace Screensavers
 
-#endif  // PALA_UI_SCREENSAVERS_H
+#endif  // PAGINOTTO_UI_SCREENSAVERS_H

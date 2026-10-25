@@ -1,5 +1,5 @@
-#ifndef PALA_UI_SLEEP_H
-#define PALA_UI_SLEEP_H
+#ifndef PAGINOTTO_UI_SLEEP_H
+#define PAGINOTTO_UI_SLEEP_H
 
 #include "src/pure/arduino_compat.h"  // uint32_t
 
@@ -49,4 +49,4 @@ void idleLightSleep(bool tightTick);
 
 }  // namespace Sleep
 
-#endif  // PALA_UI_SLEEP_H
+#endif  // PAGINOTTO_UI_SLEEP_H

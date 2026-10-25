@@ -4,8 +4,8 @@
 //
 // All pure-module headers should `#include "arduino_compat.h"` instead of
 // pulling in `<Arduino.h>` directly.
-#ifndef PALA_PURE_ARDUINO_COMPAT_H
-#define PALA_PURE_ARDUINO_COMPAT_H
+#ifndef PAGINOTTO_PURE_ARDUINO_COMPAT_H
+#define PAGINOTTO_PURE_ARDUINO_COMPAT_H
 
 #ifdef ARDUINO
 
@@ -164,4 +164,4 @@ inline auto _arduino_max(A a, B b) -> decltype(a > b ? a : b) { return a > b ? a
 
 #endif  // ARDUINO
 
-#endif  // PALA_PURE_ARDUINO_COMPAT_H
+#endif  // PAGINOTTO_PURE_ARDUINO_COMPAT_H

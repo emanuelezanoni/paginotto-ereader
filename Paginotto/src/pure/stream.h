@@ -1,5 +1,5 @@
-#ifndef PALA_PURE_STREAM_H
-#define PALA_PURE_STREAM_H
+#ifndef PAGINOTTO_PURE_STREAM_H
+#define PAGINOTTO_PURE_STREAM_H
 
 #include "arduino_compat.h"
 
@@ -49,4 +49,4 @@ private:
   uint32_t pos_ = 0;
 };
 
-#endif  // PALA_PURE_STREAM_H
+#endif  // PAGINOTTO_PURE_STREAM_H

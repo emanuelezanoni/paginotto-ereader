@@ -1,5 +1,5 @@
-#ifndef PALA_STORAGE_WIFI_CREDS_H
-#define PALA_STORAGE_WIFI_CREDS_H
+#ifndef PAGINOTTO_STORAGE_WIFI_CREDS_H
+#define PAGINOTTO_STORAGE_WIFI_CREDS_H
 
 #include <Arduino.h>
 
@@ -28,4 +28,4 @@ void clear();
 
 }  // namespace WifiCreds
 
-#endif  // PALA_STORAGE_WIFI_CREDS_H
+#endif  // PAGINOTTO_STORAGE_WIFI_CREDS_H

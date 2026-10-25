@@ -1,5 +1,5 @@
-#ifndef PALA_PURE_PATHS_H
-#define PALA_PURE_PATHS_H
+#ifndef PAGINOTTO_PURE_PATHS_H
+#define PAGINOTTO_PURE_PATHS_H
 
 #include "arduino_compat.h"
 
@@ -40,4 +40,4 @@ String sanitizeFolderInput(const String& raw);
 // while preserving the suffix.
 String sanitizeUploadedFilename(String fname, size_t maxBytes = 0);
 
-#endif  // PALA_PURE_PATHS_H
+#endif  // PAGINOTTO_PURE_PATHS_H

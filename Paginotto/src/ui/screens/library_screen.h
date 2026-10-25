@@ -1,5 +1,5 @@
-#ifndef PALA_UI_SCREENS_LIBRARY_SCREEN_H
-#define PALA_UI_SCREENS_LIBRARY_SCREEN_H
+#ifndef PAGINOTTO_UI_SCREENS_LIBRARY_SCREEN_H
+#define PAGINOTTO_UI_SCREENS_LIBRARY_SCREEN_H
 
 #include "src/ui/screen.h"
 
@@ -22,4 +22,4 @@ void navigateToLibraryRoot();
 // (which preserves folder expansion).
 void resetLibraryNav();
 
-#endif  // PALA_UI_SCREENS_LIBRARY_SCREEN_H
+#endif  // PAGINOTTO_UI_SCREENS_LIBRARY_SCREEN_H

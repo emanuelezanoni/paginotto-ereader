@@ -1,5 +1,5 @@
-#ifndef PALA_UI_TOAST_H
-#define PALA_UI_TOAST_H
+#ifndef PAGINOTTO_UI_TOAST_H
+#define PAGINOTTO_UI_TOAST_H
 
 #include "src/pure/arduino_compat.h"  // String
 
@@ -38,4 +38,4 @@ void reset();
 
 }  // namespace Toast
 
-#endif  // PALA_UI_TOAST_H
+#endif  // PAGINOTTO_UI_TOAST_H

@@ -1,5 +1,5 @@
-#ifndef PALA_WEB_CHROME_H
-#define PALA_WEB_CHROME_H
+#ifndef PAGINOTTO_WEB_CHROME_H
+#define PAGINOTTO_WEB_CHROME_H
 
 #include "src/pure/arduino_compat.h"  // String
 #include "src/config.h"                // D_WEB_STORAGE_HEADING default for storageCardHtml (via lang.h)
@@ -47,4 +47,4 @@ int storageUsedPct();
 // Mount /style.css — call once from registerWebRoutes().
 void registerChromeRoutes();
 
-#endif  // PALA_WEB_CHROME_H
+#endif  // PAGINOTTO_WEB_CHROME_H

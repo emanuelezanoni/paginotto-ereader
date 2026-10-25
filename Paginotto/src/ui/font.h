@@ -1,5 +1,5 @@
-#ifndef PALA_UI_FONT_H
-#define PALA_UI_FONT_H
+#ifndef PAGINOTTO_UI_FONT_H
+#define PAGINOTTO_UI_FONT_H
 
 #include "src/pure/paginator.h"     // LayoutMetrics
 #include "src/storage/page_cache.h" // PageCacheLayout
@@ -105,4 +105,4 @@ int bionicPrefixBytes(const char* word, int byteLen);
 
 }  // namespace Font
 
-#endif  // PALA_UI_FONT_H
+#endif  // PAGINOTTO_UI_FONT_H
