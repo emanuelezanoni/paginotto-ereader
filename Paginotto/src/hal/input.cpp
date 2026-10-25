@@ -42,6 +42,79 @@ struct ButtonQueue {
 };
 static ButtonQueue s_btnQ;
 
+static bool popQueuedEdge(uint8_t head_snapshot, bool& pressed,
+                          uint32_t& edge_time) {
+  if (s_btnQ.tail == head_snapshot) return false;
+
+  noInterrupts();
+  const uint8_t slot = s_btnQ.tail;
+  pressed = s_btnQ.state[slot];
+  edge_time = s_btnQ.timeMs[slot];
+  s_btnQ.tail = static_cast<uint8_t>((slot + 1) % BTN_Q);
+  interrupts();
+  return true;
+}
+
+static void consumeAcceptedEdge(ButtonState& s, bool edge_pressed,
+                                uint32_t edge_time) {
+  if (!acceptsButtonEdge(edge_pressed, s.stablePressed_, edge_time,
+                         s.lastStableChange_, DEBOUNCE_MS)) {
+    return;
+  }
+
+  const bool was_pressed = s.stablePressed_;
+  s.stablePressed_ = edge_pressed;
+  s.lastStableChange_ = edge_time;
+
+  if (!was_pressed) {
+    s.pressStart_ = edge_time;
+    s.pressArmed_ = true;
+    return;
+  }
+
+  if (!s.pressArmed_) return;
+
+  const uint32_t duration = static_cast<uint32_t>(edge_time - s.pressStart_);
+  if (duration >= CLICK_HOLD_MS) {
+    if (s.clickCount_ == 0) {
+      s.hold_ = true;
+    } else if (s.clickCount_ == 1) {
+      s.clickHoldClick_ = true;
+    }
+    s.clickCount_ = 0;
+  } else {
+    ++s.clickCount_;
+    s.lastRelease_ = edge_time;
+    if (s.clickCount_ == 1) s.firstClickRelease_ = edge_time;
+  }
+
+  s.pressArmed_ = false;
+  s.pressStart_ = 0;
+}
+
+static void commitPendingClicks(ButtonState& s) {
+  if (s.clickCount_ == 0) return;
+
+  const uint32_t now = millis();
+  const bool gap_elapsed =
+      static_cast<uint32_t>(now - s.lastRelease_) > MAX_CLICK_GAP_MS;
+  const bool sequence_timeout =
+      static_cast<uint32_t>(now - s.firstClickRelease_) > MAX_CLICK_SEQUENCE_MS;
+  const bool quad_ready = s.clickCount_ >= 4;
+  const bool ready_by_time =
+      (gap_elapsed || sequence_timeout) && !s.stablePressed_;
+  if (!ready_by_time && !quad_ready) return;
+
+  switch (clickKindForCount(s.clickCount_)) {
+    case ButtonShortClick:  s.shortClick_ = true; break;
+    case ButtonDoubleClick: s.doubleClick_ = true; break;
+    case ButtonTripleClick: s.tripleClick_ = true; break;
+    case ButtonQuadClick:   s.quadClick_ = true; break;
+    case ButtonNoClick:     break;
+  }
+  s.clickCount_ = 0;
+}
+
 // ============================================================================
 //  Input frontend — overview
 //
@@ -276,50 +349,10 @@ void ButtonState::poll() {
   headSnapshot = s_btnQ.head;
   interrupts();
 
-  while (s_btnQ.tail != headSnapshot) {
-    noInterrupts();
-    bool edgePressed = s_btnQ.state[s_btnQ.tail];
-    uint32_t edgeTime = s_btnQ.timeMs[s_btnQ.tail];
-    s_btnQ.tail = (uint8_t)((s_btnQ.tail + 1) % BTN_Q);
-    interrupts();
-
-    if (!acceptsButtonEdge(edgePressed, stablePressed_, edgeTime,
-                           lastStableChange_, DEBOUNCE_MS)) continue;
-
-    bool prevPressed = stablePressed_;
-    stablePressed_ = edgePressed;
-    lastStableChange_ = edgeTime;
-
-    // On a clean press, start the timer and arm for a future release.
-    if (!prevPressed) {
-      pressStart_ = edgeTime;
-      pressArmed_ = true;
-    }
-
-    // A held release is never a plain action. Normally ClickHold already
-    // fired at threshold; preserve it as a fallback only if polling was
-    // blocked through that threshold. A single hold is valid without a
-    // preceding click; multi-click holds are discarded.
-    if (prevPressed) {
-      if (pressArmed_) {
-        uint32_t dur = (uint32_t)(edgeTime - pressStart_);
-        if (dur >= CLICK_HOLD_MS) {
-          if (clickCount_ == 0) {
-            hold_ = true;
-            clickCount_ = 0;
-          } else if (clickCount_ == 1) {
-            clickHoldClick_ = true;
-            clickCount_ = 0;
-          }
-        } else {
-          clickCount_++;
-          lastRelease_ = edgeTime;
-          if (clickCount_ == 1) firstClickRelease_ = edgeTime;
-        }
-      }
-      pressArmed_ = false;
-      pressStart_ = 0;
-    }
+  bool edge_pressed = false;
+  uint32_t edge_time = 0;
+  while (popQueuedEdge(headSnapshot, edge_pressed, edge_time)) {
+    consumeAcceptedEdge(*this, edge_pressed, edge_time);
   }
 
   // Hold gestures emit at threshold, while held. Their release is consumed.
@@ -348,24 +381,7 @@ void ButtonState::poll() {
   // The mapping from final count to which flag to emit is the only thing that
   // varies by count; the timer logic is uniform.
   //
-  if (clickCount_ > 0) {
-    uint32_t now = millis();
-    bool gapElapsed      = (uint32_t)(now - lastRelease_)       > MAX_CLICK_GAP_MS;
-    bool sequenceTimeout = (uint32_t)(now - firstClickRelease_) > MAX_CLICK_SEQUENCE_MS;
-    bool quadReady       = clickCount_ >= 4;
-    bool readyByTime     = (gapElapsed || sequenceTimeout) && !stablePressed_;
-
-    if (readyByTime || quadReady) {
-      switch (clickKindForCount(clickCount_)) {
-        case ButtonShortClick:  shortClick_ = true; break;
-        case ButtonDoubleClick: doubleClick_ = true; break;
-        case ButtonTripleClick: tripleClick_ = true; break;
-        case ButtonQuadClick:   quadClick_ = true; break;
-        case ButtonNoClick:     break;
-      }
-      clickCount_ = 0;
-    }
-  }
+  commitPendingClicks(*this);
 }
 
 ButtonEvent waitForNextEvent() {
