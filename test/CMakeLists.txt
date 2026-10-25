@@ -31,6 +31,7 @@ set(TEST_SRC
   ${CMAKE_CURRENT_SOURCE_DIR}/test_paginator.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_library_nav.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_hold_gesture.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_stream.cpp
 )
 
 add_executable(host_tests ${SUT_SRC} ${TEST_SRC})

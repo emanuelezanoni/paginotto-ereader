@@ -88,7 +88,12 @@ clean provenance decision.
      ordering and catalog references preserved.
    - [x] Added defensive handling for null output/state pointers, invalid
      counts, zero capacity and malformed empty folders.
-   - [ ] Remaining stream interfaces review/rewrite.
+   - [x] `stream.h` contract characterized with host tests for byte order,
+     EOF, absolute seek, exact-EOF seek and invalid seeks.
+   - [x] `StringReadStream` confirmed as a small, self-contained test adapter;
+     no unnecessary redesign was introduced.
+   - [x] `file_stream.h` classified as a thin Arduino/HAL adapter rather than
+     core reader logic. It remains subject to the later hardware-layer audit.
 
    The streaming compaction API intentionally retains its existing contract:
    a chunk may return a trailing space when `trimTail=false`. Therefore a
@@ -205,6 +210,7 @@ allow the implementation and internal organisation to be Paginotto-specific.
 - [x] Paginator characterization and rewrite.
 - [x] Text utility review/rewrite and stricter UTF-8 handling.
 - [x] Library navigation review/rewrite.
+- [x] Stream contract characterization and pure adapter tests.
 - [ ] Remaining core reader algorithms review/rewrite.
 - [ ] Persistence and library storage review/rewrite.
 - [ ] Device UI and hardware adapter review/rewrite.
