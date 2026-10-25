@@ -54,7 +54,7 @@ static const char kStyleCss[] PROGMEM =
   ".book-title,.book-title-view h3,.card h2{overflow-wrap:anywhere;word-break:break-word}"
   ".icon-btn{padding:5px 8px;background:transparent;color:var(--link);font-size:18px;line-height:1;border:1px solid var(--line);flex:none}"
   ".book-actions{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-top:auto;padding-top:14px;border-top:1px solid var(--line-soft)}"
-  ".book-actions-left,.book-actions-right{display:flex;align-items:center;flex-wrap:wrap;gap:8px}"
+  ".book-actions-left,.book-actions-right{display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-width:0}"
   ".book-folder-form{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:0}"
   ".book-folder-form select{width:auto;min-width:130px}"
   ".library-tree{display:grid;gap:10px;margin-top:12px}"
@@ -116,7 +116,7 @@ static const char kStyleCss[] PROGMEM =
   ".wifi-scan-item{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid var(--line-soft);border-radius:10px;background:var(--stat-bg)}"
   "button,.btn{display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:10px;background:var(--btn-bg);color:var(--btn-fg);padding:10px 14px;font:600 14px system-ui,sans-serif;text-decoration:none;cursor:pointer}"
   ".btn.secondary{background:var(--btn-sec-bg);color:var(--btn-sec-fg);border:1px solid var(--btn-sec-bd)}"
-  "input[type=text],input[type=number],input[type=file],input[type=search],select,textarea{width:100%;box-sizing:border-box;border:1px solid var(--inp-bd);border-radius:10px;background:var(--inp-bg);color:var(--text);padding:10px;font:inherit}"
+  "input[type=text],input[type=number],input[type=file],input[type=search],input[type=url],input[type=password],select,textarea{width:100%;box-sizing:border-box;border:1px solid var(--inp-bd);border-radius:10px;background:var(--inp-bg);color:var(--text);padding:10px;font:inherit}"
   "input[type=checkbox],input[type=radio]{accent-color:var(--link)}"
   ".nav a.active{font-weight:700;color:var(--text);text-decoration:underline;text-underline-offset:3px}"
   "[hidden]{display:none!important}"
@@ -125,7 +125,8 @@ static const char kStyleCss[] PROGMEM =
   "p + p{margin-top:10px}"
   "@media(min-width:760px){.stats{grid-template-columns:repeat(4,minmax(0,1fr))}}"
   "@media(min-width:620px){.grid.cols-2{grid-template-columns:1fr 1fr}}"
-  "@media(max-width:640px){.row,.book-row{flex-direction:column}.book-tools{align-self:stretch;flex-direction:row;flex-wrap:wrap}.book-actions{align-items:stretch;flex-direction:column}.book-actions-left,.book-actions-right{width:100%}.book-actions-right{justify-content:flex-end}.book-folder-form{flex:1}.book-folder-form select{flex:1}.wrap{padding:14px}}"
+  ".book-actions-left .btn,.book-actions-right .btn{white-space:nowrap}"
+  "@media(max-width:640px){.row,.book-row{flex-direction:column}.book-tools{align-self:stretch;flex-direction:row;flex-wrap:wrap}.book-actions{align-items:stretch;flex-direction:column}.book-actions-left,.book-actions-right{width:100%}.book-actions-left{display:grid;grid-template-columns:minmax(0,1fr);align-items:stretch}.book-actions-right{display:grid;grid-template-columns:1fr 1fr}.book-actions-right form,.book-actions-right .btn{width:100%}.book-folder-form{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center}.book-folder-form select{min-width:0}.wrap{padding:14px}}"
   ;
 
 static void handleStyleCss() {
@@ -149,7 +150,7 @@ String webPageStart(const String& title, const String& subtitle,
   out = "<!doctype html><html><head><meta charset='utf-8'>"
         "<meta name='viewport' content='width=device-width,initial-scale=1'>"
         "<meta name='color-scheme' content='light'>"
-        "<link rel='stylesheet' href='/style.css?v=4'>";
+        "<link rel='stylesheet' href='/style.css?v=5'>";
   out += "<title>";
   out += title;
   out += "</title></head><body><div class='wrap";

@@ -295,6 +295,9 @@ static const char kReadStyle[] PROGMEM =
   "<style>"
   ".bv-find{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px}"
   ".bv-find input[type=search]{flex:1;min-width:160px}"
+  ".bv-find-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}"
+  ".bv-search-row{margin-top:14px}"
+  "@media(max-width:640px){.bv-search-row{display:grid;grid-template-columns:1fr}.bv-search-row input[type=search]{min-width:0}.bv-search-row .bv-find-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.bv-search-row .bv-find-actions button{width:100%}.bv-search-row #bvJumpBtn{grid-column:1/-1}}"
   ".bv-find .small{padding:6px 12px;font-size:13px}"
   ".bv-status{margin-top:8px;font-size:13px;color:var(--muted)}"
   ".bv-text{margin-top:14px;max-height:60vh;overflow:auto;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--pre-bg);white-space:pre-wrap;line-height:1.5;font:14px/1.5 system-ui,sans-serif}"
@@ -452,12 +455,14 @@ static void handleReadView() {
   out += "</div>";
 
   // Search and jump controls stay in one context.
-  out += "<div class='bv-find'>"
+  out += "<div class='bv-find bv-search-row'>"
          "<input id='bvFind' type='search' placeholder='" D_WEB_READ_FIND_PLACEHOLDER "' autocomplete='off'>"
+         "<div class='bv-find-actions'>"
          "<button type='button' class='btn small' id='bvFindBtn'>" D_WEB_READ_FIND_ALL "</button>"
          "<button type='button' class='btn secondary small' id='bvFindPrev'>&#9650; " D_WEB_READ_FIND_PREV "</button>"
          "<button type='button' class='btn secondary small' id='bvFindNext'>&#9660; " D_WEB_READ_FIND_NEXT "</button>"
          "<button type='button' class='btn small' id='bvJumpBtn'>" D_WEB_READ_JUMP_HERE "</button>"
+         "</div>"
          "</div>"
          "<div class='bv-status' id='bvFindStat'></div>"
          "<div class='bv-status' id='bvJumpStat'></div>";
