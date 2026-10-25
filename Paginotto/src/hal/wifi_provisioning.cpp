@@ -11,6 +11,7 @@
 #include <WiFi.h>
 
 #include "src/config.h"
+#include "src/pure/wifi_credentials.h"
 #include "src/storage/wifi_creds.h"
 
 namespace WifiProvisioning {
@@ -38,6 +39,7 @@ static constexpr uint32_t kShutdownGraceMs = 2000;
 // finding their Wi-Fi password in a list and typing it; short enough that a
 // genuinely abandoned session eventually lets the device idle.
 static constexpr uint32_t kHostActivityMs = 5 * 60 * 1000;
+static constexpr uint32_t kConnectTimeoutMs = 15000;
 
 // True when we believe a USB host is actively driving our bus. Combines two
 // signals because each fails independently:
@@ -71,6 +73,26 @@ static void clearGraceTimer() {
   s_state.credsReceivedMs = 0;
 }
 
+// Improv's default connector switches the radio to WIFI_STA. During an
+// upload the AP is owned by UploadScreen and must survive provisioning, so
+// keep AP+STA in that mode. Outside upload mode, use STA only and let the
+// caller tear it down after the protocol reply has been flushed.
+static bool connectForProvisioning(const char* ssid, const char* password) {
+  if (!ssid || !password || !WifiCredentialPolicy::validSsid(String(ssid)) ||
+      !WifiCredentialPolicy::validPassword(String(password))) {
+    return false;
+  }
+
+  WiFi.mode(s_state.uploadSession ? WIFI_AP_STA : WIFI_STA);
+  WiFi.begin(ssid, password);
+  const uint32_t started = millis();
+  while (WiFi.status() != WL_CONNECTED &&
+         static_cast<uint32_t>(millis() - started) < kConnectTimeoutMs) {
+    delay(50);
+  }
+  return WiFi.status() == WL_CONNECTED;
+}
+
 void begin() {
   s_state.lib.setDeviceInfo(
       ImprovTypes::ChipFamily::CF_ESP32_S3,
@@ -78,6 +100,7 @@ void begin() {
       FW_VERSION,
       "Paginotto",
       "http://paginotto.local/");
+  s_state.lib.setCustomConnectWiFi(connectForProvisioning);
 
   // The library handles WiFi.begin() itself; we only persist creds once the
   // association succeeds. If the association fails the library reports the
