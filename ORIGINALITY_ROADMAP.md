@@ -314,13 +314,16 @@ allow the implementation and internal organisation to be Paginotto-specific.
   remaining high-similarity modules listed explicitly.
 - [ ] Differential oracle against the imported implementation (needed for
   stronger historical-behaviour compatibility evidence).
-- [ ] Remaining core reader algorithms review/rewrite.
+- [x] Remaining core reader algorithms review/rewrite; reader integration,
+  position recovery, incremental scan, navigation boundaries, sleep/resume,
+  layout remapping and WebUI jumps are covered by host tests and firmware CI.
 - [x] Persistence and library storage review/rewrite (paths, catalog,
   metadata and page-cache integration completed).
 - [ ] Classify device UI/HAL files into external API, Paginotto wrapper and
   inherited implementation before deciding what to rewrite.
-- [ ] Device UI and hardware adapter review/rewrite, starting with reader
-  integration and only then display/input/sleep/battery.
+- [ ] Device UI and hardware adapter review/rewrite. Reader integration is
+  complete; remaining work starts with display/input/sleep/battery/file-stream
+  boundary classification and only then targets inherited product logic.
 - [ ] Connectivity and maintenance review/rewrite.
 - [ ] Screensaver WebUI rewrite.
 - [ ] Remaining inherited utility review.
