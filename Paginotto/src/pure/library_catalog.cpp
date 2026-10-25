@@ -15,10 +15,11 @@ void sortFolders(Catalog& catalog) {
   for (int i = 0; i < catalog.folderCount - 1; ++i) {
     for (int j = i + 1; j < catalog.folderCount; ++j) {
       if (std::strcmp(catalog.folders[j], catalog.folders[i]) < 0) {
-        char temporary[MAX_FOLDER_PATH + 1];
-        std::memcpy(temporary, catalog.folders[i], sizeof(temporary));
-        std::memcpy(catalog.folders[i], catalog.folders[j], sizeof(temporary));
-        std::memcpy(catalog.folders[j], temporary, sizeof(temporary));
+        for (size_t k = 0; k <= MAX_FOLDER_PATH; ++k) {
+          const char temporary = catalog.folders[i][k];
+          catalog.folders[i][k] = catalog.folders[j][k];
+          catalog.folders[j][k] = temporary;
+        }
       }
     }
   }
