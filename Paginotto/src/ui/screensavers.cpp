@@ -3,170 +3,170 @@
 #include <esp_random.h>
 
 #include "src/config.h"
-#include "src/hal/display.h"   // gfx
+#include "src/hal/display.h"
 #include "src/pure/screensaver_policy.h"
-#include "src/state.h"         // FS, prefs
+#include "src/state.h"
 
 namespace Screensavers {
+namespace {
 
-// File-private state. Cached at loadSettings(); mutators below keep both
-// the in-memory copy and the NVS value in sync.
-static Mode    s_mode      = Mode::Single;
-static int     s_cycleIdx  = 0;     // next slot index to use in Cycle order
-static int     s_lastShown = -1;    // last slot shown (Shuffle anti-repeat)
+constexpr const char* kDirectory = "/screensavers";
+constexpr const char* kLegacyImage = "/sleep.bin";
+constexpr const char* kModeKey = "cfg_ss_mode";
+constexpr const char* kCursorKey = "cfg_ss_idx";
+constexpr const char* kPreviousKey = "cfg_ss_last";
 
-// NVS keys — file-private; nothing outside this file should reference them.
-static constexpr const char* kKeyMode      = "cfg_ss_mode";
-static constexpr const char* kKeyCycleIdx  = "cfg_ss_idx";
-static constexpr const char* kKeyLastShown = "cfg_ss_last";
+struct Runtime {
+  Mode mode = Mode::Single;
+  int cursor = 0;
+  int previous = -1;
+};
 
-static constexpr const char* kDir = "/screensavers";
+Runtime s_runtime;
 
-static void ensureDir() {
-  if (!FS.exists(kDir)) FS.mkdir(kDir);
+bool validSlot(int slot) { return slot >= 0 && slot < MAX_SLOTS; }
+
+void ensureDirectory() {
+  if (!FS.exists(kDirectory)) FS.mkdir(kDirectory);
 }
 
+void resetRotation() {
+  s_runtime.cursor = 0;
+  s_runtime.previous = -1;
+  prefs.putInt(kCursorKey, 0);
+  prefs.putInt(kPreviousKey, -1);
+}
+
+bool hasExpectedSize(const String& path) {
+  File file = FS.open(path, "r");
+  const bool valid = file &&
+      file.size() == static_cast<size_t>(SCREENSAVER_BYTES);
+  if (file) file.close();
+  return valid;
+}
+
+bool readExact(const String& path, uint8_t* buffer) {
+  if (!buffer || !hasExpectedSize(path)) return false;
+  File file = FS.open(path, "r");
+  if (!file) return false;
+  const size_t received = file.read(buffer, SCREENSAVER_BYTES);
+  file.close();
+  return received == static_cast<size_t>(SCREENSAVER_BYTES);
+}
+
+int collectPopulated(int* slots) {
+  if (!slots) return 0;
+  int count = 0;
+  for (int slot = 0; slot < MAX_SLOTS; ++slot) {
+    if (slotExists(slot)) slots[count++] = slot;
+  }
+  return count;
+}
+
+bool paint(const uint8_t* image) {
+  if (!image) return false;
+  gfx.fillScreen(0);
+  gfx.drawXBitmap(0, 0, image, SCREEN_W, SCREEN_H, 1);
+  return true;
+}
+
+}  // namespace
+
 String slotPath(int slot) {
-  char buf[28];
-  snprintf(buf, sizeof(buf), "%s/%d.bin", kDir, slot);
-  return String(buf);
+  char path[32];
+  snprintf(path, sizeof(path), "%s/%d.bin", kDirectory, slot);
+  return String(path);
 }
 
 bool slotExists(int slot) {
-  if (slot < 0 || slot >= MAX_SLOTS) return false;
-  File f = FS.open(slotPath(slot), "r");
-  if (!f) return false;
-  bool ok = (f.size() == (size_t)SCREENSAVER_BYTES);
-  f.close();
-  return ok;
+  return validSlot(slot) && hasExpectedSize(slotPath(slot));
 }
 
 int populatedCount() {
-  int n = 0;
-  for (int i = 0; i < MAX_SLOTS; i++) if (slotExists(i)) n++;
-  return n;
+  int slots[MAX_SLOTS];
+  return collectPopulated(slots);
 }
 
 int firstFreeSlot() {
-  for (int i = 0; i < MAX_SLOTS; i++) if (!slotExists(i)) return i;
+  for (int slot = 0; slot < MAX_SLOTS; ++slot) {
+    if (!slotExists(slot)) return slot;
+  }
   return -1;
 }
 
 bool readSlot(int slot, uint8_t out[SCREENSAVER_BYTES]) {
-  if (slot < 0 || slot >= MAX_SLOTS) return false;
-  File f = FS.open(slotPath(slot), "r");
-  if (!f) return false;
-  if (f.size() != (size_t)SCREENSAVER_BYTES) { f.close(); return false; }
-  size_t got = f.read(out, SCREENSAVER_BYTES);
-  f.close();
-  return got == (size_t)SCREENSAVER_BYTES;
-}
-
-// Build a compact array of populated slot indices in ascending order.
-// Caller-allocated; returns the count.
-static int collectSlots(int outSlots[MAX_SLOTS]) {
-  int n = 0;
-  for (int i = 0; i < MAX_SLOTS; i++) {
-    if (slotExists(i)) outSlots[n++] = i;
-  }
-  return n;
+  return validSlot(slot) && readExact(slotPath(slot), out);
 }
 
 void loadSettings() {
-  ensureDir();
-  int m = prefs.getInt(kKeyMode, (int)Mode::Single);
-  if (!ScreensaverPolicy::validMode(m)) m = (int)Mode::Single;
-  s_mode = (Mode)m;
-  s_cycleIdx  = prefs.getInt(kKeyCycleIdx, 0);
-  if (s_cycleIdx < 0) s_cycleIdx = 0;
-  s_lastShown = prefs.getInt(kKeyLastShown, -1);
+  ensureDirectory();
+  const int storedMode = prefs.getInt(kModeKey, static_cast<int>(Mode::Single));
+  s_runtime.mode = ScreensaverPolicy::validMode(storedMode)
+      ? static_cast<Mode>(storedMode) : Mode::Single;
+  s_runtime.cursor = prefs.getInt(kCursorKey, 0);
+  if (s_runtime.cursor < 0) s_runtime.cursor = 0;
+  s_runtime.previous = prefs.getInt(kPreviousKey, -1);
 }
 
-void setMode(Mode m) {
-  s_mode = m;
-  prefs.putInt(kKeyMode, (int)m);
-  // Reset the cycle pointer so a fresh mode starts from slot 0.
-  s_cycleIdx = 0;
-  prefs.putInt(kKeyCycleIdx, 0);
+void setMode(Mode mode) {
+  const int encoded = static_cast<int>(mode);
+  s_runtime.mode = ScreensaverPolicy::validMode(encoded)
+      ? mode : Mode::Single;
+  prefs.putInt(kModeKey, static_cast<int>(s_runtime.mode));
+  resetRotation();
 }
 
-Mode currentMode() { return s_mode; }
+Mode currentMode() { return s_runtime.mode; }
 
 bool installFromTemp(int slot, const String& tmpPath) {
-  if (slot < 0 || slot >= MAX_SLOTS) {
+  if (!validSlot(slot) || tmpPath.length() == 0 ||
+      !hasExpectedSize(tmpPath)) {
+    if (tmpPath.length() > 0 && FS.exists(tmpPath)) FS.remove(tmpPath);
+    return false;
+  }
+  ensureDirectory();
+  const String destination = slotPath(slot);
+  if (FS.exists(destination)) FS.remove(destination);
+  if (!FS.rename(tmpPath, destination)) {
     if (FS.exists(tmpPath)) FS.remove(tmpPath);
     return false;
   }
-  ensureDir();
-  String dst = slotPath(slot);
-  if (FS.exists(dst)) FS.remove(dst);
-  if (!FS.rename(tmpPath, dst)) {
-    if (FS.exists(tmpPath)) FS.remove(tmpPath);
-    return false;
-  }
-  // New image enters the rotation on the next sleep. Resetting the cycle
-  // pointer ensures the newly-populated slot is reached predictably, and
-  // clearing `last` lets Shuffle pick it.
-  s_cycleIdx  = 0;
-  s_lastShown = -1;
-  prefs.putInt(kKeyCycleIdx, 0);
-  prefs.putInt(kKeyLastShown, -1);
+  resetRotation();
   return true;
 }
 
 void deleteSlot(int slot) {
-  if (slot < 0 || slot >= MAX_SLOTS) return;
-  String p = slotPath(slot);
-  if (FS.exists(p)) FS.remove(p);
-  s_cycleIdx  = 0;
-  s_lastShown = -1;
-  prefs.putInt(kKeyCycleIdx, 0);
-  prefs.putInt(kKeyLastShown, -1);
+  if (!validSlot(slot)) return;
+  const String path = slotPath(slot);
+  if (FS.exists(path)) FS.remove(path);
+  resetRotation();
 }
 
 bool drawNext() {
-  if (s_mode == Mode::Single) {
-    File sf = FS.open("/sleep.bin", "r");
-    if (sf && sf.size() >= (size_t)SCREENSAVER_BYTES) {
-      static uint8_t sleepBuf[SCREENSAVER_BYTES];
-      sf.read(sleepBuf, SCREENSAVER_BYTES);
-      sf.close();
-      gfx.fillScreen(0);
-      gfx.drawXBitmap(0, 0, sleepBuf, SCREEN_W, SCREEN_H, 1);
-      return true;
-    }
-    if (sf) sf.close();
-    return false;
+  static uint8_t image[SCREENSAVER_BYTES];
+  if (s_runtime.mode == Mode::Single) {
+    return readExact(kLegacyImage, image) && paint(image);
   }
 
   int slots[MAX_SLOTS];
-  int count = collectSlots(slots);
+  const int count = collectPopulated(slots);
   if (count == 0) return false;
 
-  int pick = slots[0];
-  if (s_mode == Mode::Shuffle) {
-    const auto decision = ScreensaverPolicy::chooseShuffle(
-        slots, count, s_lastShown, esp_random());
-    pick = decision.slot;
+  ScreensaverPolicy::Selection selection;
+  if (s_runtime.mode == Mode::Shuffle) {
+    selection = ScreensaverPolicy::chooseShuffle(
+        slots, count, s_runtime.previous, esp_random());
   } else {
-    // Cycle walks the populated set in order and persists the cursor across
-    // deep sleeps. Single mode returned above because it uses /sleep.bin.
-    const auto decision = ScreensaverPolicy::chooseCycle(
-        slots, count, s_cycleIdx);
-    pick = decision.slot;
-    s_cycleIdx = decision.nextCycleIndex;
-    prefs.putInt(kKeyCycleIdx, s_cycleIdx);
+    selection = ScreensaverPolicy::chooseCycle(
+        slots, count, s_runtime.cursor);
+    s_runtime.cursor = selection.nextCycleIndex;
+    prefs.putInt(kCursorKey, s_runtime.cursor);
   }
+  if (!readSlot(selection.slot, image)) return false;
 
-  static uint8_t buf[SCREENSAVER_BYTES];
-  if (!readSlot(pick, buf)) return false;
-
-  s_lastShown = pick;
-  prefs.putInt(kKeyLastShown, pick);
-
-  gfx.fillScreen(0);
-  gfx.drawXBitmap(0, 0, buf, SCREEN_W, SCREEN_H, 1);
-  return true;
+  s_runtime.previous = selection.lastShown;
+  prefs.putInt(kPreviousKey, s_runtime.previous);
+  return paint(image);
 }
 
 }  // namespace Screensavers
