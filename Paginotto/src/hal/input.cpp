@@ -3,6 +3,7 @@
 #include <esp_timer.h>
 
 #include "src/pure/hold_gesture.h"  // classifyHoldInProgress
+#include "src/pure/button_policy.h"
 
 // Local helper: map a HoldGestureKind decision into the matching output
 // flag.
@@ -282,8 +283,8 @@ void ButtonState::poll() {
     s_btnQ.tail = (uint8_t)((s_btnQ.tail + 1) % BTN_Q);
     interrupts();
 
-    if ((uint32_t)(edgeTime - lastStableChange_) <= DEBOUNCE_MS) continue;
-    if (edgePressed == stablePressed_) continue;
+    if (!acceptsButtonEdge(edgePressed, stablePressed_, edgeTime,
+                           lastStableChange_, DEBOUNCE_MS)) continue;
 
     bool prevPressed = stablePressed_;
     stablePressed_ = edgePressed;
@@ -355,10 +356,13 @@ void ButtonState::poll() {
     bool readyByTime     = (gapElapsed || sequenceTimeout) && !stablePressed_;
 
     if (readyByTime || quadReady) {
-      if      (clickCount_ == 1) shortClick_  = true;
-      else if (clickCount_ == 2) doubleClick_ = true;
-      else if (clickCount_ == 3) tripleClick_ = true;
-      else                        quadClick_   = true;
+      switch (clickKindForCount(clickCount_)) {
+        case ButtonShortClick:  shortClick_ = true; break;
+        case ButtonDoubleClick: doubleClick_ = true; break;
+        case ButtonTripleClick: tripleClick_ = true; break;
+        case ButtonQuadClick:   quadClick_ = true; break;
+        case ButtonNoClick:     break;
+      }
       clickCount_ = 0;
     }
   }

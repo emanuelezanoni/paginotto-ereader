@@ -99,7 +99,10 @@ that need review even when their score is lower:
   click/hold state machine are product logic. The current implementation is
   substantially derived from upstream, although Paginotto has already changed
   the public event model and removed legacy app-facing counters. Classify it
-  as **derived product logic — targeted rewrite/review pending**.
+  as **derived product logic — targeted rewrite/review pending**. The pure
+  edge/debounce and click-count decisions are now isolated in
+  `src/pure/button_policy.*` and covered by host tests; the ISR frontend and
+  full state-machine rewrite remain pending.
 - `src/ui/font.cpp` and `src/ui/font.h` are **repository rendering policy**,
   not U8g2 source. U8g2 supplies font tables and drawing primitives; role
   selection, NVS settings, layout metrics, cache stamping and bionic reading

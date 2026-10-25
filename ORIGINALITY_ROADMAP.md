@@ -322,7 +322,9 @@ Work in this order, one bounded subsystem at a time:
    rotation and refresh semantics; remove inherited implementation structure.
    **`file_stream` and `display` complete.**
 2. `input`: preserve ISR safety, event timings and public `ButtonEvent`
-   behaviour; test debounce, overflow, click/hold and wake edges.
+   behaviour; test debounce, overflow, click/hold and wake edges. The pure
+   edge/debounce and click-count policy is now extracted and tested; the ISR
+   frontend and full classifier rewrite remain.
 3. `font`: preserve font roles, layout metrics, cache stamps and bionic mode;
    keep U8g2 as the rendering dependency.
 4. `sleep` + `lock`: preserve NVS keys, wake behaviour, lock lifecycle and
