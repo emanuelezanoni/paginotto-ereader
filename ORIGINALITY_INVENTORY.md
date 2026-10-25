@@ -79,6 +79,11 @@ important than a large generic header.
 
 - The pure reader core has been rewritten or characterized: paginator,
   `text_util`, `library_nav` and the `StringReadStream` contract.
+- The current implementation comparison is materially different from the
+  header comparison: `paginator.cpp` is about 44%, `text_util.cpp` about 59%
+  and `library_nav.cpp` about 40% similar to the mapped upstream files. These
+  figures support that the implementations were substantially changed, but
+  they are still not a legal originality certificate.
 - Functional preservation is supported by the host suite, now **64 tests and
   227 checks**, including malformed UTF-8, pagination boundaries, invalid
   starts, catalog bounds, EOF and seek behavior.
@@ -91,6 +96,30 @@ important than a large generic header.
   UI/widgets, connectivity/OTA, HAL and screensavers still require review or
   clean-room-style rewrites before a Paginotto-only license can honestly cover
   the whole current source tree.
+
+### Why a plain diff is insufficient
+
+A normal textual diff is useful for finding unchanged files and obvious
+copying, but it is not an originality test. Renaming variables, reformatting,
+reordering functions or translating comments can make a diff look different
+while retaining the same expressive structure. Conversely, a generic header
+or hardware adapter can legitimately remain similar because its interface is
+dictated by the protocol.
+
+For the remaining work, the stronger engineering procedure is:
+
+1. write a behavioural specification from public APIs, file formats and tests;
+2. freeze black-box characterization tests before editing;
+3. reimplement from that specification without using upstream structure as a
+   template;
+4. compare normalized tokens/AST shape, not only raw text;
+5. review comments, strings, HTML/CSS/JavaScript and assets separately;
+6. keep the upstream mapping and the provenance boundary explicit.
+
+This is a clean-room-style engineering process, not a formal legal clean room
+because the same agent can inspect both implementations. It is nevertheless
+the correct way to avoid mistaking cosmetic renaming for an independent
+implementation.
 
 ## Historical first-pass action summary
 
