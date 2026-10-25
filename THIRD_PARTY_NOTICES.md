@@ -31,9 +31,9 @@ code. The dependency versions and revisions below are the values declared in
 - The firmware uses font data exposed by U8g2 (`helvR`, `helvB`, `5x8` and
   `6x10` families). Those font terms are part of the U8g2 distribution and
   are not Paginotto-authored assets.
-- `Paginotto/src/ui/default_screensaver.h` is a product asset in the current
-  tree. Its provenance and any source artwork still require a manual asset
-  record before a project-wide license claim.
+- `Paginotto/src/ui/default_screensaver.h` is a Paginotto product meme asset,
+  intentionally embedded in the firmware. It is not treated as third-party
+  artwork or as a dependency license item.
 - No standalone font, icon or image source files were found outside the
   embedded default screensaver and dependency packages.
 

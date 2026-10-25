@@ -294,11 +294,10 @@ allow the implementation and internal organisation to be Paginotto-specific.
    and toast deadline policy were refactored and tested. The generic `screen`
    interface remains an API boundary, not a substantive implementation.
 4. **Final provenance/licensing audit — in progress.** The dependency
-   inventory and `THIRD_PARTY_NOTICES.md` are now present, and the current
-   source has been rescanned against the imported snapshot. Remaining work is
-   the manual review of every retained interface/asset, an explicit record
-   for the default screensaver artwork, and the differential compatibility
-   oracle.
+   inventory, `THIRD_PARTY_NOTICES.md`, current-tree rescan and differential
+   compatibility oracle are complete. The default screensaver is recorded as
+   a Paginotto meme asset. Remaining work is the manual review of retained
+   interfaces and the final license scope.
 5. **Boundary and release.** Update `UPSTREAM.md` and README, document the
    exact boundary between inherited history, external material and
    Paginotto-authored code, choose the Paginotto license, run the full matrix,
@@ -356,10 +355,11 @@ remaining provenance work is the global manual inventory and licensing audit.
 
 ### Phase 4 — Provenance and licensing closure
 
-**Status: in progress.** The dependency inventory, QRCode pin and
-`THIRD_PARTY_NOTICES.md` are complete. The manual file/asset classification,
-default screensaver provenance record, differential oracle and final license
-scope are still open.
+**Status: in progress.** The dependency inventory, QRCode pin,
+`THIRD_PARTY_NOTICES.md`, current exact-match scan and differential oracle are
+complete. The default screensaver is classified as a Paginotto meme asset.
+The final license scope and any remaining manual boundary notes are still
+open.
 
 ### Phase 5 — Boundary release
 
@@ -439,8 +439,9 @@ matrix, and prepare `v2.0.0`.
   now terminate safely instead of reading from an unintended cursor position.
 - [x] Core/provenance audit performed; stale inventory counts corrected and
   remaining high-similarity modules listed explicitly.
-- [ ] Differential oracle against the imported implementation (needed for
-  stronger historical-behaviour compatibility evidence).
+- [x] Differential compatibility oracle against the imported implementation;
+  the reproducible check is documented in `DIFFERENTIAL_ORACLE.md` and its
+  hardware-test limitation is explicit.
 - [x] Remaining core reader algorithms review/rewrite; reader integration,
   position recovery, incremental scan, navigation boundaries, sleep/resume,
   layout remapping and WebUI jumps are covered by host tests and firmware CI.
@@ -469,8 +470,9 @@ matrix, and prepare `v2.0.0`.
   widgets list-window calculation and toast expiry are covered by the current
   implementation and host tests.
 - [ ] Remaining inherited utility review.
-- [ ] Manual asset provenance and complete license inventory, including the
-  default screensaver artwork and all retained dependency notices.
+- [x] Default screensaver asset classified as a Paginotto meme; dependency
+  notices are recorded in `THIRD_PARTY_NOTICES.md`.
+- [ ] Complete license inventory and final Paginotto license scope.
 - [ ] Provenance-boundary commit.
 - [ ] Paginotto license and third-party notices.
 - [ ] Final verification and `v2.0.0` release.

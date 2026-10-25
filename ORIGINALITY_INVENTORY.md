@@ -89,9 +89,10 @@ traceability while the manual inventory is completed:
 - **Current exact-match product file:** `Paginotto/partitions.csv`. It is
   board configuration, not an implementation module, and remains explicitly
   attributed to the historical boundary rather than claimed as newly authored.
-- **Asset follow-up:** `default_screensaver.h` is the only standalone embedded
-  product image asset found in the tracked tree. Its artwork provenance still
-  needs a human record before a blanket project license is selected.
+- **Asset classification:** `default_screensaver.h` is the only standalone
+  embedded product image asset found in the tracked tree. It is a Paginotto
+  meme asset and is not treated as third-party artwork. No additional asset
+  provenance action is required for it.
 
 This classification is an engineering/provenance conclusion, not a legal
 opinion. The upstream repository has no standard license in the imported
