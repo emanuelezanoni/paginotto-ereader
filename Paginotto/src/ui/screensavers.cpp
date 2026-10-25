@@ -4,6 +4,7 @@
 
 #include "src/config.h"
 #include "src/hal/display.h"   // gfx
+#include "src/pure/screensaver_policy.h"
 #include "src/state.h"         // FS, prefs
 
 namespace Screensavers {
@@ -74,7 +75,7 @@ static int collectSlots(int outSlots[MAX_SLOTS]) {
 void loadSettings() {
   ensureDir();
   int m = prefs.getInt(kKeyMode, (int)Mode::Single);
-  if (m < 0 || m > 2) m = (int)Mode::Single;
+  if (!ScreensaverPolicy::validMode(m)) m = (int)Mode::Single;
   s_mode = (Mode)m;
   s_cycleIdx  = prefs.getInt(kKeyCycleIdx, 0);
   if (s_cycleIdx < 0) s_cycleIdx = 0;
@@ -143,26 +144,18 @@ bool drawNext() {
   if (count == 0) return false;
 
   int pick = slots[0];
-  if (s_mode == Mode::Shuffle && count > 1) {
-    // Bounded retry to avoid an immediate repeat; if the RNG keeps landing
-    // on the same slot (very rare with count >= 2), the guard prevents an
-    // infinite loop and accepts the repeat after enough tries.
-    int guard = 12;
-    do {
-      pick = slots[(int)(esp_random() % (uint32_t)count)];
-      guard--;
-    } while (pick == s_lastShown && guard > 0);
-  } else if (s_mode == Mode::Shuffle) {
-    pick = slots[0];  // count == 1, no choice
+  if (s_mode == Mode::Shuffle) {
+    const auto decision = ScreensaverPolicy::chooseShuffle(
+        slots, count, s_lastShown, esp_random());
+    pick = decision.slot;
   } else {
-    // Cycle: walk the populated set in order, persisted across deep sleeps
-    // via the cycle-idx pref so the next wake picks up where we left off.
-    int idx = s_cycleIdx;
-    if (idx < 0 || idx >= count) idx = 0;
-    pick = slots[idx];
-    int nextIdx = (idx + 1) % count;
-    s_cycleIdx = nextIdx;
-    prefs.putInt(kKeyCycleIdx, nextIdx);
+    // Cycle walks the populated set in order and persists the cursor across
+    // deep sleeps. Single mode returned above because it uses /sleep.bin.
+    const auto decision = ScreensaverPolicy::chooseCycle(
+        slots, count, s_cycleIdx);
+    pick = decision.slot;
+    s_cycleIdx = decision.nextCycleIndex;
+    prefs.putInt(kKeyCycleIdx, s_cycleIdx);
   }
 
   static uint8_t buf[SCREENSAVER_BYTES];
