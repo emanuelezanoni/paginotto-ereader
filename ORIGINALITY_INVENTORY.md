@@ -113,59 +113,77 @@ details. The suggested action above is provisional until that review is done.
 owned by upstream”. A critical file can still be rewritten without changing
 the product behaviour.
 
-### Critical to the core reader
+The classification below covers every file in the unchanged/high-similarity
+lists above. It answers “what breaks for the user if this file is removed?”
+It does not answer “can this file be licensed?” — provenance review is still
+required for all of them.
 
-- `src/state.h` — central firmware state, filesystem, web server and settings.
-- `src/hal/display.cpp`, `src/hal/display.h` — display and graphics backend.
-- `src/hal/file_stream.h`, `src/pure/stream.h` — book/file streaming.
-- `src/pure/paginator.cpp`, `src/pure/paginator.h` — page layout and pagination.
-- `src/pure/text_util.cpp`, `src/pure/text_util.h` — text normalisation and
-  pagination helpers.
-- `src/pure/library_nav.cpp` — library tree and entry navigation.
-- `src/storage/fs_util.cpp`, `src/storage/fs_util.h` — filesystem operations.
+### Complete classification
+
+#### CORE — reader, persistence and device lifecycle
+
+These are the files that must work for Paginotto to boot, open books, paginate
+them, remember state or keep the display usable:
+
+- `src/state.h` — central state and shared device services.
+- `src/hal/display.cpp`, `src/hal/display.h` — display backend.
+- `src/hal/file_stream.h`, `src/pure/stream.h` — book/file I/O.
+- `src/pure/arduino_compat.h` — shared firmware types and compatibility layer.
+- `src/pure/library_nav.cpp` — library tree/navigation model.
+- `src/pure/paginator.cpp`, `src/pure/paginator.h` — page layout and
+  pagination; **functionally critical**.
+- `src/pure/text_util.cpp`, `src/pure/text_util.h` — text processing used by
+  pagination; **functionally critical**.
+- `src/storage/fs_util.cpp`, `src/storage/fs_util.h` — filesystem access.
 - `src/storage/kv_store.h`, `src/storage/preferences_store.h` — persistent
-  settings storage.
-- `src/storage/library.cpp`, `src/storage/library.h` — book catalogue and
-  library state.
-- `src/ui/screen.h`, `src/ui/screens/library_screen.h` — screen framework and
-  library screen interface.
+  settings and state.
+- `src/storage/library.cpp`, `src/storage/library.h` — catalogue and book
+  management.
+- `src/ui/screen.h` — base screen interface used by the device UI.
+- `src/ui/screens/library_screen.h` — library screen interface.
 - `src/ui/screens/reader_screen.h` — reader screen interface.
+- `Paginotto/partitions.csv` — not runtime logic, but critical for the flash
+  layout and safe firmware/data upgrades.
 
-These files are operationally important, but the simple headers and hardware
-adapters should be reviewed first to determine whether their contents are
-generic/functional or contain copied expressive implementation.
+#### IMPORTANT — useful device services, but not the reading engine
 
-### Critical to connectivity and updates
+The device remains a usable reader without some of these, but loses a major
+operational capability or becomes harder to maintain:
 
-- `src/hal/wifi_provisioning.cpp`, `src/hal/wifi_provisioning.h` — Wi-Fi
-  provisioning.
-- `src/hal/ota.cpp` — firmware update download and installation.
-- `src/ui/sleep.h` — sleep/wake interface; the implementation is also coupled
-  to the board's power behaviour.
+- `src/hal/battery.h` — battery API; the device can read without the battery
+  percentage UI, but power information is degraded.
+- `src/hal/wifi_provisioning.cpp`, `src/hal/wifi_provisioning.h` — Wi-Fi setup.
+- `src/hal/ota.cpp` — remote firmware updates.
+- `src/ui/sleep.h` — sleep/wake contract; important for battery life and wake
+  reliability, though not for pagination.
+- `src/ui/widgets.cpp`, `src/ui/widgets.h` — shared controls and drawing
+  helpers used across the device UI.
+- `src/ui/lock.h` — lock-state interface; important only if the lock feature
+  is retained.
 
-### Critical to the current UI, but not to the reader engine
+#### OPTIONAL — WebUI tools and administrative features
 
-- `src/ui/widgets.cpp`, `src/ui/widgets.h` — shared UI controls and layout.
-- `src/ui/lock.h` — lock-state interface; removable as a feature, but used by
-  the reader UI.
-- `src/ui/screensavers.cpp`, `src/ui/screensavers.h` — screensaver runtime.
-- `src/ui/toast.cpp`, `src/ui/toast.h` — notifications.
+These are not required for local reading with the physical device controls:
+
+- `src/web/web.h` — WebUI framework interface.
+- `src/web/find.h` — browser-side book search.
+- `src/web/reset.h` — browser-side reset action.
+
+The WebUI is valuable, but its removal does not prevent the reader firmware
+from booting and displaying books.
+
+#### COSMETIC — screensavers and feedback
+
+These can be removed without affecting book storage, pagination, reading or
+device boot. They are still worth rewriting because they are the most obvious
+remaining upstream-derived feature:
+
+- `src/ui/screensavers.cpp`, `src/ui/screensavers.h` — device screensaver.
 - `src/web/screensavers.cpp`, `src/web/screensavers.h` — screensaver WebUI.
-- `src/web/find.h`, `src/web/reset.h`, `src/web/web.h` — WebUI route and
-  feature interfaces.
+- `src/ui/toast.cpp`, `src/ui/toast.h` — temporary notifications.
 
-### Important but comparatively easy to replace
-
-- `src/hal/battery.h` — battery API; the current battery implementation is
-  Paginotto-specific, while this header is an inherited interface.
-- `src/pure/arduino_compat.h` — compatibility aliases used throughout the
-  host tests and firmware.
-- `src/ui/screensavers.h`, `src/ui/screen.h` and the small WebUI headers —
-  mostly interfaces, provided their declarations are rewritten where they
-  retain upstream structure.
-- `Paginotto/partitions.csv` — flash layout, not application logic; it must be
-  preserved or deliberately replaced because changing it can invalidate
-  installed data.
+The screensaver rewrite is therefore **low functional risk** and a good first
+rewrite: it gives us a clean provenance win without touching the reader core.
 
 ## External dependencies
 
