@@ -299,9 +299,11 @@ static const char kReadStyle[] PROGMEM =
   ".bv-find-stack{display:grid;gap:8px;min-width:0}"
   ".bv-find-actions button{width:100%;white-space:nowrap}"
   ".bv-search-panel{margin-top:14px}"
-  ".bv-book-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-top:14px}"
-  ".bv-book-heading h2{min-width:0;margin:0;overflow-wrap:anywhere;word-break:break-word}"
-  ".bv-book-heading .bv-edit-link{flex:none;white-space:nowrap}"
+  ".bv-top-actions{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}"
+  ".bv-page-jump .bv-page-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-items:center}"
+  ".bv-page-jump .bv-page-form input{max-width:none}"
+  ".bv-page-jump .bv-page-form button{width:100%}"
+  ".bv-page-jump .bv-page-form .bv-page-hint{grid-column:1/-1}"
   ".bv-find .small{min-height:42px;padding:10px 14px;font-size:14px}"
   "@media(max-width:640px){.bv-search-panel{position:sticky;top:0;z-index:3;padding:8px 0 10px;background:var(--card);border-bottom:1px solid var(--line-soft)}.bv-search-row{display:grid;grid-template-columns:1fr}.bv-search-row input[type=search]{min-width:0}.bv-find-actions{grid-template-columns:repeat(2,minmax(0,1fr))}}"
   "@media(max-width:360px){.bv-find-actions{grid-template-columns:1fr}}"
@@ -451,14 +453,14 @@ static void handleReadView() {
   out += "<div id='bvReady' hidden>";
   out += "<div class='card'>";
   out += "<div id='bvBrowseUi'>";
-  out += "<div class='actions' style='margin-top:0;margin-bottom:14px'>";
+  out += "<div class='actions bv-top-actions' style='margin-top:0;margin-bottom:14px'>";
   out += webBackLink("/books", D_WEB_BACK_TO_BOOKS);
+  out += "<button type='button' class='btn secondary small' id='bvEditBtn'>" D_WEB_READ_EDIT_TEXT "</button>";
   out += "</div>";
 
-  out += "<div class='bv-book-heading'><h2>";
+  out += "<h2>";
   out += htmlEscape(String(g_library.books[id].name));
-  out += "</h2><button type='button' class='btn secondary small bv-edit-link' id='bvEditBtn'>" D_WEB_READ_EDIT_TEXT "</button></div>"
-          "<div class='meta'>";
+  out += "</h2><div class='meta'>";
   out += String((int)g_library.books[id].size);
   out += " " D_WEB_READ_BYTES_LABEL " (";
   out += String((float)g_library.books[id].size / 1000.0f, 1);
@@ -467,12 +469,12 @@ static void handleReadView() {
   out += "</div>";
 
   // Jump-by-page form (uses the existing /jumppage route).
-  out += "<div style='margin-top:14px;border-top:1px solid var(--line-soft);padding-top:12px'>"
-         "<form method='POST' action='/jumppage' class='bv-find'>"
+  out += "<div class='bv-page-jump' style='margin-top:14px;border-top:1px solid var(--line-soft);padding-top:12px'>"
+         "<form method='POST' action='/jumppage' class='bv-find bv-page-form'>"
          "<input type='hidden' name='id' value='" + String(id) + "'>"
-         "<input type='text' name='page' inputmode='numeric' placeholder='" D_WEB_READ_PAGE_PLACEHOLDER "' value='" + String(savedPage) + "' style='max-width:140px'>"
+         "<input type='text' name='page' inputmode='numeric' placeholder='" D_WEB_READ_PAGE_PLACEHOLDER "' value='" + String(savedPage) + "'>"
          "<button type='submit' class='btn small'>" D_WEB_READ_JUMP_PAGE "</button>"
-         "<span class='muted small'>" D_WEB_READ_JUMP_HINT "</span>"
+         "<span class='muted small bv-page-hint'>" D_WEB_READ_JUMP_HINT "</span>"
          "</form></div>";
 
   out += "</div>";
