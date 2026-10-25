@@ -3,6 +3,7 @@
 #include "src/hal/battery.h"
 #include "src/hal/display.h"
 #include "src/ui/font.h"
+#include "src/pure/ui_policy.h"
 
 static const int UI_HEADER_TOP = 6;
 static const int UI_HEADER_GAP = 6;
@@ -120,9 +121,8 @@ void drawScrollableList(int contentTopY, int itemCount, int selectedIndex,
 
   // Center the selected item in the visible window, then clamp at the
   // ends so we don't leave blank rows past the list.
-  int top = selectedIndex - (visibleRows / 2);
-  if (top < 0) top = 0;
-  if (top > itemCount - visibleRows) top = max(0, itemCount - visibleRows);
+  const int top = UiPolicy::listWindowTop(itemCount, selectedIndex,
+                                           visibleRows);
 
   int y = contentTopY;
   int rowsUsed = 0;

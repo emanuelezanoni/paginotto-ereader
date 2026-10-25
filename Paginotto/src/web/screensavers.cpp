@@ -34,6 +34,22 @@ SlotUpload s_up;
 
 }  // namespace
 
+// Arduino String::toInt() returns zero for malformed input. That is unsafe for
+// destructive slot operations because a bad query could accidentally target
+// slot 0. Parse the decimal token explicitly and reject everything else.
+static bool parseSlotArgument(const String& raw, int& slot) {
+  if (raw.length() == 0) return false;
+  int value = 0;
+  for (size_t i = 0; i < raw.length(); ++i) {
+    const char c = raw[i];
+    if (c < '0' || c > '9') return false;
+    value = value * 10 + (c - '0');
+    if (value >= Screensavers::MAX_SLOTS) return false;
+  }
+  slot = value;
+  return true;
+}
+
 void resetScreensaverUpload() {
   if (s_up.tmpFile) s_up.tmpFile.close();
   s_up = SlotUpload{};
@@ -65,8 +81,10 @@ static void handleSleepThumb() {
     }
     if (f) f.close();
   } else if (server.hasArg("slot")) {
-    int slot = server.arg("slot").toInt();
-    gotBytes = Screensavers::readSlot(slot, buf);
+    int slot = -1;
+    if (parseSlotArgument(server.arg("slot"), slot)) {
+      gotBytes = Screensavers::readSlot(slot, buf);
+    }
   }
 
   if (!gotBytes) {
@@ -139,8 +157,8 @@ static void handleSleepDownload() {
     if (f) f.close();
     filename = "sleep.bin";
   } else if (server.hasArg("slot")) {
-    int slot = server.arg("slot").toInt();
-    if (slot >= 0 && slot < Screensavers::MAX_SLOTS) {
+    int slot = -1;
+    if (parseSlotArgument(server.arg("slot"), slot)) {
       gotBytes = Screensavers::readSlot(slot, buf);
       filename = "screensaver-slot-" + String(slot) + ".bin";
     }
@@ -168,8 +186,15 @@ static void handleSleepDelete() {
   if (server.hasArg("single")) {
     if (FS.exists("/sleep.bin")) FS.remove("/sleep.bin");
   } else if (server.hasArg("slot")) {
-    int slot = server.arg("slot").toInt();
+    int slot = -1;
+    if (!parseSlotArgument(server.arg("slot"), slot)) {
+      server.send(400, "text/plain; charset=utf-8", "Invalid slot");
+      return;
+    }
     Screensavers::deleteSlot(slot);
+  } else {
+    server.send(400, "text/plain; charset=utf-8", "Missing target");
+    return;
   }
   server.sendHeader("Location", "/screensavers");
   server.send(302, "text/plain", "");
@@ -213,8 +238,12 @@ static void handleScreensaverUploadStream() {
     if (!s_up.legacy) {
       // No slot arg → auto-pick first free.
       int requested = -1;
-      if (server.hasArg("slot")) requested = server.arg("slot").toInt();
-      if (requested < 0 || requested >= Screensavers::MAX_SLOTS) {
+      if (server.hasArg("slot") &&
+          !parseSlotArgument(server.arg("slot"), requested)) {
+        s_up.error = "Invalid slot";
+        return;
+      }
+      if (!server.hasArg("slot")) {
         requested = Screensavers::firstFreeSlot();
       }
       if (requested < 0) {
@@ -233,7 +262,8 @@ static void handleScreensaverUploadStream() {
   else if (up.status == UPLOAD_FILE_WRITE) {
     if (s_up.error.length() > 0) return;
     if (s_up.tmpFile && up.currentSize > 0) {
-      if (s_up.tmpFile.size() + up.currentSize > 8192) {
+      if (s_up.tmpFile.size() + up.currentSize >
+          (size_t)Screensavers::SCREENSAVER_BYTES) {
         s_up.tmpFile.close();
         if (FS.exists(s_up.tmpPath)) FS.remove(s_up.tmpPath);
         s_up.error = "Image file is too large";

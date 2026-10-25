@@ -31,6 +31,7 @@ set(SUT_SRC
   ${FW_SRC}/pure/device_policy.cpp
   ${FW_SRC}/pure/ota_policy.cpp
   ${FW_SRC}/pure/screensaver_policy.cpp
+  ${FW_SRC}/pure/ui_policy.cpp
   ${FW_SRC}/pure/wifi_credentials.cpp
   ${FW_SRC}/storage/book_metadata.cpp
 )
@@ -55,6 +56,7 @@ set(TEST_SRC
   ${CMAKE_CURRENT_SOURCE_DIR}/test_device_policy.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_ota_policy.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_screensaver_policy.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_ui_policy.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_wifi_credentials.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_stream.cpp
 )

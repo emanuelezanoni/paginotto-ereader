@@ -3,6 +3,7 @@
 #include "src/config.h"        // TOAST_MS, MARGIN_X, SCREEN_H, SCREEN_W, STATUS_H
 #include "src/hal/display.h"   // u8g2 + gfx
 #include "src/ui/font.h"
+#include "src/pure/ui_policy.h"
 
 namespace Toast {
 
@@ -11,7 +12,7 @@ static String   s_msg;
 static uint32_t s_untilMs = 0;  // 0 == not active
 
 static bool isExpired() {
-  return s_untilMs != 0 && (int32_t)(millis() - s_untilMs) > 0;
+  return s_untilMs != 0 && !UiPolicy::deadlineActive(millis(), s_untilMs);
 }
 
 void show(const String& msg) {
