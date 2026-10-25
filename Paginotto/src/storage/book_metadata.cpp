@@ -2,77 +2,112 @@
 
 #include "src/pure/hashing.h"
 
+namespace {
+
+String metadataKey(const String& bookKey, const char* suffix) {
+  return bookKey + suffix;
+}
+
+bool validBookKey(const String& bookKey) {
+  return bookKey.length() > 0;
+}
+
+}  // namespace
+
 // ============================================================================
 //  Testable KV-store-backed API
 // ============================================================================
 int loadSavedPage(KeyValueStore& kv, const String& bookKey) {
-  int p = kv.getInt((bookKey + "_p").c_str(), 0);
+  if (!validBookKey(bookKey)) return 0;
+  int p = kv.getInt(metadataKey(bookKey, "_p").c_str(), 0);
   return (p < 0) ? 0 : p;
 }
 
 void saveSavedPage(KeyValueStore& kv, const String& bookKey, int pageIndex) {
-  kv.putInt((bookKey + "_p").c_str(), pageIndex);
+  if (!validBookKey(bookKey)) return;
+  kv.putInt(metadataKey(bookKey, "_p").c_str(), pageIndex < 0 ? 0 : pageIndex);
 }
 
 uint32_t loadSavedOffset(KeyValueStore& kv, const String& bookKey) {
-  // Stored as int; -1 (default when key absent) sentinels "not set."
-  int v = kv.getInt((bookKey + "_off").c_str(), -1);
+  if (!validBookKey(bookKey)) return kOffsetUnset;
+
+  // New writes use a four-byte blob so the complete uint32_t range survives.
+  // The int fallback keeps offsets written by older firmware readable.
+  const String key = metadataKey(bookKey, "_off");
+  uint32_t offset = 0;
+  if (kv.getBytes(key.c_str(), &offset, sizeof(offset)) == sizeof(offset)) {
+    return offset;
+  }
+  int v = kv.getInt(key.c_str(), -1);
   return (v < 0) ? kOffsetUnset : (uint32_t)v;
 }
 
 void saveSavedOffset(KeyValueStore& kv, const String& bookKey, uint32_t byteOffset) {
-  kv.putInt((bookKey + "_off").c_str(), (int)byteOffset);
+  if (!validBookKey(bookKey)) return;
+  kv.putBytes(metadataKey(bookKey, "_off").c_str(), &byteOffset,
+              sizeof(byteOffset));
 }
 
 String loadSavedAnchor(KeyValueStore& kv, const String& bookKey) {
-  return kv.getString((bookKey + "_anc").c_str(), String());
+  if (!validBookKey(bookKey)) return String();
+  return kv.getString(metadataKey(bookKey, "_anc").c_str(), String());
 }
 
 uint32_t loadSavedAnchorAt(KeyValueStore& kv, const String& bookKey) {
-  int value = kv.getInt((bookKey + "_anc_at").c_str(), -1);
+  if (!validBookKey(bookKey)) return 0U;
+  int value = kv.getInt(metadataKey(bookKey, "_anc_at").c_str(), -1);
   return value < 0 ? 0U : (uint32_t)value;
 }
 
 void saveSavedAnchor(KeyValueStore& kv, const String& bookKey,
                      const String& anchor, uint32_t anchorAt) {
+  if (!validBookKey(bookKey)) return;
+  const String anchorKey = metadataKey(bookKey, "_anc");
+  const String anchorAtKey = metadataKey(bookKey, "_anc_at");
   if (anchor.length() == 0 || anchorAt >= anchor.length()
       || anchor.length() > kBookmarkAnchorMaxBytes) {
-    kv.remove((bookKey + "_anc").c_str());
-    kv.remove((bookKey + "_anc_at").c_str());
+    kv.remove(anchorKey.c_str());
+    kv.remove(anchorAtKey.c_str());
     return;
   }
-  kv.putString((bookKey + "_anc").c_str(), anchor);
-  kv.putInt((bookKey + "_anc_at").c_str(), (int)anchorAt);
+  kv.putString(anchorKey.c_str(), anchor);
+  kv.putInt(anchorAtKey.c_str(), (int)anchorAt);
 }
 
 bool clearBookMetadata(KeyValueStore& kv, const String& bookKey) {
-  kv.remove((bookKey + "_p").c_str());
-  kv.remove((bookKey + "_off").c_str());
-  kv.remove((bookKey + "_anc").c_str());
-  kv.remove((bookKey + "_anc_at").c_str());
+  if (!validBookKey(bookKey)) return false;
+  kv.remove(metadataKey(bookKey, "_p").c_str());
+  kv.remove(metadataKey(bookKey, "_off").c_str());
+  kv.remove(metadataKey(bookKey, "_anc").c_str());
+  kv.remove(metadataKey(bookKey, "_anc_at").c_str());
   return true;
 }
 
 void renameBookMetadata(KeyValueStore& kv, const String& oldKey, const String& newKey) {
-  int progress = kv.getInt((oldKey + "_p").c_str(), -1);
-  if (progress >= 0) {
-    kv.putInt((newKey + "_p").c_str(), progress);
-    kv.remove((oldKey + "_p").c_str());
-  }
+  if (!validBookKey(oldKey) || !validBookKey(newKey) || oldKey == newKey) return;
 
-  int off = kv.getInt((oldKey + "_off").c_str(), -1);
-  if (off >= 0) {
-    kv.putInt((newKey + "_off").c_str(), off);
-    kv.remove((oldKey + "_off").c_str());
+  int progress = kv.getInt(metadataKey(oldKey, "_p").c_str(), -1);
+  if (progress >= 0) {
+    kv.putInt(metadataKey(newKey, "_p").c_str(), progress);
   }
+  kv.remove(metadataKey(oldKey, "_p").c_str());
+
+  const uint32_t offset = loadSavedOffset(kv, oldKey);
+  if (offset != kOffsetUnset) {
+    saveSavedOffset(kv, newKey, offset);
+  }
+  kv.remove(metadataKey(oldKey, "_off").c_str());
 
   String anchor = loadSavedAnchor(kv, oldKey);
-  if (anchor.length() > 0) {
-    saveSavedAnchor(kv, newKey, anchor, loadSavedAnchorAt(kv, oldKey));
-    kv.remove((oldKey + "_anc").c_str());
-    kv.remove((oldKey + "_anc_at").c_str());
+  const uint32_t anchorAt = loadSavedAnchorAt(kv, oldKey);
+  if (anchor.length() > 0 && anchorAt < anchor.length()
+      && anchor.length() <= kBookmarkAnchorMaxBytes) {
+    saveSavedAnchor(kv, newKey, anchor, anchorAt);
   }
-
+  // Remove both keys even when the old anchor was empty or malformed, so
+  // stale partial metadata cannot survive a rename.
+  kv.remove(metadataKey(oldKey, "_anc").c_str());
+  kv.remove(metadataKey(oldKey, "_anc_at").c_str());
 }
 
 #ifdef ARDUINO

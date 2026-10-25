@@ -2,7 +2,10 @@
 #include "pure/stream.h"
 
 TEST_CASE("StringReadStream reads bytes in order and reports EOF") {
-  char raw[] = {'A', (char)0xC3, (char)0xA9};
+  String raw;
+  raw += 'A';
+  raw += (char)0xC3;
+  raw += (char)0xA9;
   StringReadStream stream(raw);
 
   REQUIRE(stream.available());

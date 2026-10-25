@@ -114,6 +114,15 @@ clean provenance decision.
      covered by host tests.
    - [x] LittleFS-backed path compiled successfully for both firmware boards.
 
+   Persistence progress:
+
+   - [x] Existing per-book keys (`_p`, `_off`, `_anc`, `_anc_at`) preserved.
+   - [x] Offset storage now supports the complete `uint32_t` range while
+     retaining a fallback reader for legacy integer values.
+   - [x] Negative pages, empty keys, invalid anchors, self-renames and orphan
+     anchor fields covered by host tests.
+   - [x] Metadata helpers compiled successfully for both firmware boards.
+
 2. **Persistence and library storage**
    - `src/storage/fs_util.cpp`
    - `src/storage/fs_util.h`

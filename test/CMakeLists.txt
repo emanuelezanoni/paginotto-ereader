@@ -32,6 +32,7 @@ set(TEST_SRC
   ${CMAKE_CURRENT_SOURCE_DIR}/test_paginator.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_library_nav.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_library_catalog.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_book_metadata.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_hold_gesture.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_stream.cpp
 )
