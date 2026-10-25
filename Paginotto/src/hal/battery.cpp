@@ -2,6 +2,7 @@
 
 #include "src/hal/display.h" // u8g2 + gfx for the battery icon
 #include "src/ui/font.h"     // role-based font switch (UiSmall for the % text)
+#include "src/pure/device_policy.h"
 
 #if HAS_BATTERY
 
@@ -73,38 +74,6 @@ static float readBatteryVoltageRaw() {
   return v;
 }
 
-static int batteryPercentFromOCV(float v) {
-  struct BatPoint { float v; int pct; };
-  // Typical single-cell LiPo resting-voltage curve. This is deliberately a
-  // coarse estimate: without a coulomb counter it cannot know state of charge
-  // accurately while the ESP32 is under load.
-  static const BatPoint lut[] = {
-    {4.20f, 100}, {4.15f, 95}, {4.10f, 90}, {4.05f, 80},
-    {4.00f, 70},  {3.95f, 60}, {3.90f, 50}, {3.85f, 40},
-    {3.80f, 30},  {3.75f, 20}, {3.70f, 15}, {3.65f, 10},
-    {3.60f, 5},   {3.50f, 2},  {3.30f, 0}
-  };
-
-  if (v >= lut[0].v) return 100;
-  const int n = (int)(sizeof(lut) / sizeof(lut[0]));
-  if (v <= lut[n - 1].v) return 0;
-
-  for (int i = 0; i < n - 1; i++) {
-    float vHi = lut[i].v;
-    float vLo = lut[i + 1].v;
-    int pHi = lut[i].pct;
-    int pLo = lut[i + 1].pct;
-    if (v <= vHi && v >= vLo) {
-      float t = (v - vLo) / (vHi - vLo);
-      int pct = (int)(pLo + t * (float)(pHi - pLo) + 0.5f);
-      if (pct < 0) pct = 0;
-      if (pct > 100) pct = 100;
-      return pct;
-    }
-  }
-  return 0;
-}
-
 void updateBatteryCached(bool force) {
   uint32_t now = millis();
   if (!force && (now - s_battery.lastMs) < BAT_CACHE_MS) return;
@@ -123,24 +92,21 @@ void updateBatteryCached(bool force) {
     s_battery.filteredV = (alpha * raw) + ((1.0f - alpha) * s_battery.filteredV);
   }
   s_battery.filteredV = clampf(s_battery.filteredV, 3.0f, 4.25f);
-  s_battery.pctRaw = batteryPercentFromOCV(s_battery.filteredV);
+  s_battery.pctRaw = batteryPercentFromVoltage(s_battery.filteredV);
 
   if (force) {
     s_battery.pctShown = s_battery.pctRaw;
   } else {
     // Follow real changes within a few refreshes, while still suppressing
     // one-sample jumps caused by Wi-Fi/display load.
-    int delta = s_battery.pctRaw - s_battery.pctShown;
-    if (delta < -3) delta = -3;
-    if (delta > 3) delta = 3;
-    s_battery.pctShown += delta;
+    s_battery.pctShown = slewBatteryPercent(s_battery.pctShown,
+                                            s_battery.pctRaw, 3);
   }
 
   if (s_battery.pctShown < 0) s_battery.pctShown = 0;
   if (s_battery.pctShown > 100) s_battery.pctShown = 100;
 
-  if (!s_battery.low && s_battery.pctShown <= 8) s_battery.low = true;
-  else if (s_battery.low && s_battery.pctShown >= 12) s_battery.low = false;
+  s_battery.low = updateLowBatteryState(s_battery.low, s_battery.pctShown);
 }
 
 void drawBatteryTopRight() {

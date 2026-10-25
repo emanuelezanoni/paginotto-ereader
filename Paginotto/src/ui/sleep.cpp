@@ -14,6 +14,7 @@
 #include "src/ui/lock.h"            // Lock::isLocked — gates the lock badge
 #include "src/ui/screen.h"
 #include "src/ui/screensavers.h"   // multi-slot rotation
+#include "src/pure/device_policy.h"
 
 namespace Sleep {
 
@@ -27,17 +28,13 @@ static constexpr const char* kKeyLockOnSleep   = "cfg_lck_slp";
 
 void loadSettings() {
   int s = prefs.getInt(kKeyIdleSecs, 120);
-  if (s < 10)   s = 10;
-  if (s > 3600) s = 3600;
-  s_idleSecs = s;
+  s_idleSecs = clampIdleTimeoutSeconds(s);
   s_noScreensaver = prefs.getBool(kKeyNoScreensaver, false);
   s_lockOnSleep   = prefs.getBool(kKeyLockOnSleep,   false);
 }
 
 void setIdleTimeout(int secs) {
-  if (secs < 10)   secs = 10;
-  if (secs > 3600) secs = 3600;
-  s_idleSecs = secs;
+  s_idleSecs = clampIdleTimeoutSeconds(secs);
   prefs.putInt(kKeyIdleSecs, s_idleSecs);
 }
 
