@@ -32,7 +32,8 @@ development history.
   `2c82e59e0f6e87afd204606b930f15cf7b5b7b8a`.
 - [x] Exact matches and high-similarity files recorded in
   `ORIGINALITY_INVENTORY.md`.
-- [ ] Manual file-by-file classification completed.
+- [x] Manual file-by-file classification completed in
+  `ORIGINALITY_INVENTORY.md`.
 
 The scan confirms that the screensaver implementation is the main functional
 rewrite target, but also found unchanged or nearly unchanged utility, UI,
@@ -293,11 +294,15 @@ allow the implementation and internal organisation to be Paginotto-specific.
    The screensaver runtime/editor, slot validation, shared widget list policy
    and toast deadline policy were refactored and tested. The generic `screen`
    interface remains an API boundary, not a substantive implementation.
-4. **Final provenance/licensing audit — in progress.** The dependency
-   inventory, `THIRD_PARTY_NOTICES.md`, current-tree rescan and differential
-   compatibility oracle are complete. The default screensaver is recorded as
-   a Paginotto meme asset. Remaining work is the manual review of retained
-   interfaces and the final license scope.
+4. **Final provenance/licensing audit — complete.** The dependency inventory,
+   `THIRD_PARTY_NOTICES.md`, current-tree rescan, manual retained-interface
+   review and differential compatibility oracle are complete. The default
+   screensaver is recorded as a Paginotto meme asset. The audit scope is now
+   explicit: materially rewritten product logic is Paginotto material;
+   generic contracts and compatibility shims are boundary material; historical
+   configuration and third-party dependencies/assets are excluded from a
+   Paginotto-only claim. Choosing and applying the project license remains in
+   the boundary-release phase.
 5. **Boundary and release.** Update `UPSTREAM.md` and README, document the
    exact boundary between inherited history, external material and
    Paginotto-authored code, choose the Paginotto license, run the full matrix,
@@ -355,11 +360,12 @@ remaining provenance work is the global manual inventory and licensing audit.
 
 ### Phase 4 — Provenance and licensing closure
 
-**Status: in progress.** The dependency inventory, QRCode pin,
-`THIRD_PARTY_NOTICES.md`, current exact-match scan and differential oracle are
-complete. The default screensaver is classified as a Paginotto meme asset.
-The final license scope and any remaining manual boundary notes are still
-open.
+**Status: complete.** The dependency inventory, QRCode pin,
+`THIRD_PARTY_NOTICES.md`, current exact-match scan, manual boundary review and
+differential oracle are complete. The default screensaver is classified as a
+Paginotto meme asset. The final scope is documented in
+`ORIGINALITY_INVENTORY.md`; license selection and application are deferred to
+the boundary-release phase.
 
 ### Phase 5 — Boundary release
 
@@ -476,7 +482,7 @@ matrix, and prepare `v2.0.0`.
   configuration or external dependencies.
 - [x] Default screensaver asset classified as a Paginotto meme; dependency
   notices are recorded in `THIRD_PARTY_NOTICES.md`.
-- [ ] Complete license inventory and final Paginotto license scope.
+- [x] Complete license inventory and final Paginotto license scope.
 - [ ] Provenance-boundary commit.
 - [ ] Paginotto license and third-party notices.
 - [ ] Final verification and `v2.0.0` release.
