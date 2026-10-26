@@ -99,6 +99,76 @@ opinion. The upstream repository has no standard license in the imported
 snapshot, so the final Paginotto license must exclude or separately address
 historical material that cannot be cleanly attributed.
 
+### Final manual classification — 2026-10-26
+
+The retained similarity candidates were reviewed against their current role,
+implementation and public contract. No additional rewrite target remains.
+This is an engineering boundary classification, not a copyright opinion.
+
+#### Paginotto-authored or materially rewritten product logic
+
+These files contain current product behaviour, policy, validation, storage or
+UI logic written or materially refactored for Paginotto:
+
+- `src/config.h`, `src/state.cpp`, `src/state.h`;
+- `src/diagnostics/*`, `src/lang/*`;
+- `src/hal/battery.*`, `src/hal/display.*`, `src/hal/file_stream.h`,
+  `src/hal/input.*`, `src/hal/ota.*`, `src/hal/wifi.*`,
+  `src/hal/wifi_provisioning.*`;
+- `src/pure/bionic_text.*`, `button_policy.*`, `device_policy.*`,
+  `library_catalog.*`, `ota_policy.*`, `page_cache_format.*`,
+  `reader_integration.*`, `reader_navigation.*`, `reader_resume.*`,
+  `reader_scan.*`, `screensaver_policy.*`, `ui_policy.*`,
+  `wifi_credentials.*`;
+- `src/pure/library_nav.*`, `paginator.*`, `paths.*`, `text_util.*`;
+- `src/storage/book_metadata.*`, `fs_util.*`, `library.*`, `page_cache.*`,
+  `wifi_creds.*`;
+- `src/ui/font.*`, `lock.*`, `reader.*`, `reader_actions.*`, `text.*`,
+  `sleep.*`, `screensavers.*`, `toast.*`, `widgets.*`,
+  `wifi_network_scanner.*`;
+- `src/ui/screens/*`;
+- `src/web/chrome.*`, `diagnostics.*`, `files.*`, `find.*`, `reset.*`,
+  `screensavers.*`, `settings.*`, `upload.*`, `web.*`, `wifi.*`.
+
+The current implementation of these modules is covered by the rewrite and
+policy commits, host tests where practical, and firmware checks. Similarity
+in a header or adapter does not change this classification when the shape is
+dictated by the hardware or persisted public contract.
+
+#### Generic contracts and compatibility shims retained by design
+
+These files are limited to public contracts, fixed persistence/file formats,
+small generic algorithms or compatibility declarations. They are not treated
+as evidence that the surrounding product implementation is upstream code:
+
+- `src/pure/arduino_compat.h`, `hashing.*`, `hold_gesture.*`, `stream.h`,
+  `page_offset_table.h`;
+- `src/storage/kv_store.h`, `preferences_store.h`;
+- `src/ui/screen.h`, `src/ui/screens/library_screen.h`,
+  `src/ui/screens/reader_screen.h`, `src/ui/sleep.h`, `src/ui/toast.h`,
+  `src/ui/widgets.h`, `src/ui/screensavers.h`;
+- HAL and WebUI headers whose declarations mirror Arduino, ESP32, display,
+  HTTP or filesystem contracts.
+
+These declarations remain boundary material and are not independently claimed
+as expressive Paginotto implementation. Their associated product logic is
+classified in the preceding section.
+
+#### Historical or external material excluded from a Paginotto-only claim
+
+- `Paginotto/partitions.csv` remains the sole current exact match to the
+  imported upstream snapshot and is retained as historical board
+  configuration, not newly authored implementation.
+- `src/ui/default_screensaver.h` is the project meme asset and is classified
+  separately from source code.
+- Arduino-ESP32/ESP-IDF, pioarduino, Heltec, Adafruit GFX, U8g2, Improv WiFi,
+  ArduinoJson and QRCode remain external dependencies covered by
+  `THIRD_PARTY_NOTICES.md`.
+
+With this review, the manual provenance inventory and retained-utility review
+are complete. Remaining work is the licensing scope, boundary documentation
+and release decision; it is not another source rewrite.
+
 ### Hardware boundary audit — block 1A
 
 - `src/hal/display.cpp` and `src/hal/display.h` are **repository adapter

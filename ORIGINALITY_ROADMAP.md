@@ -430,7 +430,9 @@ matrix, and prepare `v2.0.0`.
 - [x] Upstream license/assignment check completed.
 - [x] Initial comparison completed.
 - [x] First-pass automated provenance inventory.
-- [ ] Full manual provenance inventory.
+- [x] Full manual provenance inventory; retained interfaces, adapters,
+  historical configuration and external material were classified manually in
+  `ORIGINALITY_INVENTORY.md`.
 - [x] Paginator characterization and rewrite.
 - [x] Text utility review/rewrite and stricter UTF-8 handling.
 - [x] Library navigation review/rewrite.
@@ -469,7 +471,9 @@ matrix, and prepare `v2.0.0`.
   selection, upload/delete argument validation, atomic image promotion,
   widgets list-window calculation and toast expiry are covered by the current
   implementation and host tests.
-- [ ] Remaining inherited utility review.
+- [x] Remaining inherited utility review; retained candidates are either
+  generic contracts/compatibility shims, product adapters/policy, historical
+  configuration or external dependencies.
 - [x] Default screensaver asset classified as a Paginotto meme; dependency
   notices are recorded in `THIRD_PARTY_NOTICES.md`.
 - [ ] Complete license inventory and final Paginotto license scope.
