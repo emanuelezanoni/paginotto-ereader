@@ -59,7 +59,10 @@ void UploadScreen::draw() {
 
   int y = drawSectionHeader(firmwareMode_ ? D_UPDATE_HEADER : D_UPLOAD_HEADER);
 
-  if (phase_ == Phase::ConnectingSta) {
+  if (phase_ == Phase::Goodbye) {
+    drawCenter("Wi-Fi off.", "Returning to library automatically in 3s.");
+    return;
+  } else if (phase_ == Phase::ConnectingSta) {
     drawStatusLine(y, D_UPLOAD_CONNECTING, true); y += 20;
     Font::useBody(); u8g2.setCursor(MARGIN_X, y); u8g2.print(net_.staSsid.c_str());
   } else if (net_.mode == WifiMode::Station) {
@@ -88,9 +91,6 @@ void UploadScreen::draw() {
       u8g2.print(net_.fallbackUrl.c_str());
     }
     drawConnectionQr(net_.fallbackUrl.length() ? net_.fallbackUrl : net_.primaryUrl, 34);
-  } else if (phase_ == Phase::Goodbye) {
-    drawCenter("Wi-Fi off.", "Returning to library automatically in 3s.");
-    return;
   } else if (!sessionActive_) {
     // Selection screen: no network is active yet. Hotspot details are shown
     // only after the user explicitly selects Hotspot.
