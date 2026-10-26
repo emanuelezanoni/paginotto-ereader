@@ -14,7 +14,7 @@
 #include "src/ui/widgets.h"
 
 static constexpr const char* kKeyOtaChannel = "cfg_ota_channel";
-static constexpr uint32_t kRebootDelayMs = 60UL * 1000UL;
+static constexpr uint32_t kRebootDelayMs = 2UL * 1000UL;
 
 // Static progress callback — called from OTA::download() during the blocking
 // binary stream. Fires g_updateScreen.setProgress() which redraws at 10%.
@@ -161,18 +161,8 @@ void UpdateScreen::draw() {
   if (phase_ == Phase::RebootPrompt) {
     drawStatusLine(y, D_UPDATE_REBOOT_MSG, true);
     y += 15;
-    const uint32_t elapsed = (uint32_t)(millis() - rebootPromptMs_);
-    const uint32_t remaining = elapsed >= kRebootDelayMs
-        ? 0
-        : (kRebootDelayMs - elapsed + 999) / 1000;
-    char countdown[40];
-    snprintf(countdown, sizeof(countdown), "%s: %lus",
-             D_UPDATE_REBOOT_L1, (unsigned long)remaining);
-    drawStatusLine(y, countdown);
     y += 14;
-    drawStatusLine(y, D_UPDATE_REBOOT_L2);
-    y += 14;
-    drawStatusLine(y, D_UPDATE_REBOOT_L3);
+    drawStatusLine(y, D_UPDATE_REBOOT_HINT);
     display.update();
     return;
   }
@@ -230,12 +220,9 @@ void UpdateScreen::onButton(const ButtonEvent& e) {
 
   screenActivityMs_ = millis();
 
-  // The image is already written to the OTA partition. A double-click only
-  // accelerates the inevitable reboot; there is no safe cancellation here.
+  // The image is already written to the OTA partition. There is no action to
+  // confirm or cancel here; the automatic reboot is the only next step.
   if (phase_ == Phase::RebootPrompt) {
-    if (e.kind == ButtonEvent::Double) {
-      esp_restart();
-    }
     return;
   }
 

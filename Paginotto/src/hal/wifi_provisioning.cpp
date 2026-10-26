@@ -23,7 +23,6 @@ struct State {
   bool       credsReceived   = false;
   uint32_t   credsReceivedMs = 0;
   bool       ownsWifi        = false;  // true iff we brought Wi-Fi up to verify creds
-  uint32_t   lastHostByteMs  = 0;      // 0 = no byte ever received this boot
 };
 
 State s_state;
@@ -34,23 +33,7 @@ State s_state;
 // reply itself takes microseconds at 115200 baud; this is just headroom.
 static constexpr uint32_t kShutdownGraceMs = 2000;
 
-// How long after the last byte received from the host we still treat the
-// device as engaged for the sleep gate. Long enough to span a slow user
-// finding their Wi-Fi password in a list and typing it; short enough that a
-// genuinely abandoned session eventually lets the device idle.
-static constexpr uint32_t kHostActivityMs = 5 * 60 * 1000;
 static constexpr uint32_t kConnectTimeoutMs = 15000;
-
-// True while the host has actually sent serial traffic recently. Do not use
-// HWCDC::isPlugged() here: on the Heltec/ESP32-S3 target it can report a
-// connected CDC host when the device is merely powered, and this predicate is
-// used by the main loop as a hard gate for both deep- and light-sleep. A false
-// positive therefore keeps the whole firmware awake for the full five-minute
-// activity window and defeats the configured sleep timeout.
-static bool hostPresent() {
-  return s_state.lastHostByteMs != 0
-      && (uint32_t)(millis() - s_state.lastHostByteMs) < kHostActivityMs;
-}
 
 static void releaseWifi() {
   if (!s_state.ownsWifi) return;
@@ -132,35 +115,22 @@ void notifyUploadSession(bool active) {
 }
 
 bool isActive() {
-  // Stay awake only after actual host traffic. Physical CDC presence is not
-  // reliable enough to gate the battery-saving sleep paths.
-  return hostPresent();
+  // Sleep is blocked only while this adapter actually owns a radio session.
+  // Merely receiving a CDC byte must not pin the device awake for minutes:
+  // the upload screen already owns the radio explicitly, and a provisioning
+  // connection owns it through `ownsWifi`.
+  return s_state.uploadSession || s_state.ownsWifi;
 }
 
 void loop() {
-  // Track bytes from host for the activity-window fallback in hostPresent().
-  // Do this *before* handleSerial drains the buffer so we don't miss the
-  // moment the browser starts talking.
-  if (Serial.available() > 0) {
-    s_state.lastHostByteMs = millis();
-  }
-
-  if (!hostPresent()) {
-    // Host went away (unplug, browser closed the port, etc.). Drop anything
-    // we'd been holding.
-    releaseWifi();
-    clearGraceTimer();
-    s_state.lastHostByteMs = 0;
-    return;
-  }
-
   if (s_state.credsReceived
       && (uint32_t)(millis() - s_state.credsReceivedMs) > kShutdownGraceMs) {
     releaseWifi();
     clearGraceTimer();
-    // Keep listening — host might want to re-provision a different network.
   }
 
+  // Improv is polled continuously; with no incoming bytes this is cheap and
+  // the sleep gate above is controlled by radio ownership, not CDC presence.
   s_state.lib.handleSerial();
 }
 

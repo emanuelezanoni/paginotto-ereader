@@ -52,9 +52,7 @@
 #define D_UPDATE_INSTALLING         "Installing..."
 #define D_UPDATE_DOWNLOAD_FAILED    "Download failed"
 #define D_UPDATE_REBOOT_MSG         "Update installed"
-#define D_UPDATE_REBOOT_L1          "Restarting automatically"
-#define D_UPDATE_REBOOT_L2          "Double-click to restart now"
-#define D_UPDATE_REBOOT_L3          "Update cannot be cancelled"
+#define D_UPDATE_REBOOT_HINT        "Device restarts in 2 seconds"
 
 // ----------------------------------------------------------------------------
 //  Reader (src/ui/reader.cpp)
