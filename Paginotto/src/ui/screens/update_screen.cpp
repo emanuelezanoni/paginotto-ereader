@@ -14,6 +14,7 @@
 #include "src/ui/widgets.h"
 
 static constexpr const char* kKeyOtaChannel = "cfg_ota_channel";
+static constexpr uint32_t kRebootDelayMs = 60UL * 1000UL;
 
 // Static progress callback — called from OTA::download() during the blocking
 // binary stream. Fires g_updateScreen.setProgress() which redraws at 10%.
@@ -114,6 +115,12 @@ void UpdateScreen::checkForUpdates() {
 }
 
 void UpdateScreen::onIdleTick() {
+  if (phase_ == Phase::RebootPrompt) {
+    if ((uint32_t)(millis() - rebootPromptMs_) >= kRebootDelayMs) {
+      esp_restart();
+    }
+    return;
+  }
   if ((uint32_t)(millis() - screenActivityMs_) >= WIFI_SCREEN_INACTIVITY_TIMEOUT_MS) {
     exitToLibrary();
   }
@@ -153,8 +160,19 @@ void UpdateScreen::draw() {
   }
   if (phase_ == Phase::RebootPrompt) {
     drawStatusLine(y, D_UPDATE_REBOOT_MSG, true);
-    y += 18;
-    drawStatusLine(y, D_UPDATE_REBOOT_HINT);
+    y += 15;
+    const uint32_t elapsed = (uint32_t)(millis() - rebootPromptMs_);
+    const uint32_t remaining = elapsed >= kRebootDelayMs
+        ? 0
+        : (kRebootDelayMs - elapsed + 999) / 1000;
+    char countdown[40];
+    snprintf(countdown, sizeof(countdown), "%s: %lus",
+             D_UPDATE_REBOOT_L1, (unsigned long)remaining);
+    drawStatusLine(y, countdown);
+    y += 14;
+    drawStatusLine(y, D_UPDATE_REBOOT_L2);
+    y += 14;
+    drawStatusLine(y, D_UPDATE_REBOOT_L3);
     display.update();
     return;
   }
@@ -212,7 +230,8 @@ void UpdateScreen::onButton(const ButtonEvent& e) {
 
   screenActivityMs_ = millis();
 
-  // Reboot prompt — only 2x is accepted; device has no manual reboot option.
+  // The image is already written to the OTA partition. A double-click only
+  // accelerates the inevitable reboot; there is no safe cancellation here.
   if (phase_ == Phase::RebootPrompt) {
     if (e.kind == ButtonEvent::Double) {
       esp_restart();
@@ -271,6 +290,7 @@ void UpdateScreen::installSelectedUpdate() {
       wifiStarted_ = false;
     }
     phase_ = Phase::RebootPrompt;
+    rebootPromptMs_ = millis();
   } else {
     phase_ = Phase::DownloadFailed;
   }

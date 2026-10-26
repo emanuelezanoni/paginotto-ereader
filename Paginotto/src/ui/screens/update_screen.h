@@ -50,6 +50,7 @@ private:
   bool        stableReachable_ = false;
   bool        devReachable_ = false;
   int         progress_      = 0;
+  uint32_t    rebootPromptMs_ = 0;
   uint32_t    screenActivityMs_ = 0;
 
   void loadChannel();
