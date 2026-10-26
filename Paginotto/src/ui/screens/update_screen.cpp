@@ -279,6 +279,10 @@ void UpdateScreen::installSelectedUpdate() {
       WifiProvisioning::notifyUploadSession(false);
       wifiStarted_ = false;
     }
+    // The previous OTA progress used partial refreshes.  Clear that frame and
+    // force a full panel refresh so the reboot notice cannot be hidden by
+    // stale progress pixels or the next sleep decision.
+    forceNextMenuFrameFull();
     phase_ = Phase::RebootPrompt;
     rebootPromptMs_ = millis();
   } else {
