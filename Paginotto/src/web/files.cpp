@@ -577,7 +577,7 @@ static void handleFiles() {
          "<div class='actions'><button type='submit'>" D_WEB_CREATE_FOLDER_BUTTON "</button><span class='muted'>" D_WEB_CREATE_FOLDER_HINT "</span></div>"
          "</form></div>"
          "<div class='library-tree'>"
-         "<div class='tree-root'><div class='tree-root-header'><div class='tree-label'><span class='tree-mark'>&#9670;</span><span>Library</span></div></div><div class='tree-children'>";
+         "<div class='tree-root'><div class='tree-root-header'><div class='tree-label'><span class='tree-mark tree-library-mark' aria-hidden='true'></span><span>Library</span></div></div><div class='tree-children'>";
   bool rootHasBooks = false;
   for (int i = 0; i < g_library.bookCount; i++) {
     if (g_library.books[i].folder[0] != '\0') continue;
@@ -592,7 +592,7 @@ static void handleFiles() {
   for (int folderIndex = 0; folderIndex < g_library.folderCount; folderIndex++) {
     String folder = String(g_library.folders[folderIndex]);
     if (folder.indexOf('/') >= 0) continue;  // legacy nested paths are not recreated
-    out += "<div class='tree-folder'><div class='tree-folder-header'><div class='tree-label'><span class='tree-mark'>&#128193;</span><span>";
+    out += "<div class='tree-folder'><div class='tree-folder-header'><div class='tree-label'><span class='tree-mark tree-folder-mark' aria-hidden='true'></span><span>";
     out += htmlEscape(folderLeafLabel(folder));
     out += "</span></div><form method='POST' action='/rmdir' style='margin:0'><input type='hidden' name='folder' value='";
     out += htmlEscape(folder);

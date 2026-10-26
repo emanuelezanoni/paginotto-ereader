@@ -292,31 +292,6 @@ static void handleJumpOffset() {
 //  button per match that POSTs the byte offset back to the device.
 // ============================================================================
 
-static const char kReadStyle[] PROGMEM =
-  "<style>"
-  ".bv-find{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px}"
-  ".bv-find input[type=search]{flex:1;min-width:160px}"
-  ".bv-find-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-items:stretch;width:100%}"
-  ".bv-find-stack{display:grid;gap:8px;min-width:0}"
-  ".bv-find-actions button{width:100%;white-space:nowrap}"
-  ".bv-search-panel{margin-top:14px}"
-  ".bv-top-actions{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}"
-  ".bv-page-jump .bv-page-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-items:center}"
-  ".bv-page-jump .bv-page-form input{max-width:none}"
-  ".bv-page-jump .bv-page-form button{width:100%}"
-  ".bv-page-jump .bv-page-form .bv-page-hint{grid-column:1/-1}"
-  ".bv-find .small{min-height:42px;padding:10px 14px;font-size:14px}"
-  "@media(max-width:640px){.bv-search-panel{position:sticky;top:0;z-index:3;padding:8px 0 10px;background:var(--card);border-bottom:1px solid var(--line-soft)}.bv-search-row{display:grid;grid-template-columns:1fr}.bv-search-row input[type=search]{min-width:0}.bv-find-actions{grid-template-columns:repeat(2,minmax(0,1fr))}}"
-  "@media(max-width:360px){.bv-find-actions{grid-template-columns:1fr}}"
-  "@media(max-width:640px){.bv-editor{height:calc(100dvh - 210px);min-height:280px;font-size:16px;line-height:1.5}.bv-edit-actions{position:sticky;bottom:0;z-index:2;padding:10px 0;background:var(--card);border-top:1px solid var(--line-soft)}}"
-  ".bv-status{margin-top:8px;font-size:13px;color:var(--muted)}"
-  ".bv-text{margin-top:14px;max-height:60vh;overflow:auto;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--pre-bg);white-space:pre-wrap;line-height:1.5;font:14px/1.5 system-ui,sans-serif}"
-  ".bv-editor{width:100%;min-height:60vh;max-height:none;margin-top:14px;resize:vertical;overflow:auto;overscroll-behavior:contain;font:14px/1.5 ui-monospace,monospace}"
-  ".bv-edit-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}"
-  ".find-hit{background:#fff4a3;color:#1f2328;padding:0 1px;border-radius:3px}"
-  ".find-cur{background:#ff9c2b;color:#1f2328}"
-  "</style>";
-
 // Embedded JS — loads the book text, builds a match list, scrolls between
 // matches, and POSTs the byte offset of the active match to /jumpoffset.
 //
@@ -449,7 +424,6 @@ static void handleReadView() {
     out += "<div class='banner-warn'>The previous reading position could not be matched after editing; reading position reset to the beginning.</div>";
   }
   out.reserve(out.length() + 6000);
-  out += FPSTR(kReadStyle);
   out += "<div id='bvLoading' class='bv-text'>" D_WEB_READ_LOADING "</div>";
   out += "<div id='bvReady' hidden>";
   out += "<div class='card'>";
