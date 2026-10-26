@@ -41,22 +41,13 @@ static constexpr uint32_t kShutdownGraceMs = 2000;
 static constexpr uint32_t kHostActivityMs = 5 * 60 * 1000;
 static constexpr uint32_t kConnectTimeoutMs = 15000;
 
-// True when we believe a USB host is actively driving our bus. Combines two
-// signals because each fails independently:
-//
-//   * HWCDC::isPlugged() polls for USB SOF packets. When it works, it's
-//     authoritative — false means "no host on this cable". But on at least
-//     one observed pioarduino + Heltec V3 build it returns 0 even while a
-//     browser is plainly reading bytes (CDC link is up, logs are flowing).
-//
-//   * lastHostByteMs being recent means the host sent us a byte recently.
-//     An Improv probe loop or a terminal with a user typing keeps this fresh;
-//     a wall charger or unplugged cable
-//     never bumps it.
-//
-// Trusting either signal individually catches the failure mode of the other.
+// True while the host has actually sent serial traffic recently. Do not use
+// HWCDC::isPlugged() here: on the Heltec/ESP32-S3 target it can report a
+// connected CDC host when the device is merely powered, and this predicate is
+// used by the main loop as a hard gate for both deep- and light-sleep. A false
+// positive therefore keeps the whole firmware awake for the full five-minute
+// activity window and defeats the configured sleep timeout.
 static bool hostPresent() {
-  if (HWCDC::isPlugged()) return true;
   return s_state.lastHostByteMs != 0
       && (uint32_t)(millis() - s_state.lastHostByteMs) < kHostActivityMs;
 }
@@ -141,8 +132,8 @@ void notifyUploadSession(bool active) {
 }
 
 bool isActive() {
-  // Stay awake whenever a USB host is on the bus. Wall chargers and
-  // unplugged cables register as not-plugged, so they don't pin us awake.
+  // Stay awake only after actual host traffic. Physical CDC presence is not
+  // reliable enough to gate the battery-saving sleep paths.
   return hostPresent();
 }
 
