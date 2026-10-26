@@ -57,12 +57,14 @@ static void drawConnectionQr(const String& url, int topY) {
 void UploadScreen::draw() {
   prepareMenuFrame();
 
+  if (phase_ == Phase::Goodbye) {
+    drawCenter(D_UPLOAD_GOODBYE_L1, D_UPLOAD_GOODBYE_L2);
+    return;
+  }
+
   int y = drawSectionHeader(firmwareMode_ ? D_UPDATE_HEADER : D_UPLOAD_HEADER);
 
-  if (phase_ == Phase::Goodbye) {
-    drawCenter("Wi-Fi off.", "Returning to library automatically in 3s.");
-    return;
-  } else if (phase_ == Phase::ConnectingSta) {
+  if (phase_ == Phase::ConnectingSta) {
     drawStatusLine(y, D_UPLOAD_CONNECTING, true); y += 20;
     Font::useBody(); u8g2.setCursor(MARGIN_X, y); u8g2.print(net_.staSsid.c_str());
   } else if (net_.mode == WifiMode::Station) {
@@ -263,6 +265,9 @@ void UploadScreen::requestWebUiExit() {
 void UploadScreen::beginGoodbye() {
   if (phase_ == Phase::Goodbye) return;
   exitRequested_ = false;
+  // Goodbye is a standalone transition screen. Clear the previous WebUI or
+  // library frame so its header cannot ghost through the e-ink message.
+  forceNextMenuFrameFull();
   phase_ = Phase::Goodbye;
   sessionActive_ = false;
   goodbyeStartedMs_ = millis();

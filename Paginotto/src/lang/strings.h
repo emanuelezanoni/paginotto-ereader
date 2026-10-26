@@ -24,6 +24,8 @@
 //  Upload screen (src/ui/screens/upload_screen.cpp)
 // ----------------------------------------------------------------------------
 #define D_UPLOAD_HEADER             "WebUI"
+#define D_UPLOAD_GOODBYE_L1         "WebUI closed."
+#define D_UPLOAD_GOODBYE_L2         "Wi-Fi off. Returning to library in 3s."
 #define D_UPLOAD_WIFI               "Wi-Fi"
 #define D_UPLOAD_PASSWORD           "Password"
 #define D_UPLOAD_OPEN               "Open"
