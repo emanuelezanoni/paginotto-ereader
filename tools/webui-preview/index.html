@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Paginotto WebUI preview</title>
+  <link id="theme" rel="stylesheet" href="style.css">
+  <script>const variant=new URLSearchParams(location.search).get('variant');if(variant==='typewriter')document.getElementById('theme').href='style-typewriter.css';if(variant==='panel')document.getElementById('theme').href='style-panel.css';</script>
+</head>
+<body>
+  <div class="wrap wide">
+    <header class="top">
+      <div class="top-title">
+        <div class="brand">Paginotto</div>
+        <h1>Books</h1>
+        <p class="muted">Pocket e-reader control panel</p>
+      </div>
+      <div class="top-side">
+        <span class="status-chip"><span class="status-dot"></span>Device online</span>
+        <span class="muted">Battery 78%</span>
+        <a class="btn secondary small" href="#">Exit WebUI</a>
+      </div>
+    </header>
+
+    <div class="nav-bar">
+      <nav class="nav" aria-label="Main navigation">
+        <div class="nav-pages">
+          <a class="active" href="#">Books</a>
+          <a href="#screensavers">Screensavers</a>
+          <a href="#settings">Settings</a>
+          <a href="#wifi">Wi-Fi</a>
+          <a href="#diagnostics">Diagnostics</a>
+        </div>
+      </nav>
+    </div>
+
+    <main>
+      <div class="banner-ok">Library synchronized. Changes are saved on the device.</div>
+
+      <section class="card hero-card">
+        <div>
+          <p class="eyebrow">PAGINOTTO / LIBRARY</p>
+          <h2>Your books</h2>
+          <p class="muted">Open a book on the device, or add a new one to your library.</p>
+        </div>
+        <div class="actions hero-actions">
+          <button class="btn" type="button">Upload book</button>
+          <button class="btn secondary" type="button">Refresh library</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-heading"><div><p class="eyebrow">RECENTLY ADDED</p><h2>Library</h2></div><span class="muted">6 books</span></div>
+        <ul class="list book-list">
+          <li class="book-item">
+            <div class="book-row"><div class="book-index">01</div><div class="book-main"><h3 class="book-title">The Left Hand of Darkness</h3><p class="meta">Ursula K. Le Guin · EPUB · 1.4 MB</p><p class="book-note">A groundbreaking work of speculative fiction.</p></div><div class="book-tools"><button class="btn" type="button">Read</button><button class="btn secondary" type="button">Download</button></div></div>
+          </li>
+          <li class="book-item">
+            <div class="book-row"><div class="book-index">02</div><div class="book-main"><h3 class="book-title">Dune</h3><p class="meta">Frank Herbert · EPUB · 2.1 MB</p><p class="book-note">Politics, ecology and destiny on Arrakis.</p></div><div class="book-tools"><button class="btn" type="button">Read</button><button class="btn secondary" type="button">Download</button></div></div>
+          </li>
+          <li class="book-item">
+            <div class="book-row"><div class="book-index">03</div><div class="book-main"><h3 class="book-title">The Martian</h3><p class="meta">Andy Weir · EPUB · 1.6 MB</p><p class="book-note">An engineer, a hostile planet and one very long day.</p></div><div class="book-tools"><button class="btn" type="button">Read</button><button class="btn secondary" type="button">Download</button></div></div>
+          </li>
+        </ul>
+      </section>
+
+      <div class="grid cols-2">
+        <section class="card">
+          <div class="section-heading"><div><p class="eyebrow">STORAGE</p><h2>Device space</h2></div><strong>1.8 / 5.6 GB</strong></div>
+          <div class="bar"><span style="width:32%"></span></div><p class="hint">32% used · 3.8 GB available</p>
+        </section>
+        <section class="card">
+          <div class="section-heading"><div><p class="eyebrow">QUICK SETTINGS</p><h2>Sleep</h2></div><span class="pill">2 minutes</span></div>
+          <p class="muted">The screen saver is enabled. The device sleeps when idle.</p>
+          <div class="actions"><button class="btn secondary" type="button">Open settings</button></div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="footer"><span>Paginotto WebUI</span><span>Connected over Wi-Fi · v1.3.0</span></footer>
+  </div>
+</body>
+</html>

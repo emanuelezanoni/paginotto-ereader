@@ -128,6 +128,32 @@ static const char kStyleCss[] PROGMEM =
   ".book-actions-left .btn,.book-actions-right .btn{white-space:nowrap}"
   "@media(max-width:640px){.row,.book-row{flex-direction:column}.book-tools{align-self:stretch;flex-direction:row;flex-wrap:wrap}.book-actions{align-items:stretch;flex-direction:column}.book-actions-left,.book-actions-right{width:100%}.book-actions-left{display:grid;grid-template-columns:minmax(0,1fr);align-items:stretch}.book-actions-right{display:grid;grid-template-columns:1fr 1fr}.book-actions-right form,.book-actions-right .btn{width:100%}.book-folder-form{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center}.book-folder-form select{min-width:0}.wrap{padding:14px}}"
   "@media(max-width:640px){input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea{font-size:16px!important}}"
+  // Paginotto e-ink editorial/typewriter skin. Keep selectors aligned with
+  // the existing markup so this remains a global, markup-preserving change.
+  ":root{--bg:#f1f0eb;--card:#faf9f4;--line:#262624;--line-soft:#c9c7bd;--text:#1d1d1b;--muted:#696862;--link:#a9402d;--ok:#2d5f49;--okbg:#e4eee8;--warn:#8a5a00;--warnbg:#f5ead2;--danger:#a9402d;--pill-bg:#f1eee6;--pill-fg:#514d45;--pre-bg:#f5f3eb;--stat-bg:#faf9f4;--bar-bg:#deddd5;--bar-bd:#262624;--bar-fill:#b7462f;--ban-ok-bd:#9bb8a7;--ban-warn-bd:#c5a76a;--btn-bg:#222220;--btn-fg:#fff;--btn-sec-bg:transparent;--btn-sec-fg:#1d1d1b;--btn-sec-bd:#a9aaa2;--inp-bd:#8f918b;--inp-bg:#faf9f4}"
+  "body{background:var(--bg);color:var(--text);font:15px/1.5 'Courier New',Courier,monospace;letter-spacing:-.015em}"
+  ".wrap{max-width:820px;padding:28px 24px 42px}.wrap.wide{max-width:1020px}"
+  ".top{gap:24px;margin-bottom:0;padding:20px 0 18px;border-bottom:2px solid var(--line)}"
+  ".brand{font:700 36px/.95 Georgia,'Times New Roman',serif;letter-spacing:.02em;color:var(--text);text-transform:uppercase}"
+  ".top h1,.card h2,.book-title{font-family:Georgia,'Times New Roman',serif;letter-spacing:-.02em}"
+  ".top h1{font-size:27px;text-transform:uppercase}.top a,.link{color:var(--link)}"
+  ".top-side{gap:10px}.muted,.meta,.hint{font-family:'Courier New',Courier,monospace;color:var(--muted);font-size:12px}"
+  ".nav-bar{margin:0 0 18px;padding:13px 0;border-bottom:1px solid var(--line-soft)}"
+  ".nav-pages{gap:13px 26px}.nav a{color:var(--text);font:600 12px 'Courier New',Courier,monospace;text-transform:uppercase;letter-spacing:.04em}.nav a.active{color:var(--link);text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:6px}"
+  ".card{background:var(--card);border:1px solid var(--line);border-radius:0;padding:19px 20px;margin-bottom:16px;box-shadow:none}"
+  ".book-list{gap:0}.book-list li.book-item{padding:17px 0;border:0;border-top:1px solid var(--line-soft);border-radius:0;background:transparent}.book-list li.book-item:first-child{padding-top:17px;border-top:0}"
+  ".book-title{color:var(--text);font-weight:700;font-size:20px}.book-actions{border-top:1px solid var(--line-soft)}"
+  ".tree-root,.tree-folder,.stat,.review-summary,.wifi-scan-item{border-radius:0;background:var(--stat-bg)}"
+  ".pill{border:1px solid var(--line-soft);border-radius:0;background:transparent;padding:5px 8px}"
+  ".pre{border-radius:0;background:var(--pre-bg)}"
+  ".banner-ok,.banner-warn{border-radius:0;padding:12px 14px}.banner-ok{border-left:4px solid var(--ok)}.banner-warn{border-left:4px solid var(--warn)}"
+  ".bar{height:13px;border-radius:0;background:var(--bar-bg);border:1px solid var(--bar-bd)}"
+  ".status{border-radius:0}.review-check{border-radius:0}.review-head{border-bottom:1px solid var(--line-soft)}"
+  "button,.btn{border-radius:0;background:var(--btn-bg);color:var(--btn-fg);font:600 12px 'Courier New',Courier,monospace;text-transform:uppercase;letter-spacing:.025em}"
+  ".btn.secondary{background:transparent;color:var(--btn-sec-fg);border:1px solid var(--btn-sec-bd)}"
+  "input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea{border-radius:0;background:var(--inp-bg);font-family:'Courier New',Courier,monospace}"
+  ".operation-overlay{background:rgba(29,29,27,.42)}.operation-dialog{border-radius:0;box-shadow:3px 3px 0 rgba(29,29,27,.18)}"
+  "@media(max-width:640px){.wrap{padding:16px 12px 28px}.top{padding-top:12px}.nav-pages{gap:13px 18px}}"
   ;
 
 static void handleStyleCss() {
@@ -151,7 +177,7 @@ String webPageStart(const String& title, const String& subtitle,
   out = "<!doctype html><html><head><meta charset='utf-8'>"
         "<meta name='viewport' content='width=device-width,initial-scale=1'>"
         "<meta name='color-scheme' content='light'>"
-        "<link rel='stylesheet' href='/style.css?v=9'>";
+        "<link rel='stylesheet' href='/style.css?v=10'>";
   out += "<title>";
   out += title;
   out += "</title></head><body><div class='wrap";
