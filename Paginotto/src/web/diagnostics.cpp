@@ -25,9 +25,9 @@ void handleDiagnostics() {
          "reset/error stage, free heap and Wi-Fi status; "
          "credentials and download URLs are not stored.</p>"
          "<div class='actions'><a class='btn secondary' href='/diagnostics.txt'>Download log</a>"
-         "<form method='POST' action='/diagnostics/clear' style='display:inline'>"
+         "<form method='POST' action='/diagnostics/clear' class='inline-form'>"
          "<button type='submit'>Clear log</button></form></div>"
-         "<pre style='white-space:pre-wrap;overflow:auto;max-height:60vh'>";
+         "<pre class='pre-wrap'>";
   out += htmlEscape(diagnosticsText());
   out += "</pre></div>";
   out += webPageEnd();

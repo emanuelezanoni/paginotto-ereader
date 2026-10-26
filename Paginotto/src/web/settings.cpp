@@ -79,7 +79,7 @@ static void handleSettings() {
          D_WEB_FIRMWARE_LABEL " " FW_VERSION "</p></div>";
 
   out += "<div class='card'><h2>" D_WEB_SLEEP_HEADING "</h2>"
-         "<form method='POST' action='/settings' class='stack' style='margin-top:12px'>"
+         "<form method='POST' action='/settings' class='stack mt-12'>"
          "<div class='grid cols-2'>"
          "<div><label for='sleep'>" D_WEB_SLEEP_AFTER_LABEL "</label><select id='sleep' name='sleep'>"
          "<option value='30'";   out += ss30;   out += ">" D_WEB_SLEEP_30S "</option>"
@@ -89,23 +89,23 @@ static void handleSettings() {
          "<option value='600'";  out += ss600;  out += ">" D_WEB_SLEEP_10M "</option>"
          "<option value='1800'"; out += ss1800; out += ">" D_WEB_SLEEP_30M "</option>"
          "</select><div class='hint'>" D_WEB_SLEEP_HINT "</div></div></div>"
-         "<label style='display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer'>"
-         "<input type='checkbox' name='noscr' style='width:auto'";
+         "<label class='inline-check-label'>"
+         "<input type='checkbox' name='noscr' class='checkbox-input'";
   if (Sleep::noScreensaver()) out += " checked";
   out += "><span>" D_WEB_NO_SCREENSAVER_LABEL "</span></label>"
          "<div class='hint'>" D_WEB_NO_SCREENSAVER_HINT "</div>"
-         "<label style='display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer'>"
-         "<input type='checkbox' name='lckslp' style='width:auto'";
+         "<label class='inline-check-label'>"
+         "<input type='checkbox' name='lckslp' class='checkbox-input'";
   if (Sleep::lockOnSleep()) out += " checked";
   out += "><span>" D_WEB_LOCK_ON_SLEEP_LABEL "</span></label>"
          "<div class='hint'>" D_WEB_LOCK_ON_SLEEP_HINT "</div>"
-         "<div class='actions' style='margin-top:24px'><button type='submit'>" D_WEB_SAVE_SLEEP_BUTTON "</button></div>"
+         "<div class='actions mt-24'><button type='submit'>" D_WEB_SAVE_SLEEP_BUTTON "</button></div>"
          "</form></div>";
 
   out +=
     "<div class='card'><h2>" D_WEB_READING_HEADING "</h2>"
     "<p class='muted'>" D_WEB_READING_INTRO "</p>"
-    "<form method='POST' action='/settings' accept-charset='UTF-8' style='margin-top:12px'>"
+    "<form method='POST' action='/settings' accept-charset='UTF-8' class='mt-12'>"
     "<div class='grid cols-2'>"
     "<div><label for='font'>" D_WEB_FONT_SIZE_LABEL "</label><select id='font' name='font'>"
     "<option value='8'";  out += sel8;  out += ">" D_WEB_FONT_SIZE_8  "</option>"
@@ -119,11 +119,11 @@ static void handleSettings() {
     "<option value='2'"; out += lg2; out += ">" D_WEB_LINE_SPACING_2 "</option>"
     "<option value='3'"; out += lg3; out += ">" D_WEB_LINE_SPACING_3 "</option>"
     "</select><div class='hint'>" D_WEB_LINE_SPACING_HINT "</div></div>"
-    "<div class='full' style='grid-column:1/-1'><label style='display:flex;gap:10px;align-items:center;font-weight:600'>"
+    "<div class='full'><label class='inline-check-label light'>"
     "<input type='checkbox' name='bionic' value='1'"; out += bChecked; out += "><span>" D_WEB_BIONIC_LABEL "</span></label>"
     "<div class='hint'>" D_WEB_BIONIC_HINT "</div></div>"
     "</div>"
-    "<div class='actions' style='margin-top:24px'><button type='submit'>" D_WEB_SAVE_SETTINGS_BUTTON "</button>"
+    "<div class='actions mt-24'><button type='submit'>" D_WEB_SAVE_SETTINGS_BUTTON "</button>"
     "<span class='muted'>" D_WEB_SETTINGS_APPLY_HINT "</span></div>"
     "</form></div>";
 
@@ -134,13 +134,13 @@ static void handleSettings() {
   out += "<form method='POST' action='/settings' accept-charset='UTF-8'><div class='grid cols-2'>";
   appendActionSelect(out, "btnH", D_WEB_BUTTONS_HOLD, (int)Gestures::actionHold());
   appendActionSelect(out, "btnCH", D_WEB_BUTTONS_CLICK_HOLD, (int)Gestures::actionClickHold());
-  out += "</div><div class='actions' style='margin-top:24px'><button type='submit'>" D_WEB_BUTTONS_SAVE "</button>";
+  out += "</div><div class='actions mt-24'><button type='submit'>" D_WEB_BUTTONS_SAVE "</button>";
   out += "<span class='muted'>" D_WEB_BUTTONS_LOCK_HINT "</span>";
   out += "</div></form></div>";
 
   out += "<div class='card'><h2>" D_WEB_RESET_HEADING "</h2>"
          "<p class='muted'>" D_WEB_RESET_SUBTITLE "</p>"
-         "<form method='POST' action='/settings/reset' style='margin-top:14px'>"
+         "<form method='POST' action='/settings/reset' class='mt-14'>"
          "<button class='danger' type='submit' onclick=\"return confirm('" D_WEB_RESET_CONFIRM_MESSAGE "')\">" D_WEB_RESET_YES_BUTTON "</button>"
          "</form></div>";
 

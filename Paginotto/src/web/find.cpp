@@ -428,7 +428,7 @@ static void handleReadView() {
   out += "<div id='bvReady' hidden>";
   out += "<div class='card'>";
   out += "<div id='bvBrowseUi'>";
-  out += "<div class='actions bv-top-actions' style='margin-top:0;margin-bottom:14px'>";
+  out += "<div class='actions bv-top-actions compact'>";
   out += webBackLink("/books", D_WEB_BACK_TO_BOOKS);
   out += "<button type='button' class='btn secondary small' id='bvEditBtn'>" D_WEB_READ_EDIT_TEXT "</button>";
   out += "</div>";
@@ -444,7 +444,7 @@ static void handleReadView() {
   out += "</div>";
 
   // Jump-by-page form (uses the existing /jumppage route).
-  out += "<div class='bv-page-jump' style='margin-top:14px;border-top:1px solid var(--line-soft);padding-top:12px'>"
+  out += "<div class='bv-page-jump compact'>"
          "<form method='POST' action='/jumppage' class='bv-find bv-page-form'>"
          "<input type='hidden' name='id' value='" + String(id) + "'>"
          "<input type='text' name='page' inputmode='numeric' placeholder='" D_WEB_READ_PAGE_PLACEHOLDER "' value='" + String(savedPage) + "'>"

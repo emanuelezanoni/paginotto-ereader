@@ -104,7 +104,7 @@ static void handleWifi() {
   if (msg.length()) out += "<div class='banner-ok'>" + msg + "</div>";
 
   out += "<div class='card'><h2>Device hotspot</h2><p class='muted'>Used for WebUI. Password is hidden until changed.</p>"
-         "<form method='POST' action='/wifi/hotspot' class='stack' style='margin-top:12px'>"
+         "<form method='POST' action='/wifi/hotspot' class='stack mt-12'>"
          "<div><label for='apssid'>Hotspot name</label><input id='apssid' name='ssid' maxlength='32' value='" + htmlEscape(hotspotSsid()) + "' required></div>"
          "<div><label for='appass'>Hotspot password</label><input id='appass' type='password' name='pass' minlength='8' maxlength='63' placeholder='Leave unchanged'></div>"
          "<div class='hint'>8–63 characters. Changing network settings may disconnect this browser.</div>"
@@ -123,7 +123,7 @@ static void handleWifi() {
     out += "</ul>";
   }
   out += "</div><div class='card'><h2>Nearby networks</h2>"
-         "<form method='POST' action='/wifi/add' class='stack' style='margin-top:12px'>"
+         "<form method='POST' action='/wifi/add' class='stack mt-12'>"
          "<div><label for='ssid'>Network name (SSID)</label><select id='ssid' name='ssid'><option value=''>Loading nearby networks…</option></select></div>"
          "<div id='wifi-scan-status' class='status idle'>Searching for nearby networks…</div>"
          "<div class='hint'>Only networks found nearby can be selected and tested.</div>"
@@ -139,7 +139,7 @@ static void handleWifi() {
          "}catch(e){st.textContent='Network scan unavailable. Try again.';st.className='status idle';}}poll();})();</script></div>"
          "<div class='card'><h2>Add network manually</h2>"
          "<p class='muted'>Use this for hidden networks or a phone hotspot. The connection is not tested now.</p>"
-         "<form method='POST' action='/wifi/add-manual' class='stack' style='margin-top:12px'>"
+         "<form method='POST' action='/wifi/add-manual' class='stack mt-12'>"
          "<div><label for='manual-ssid'>Network name (SSID)</label><input id='manual-ssid' name='ssid' maxlength='32' required></div>"
          "<div><label for='manual-pass'>Network password</label><input id='manual-pass' type='password' name='pass' maxlength='63'></div>"
          "<div class='actions'><button type='submit'>Save network</button></div></form></div>";

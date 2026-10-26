@@ -399,9 +399,9 @@ static String screensaverActionsHtml(bool single, int slot, bool populated) {
   // file picker; onchange auto-submits the form to the existing upload route.
   String uploadUrl = String("/screensavers/upload?") +
                      (single ? "single=1" : "slot=" + String(slot));
-  out += "<form method='POST' action='" + uploadUrl + "' enctype='multipart/form-data' style='margin:0'>";
+  out += "<form method='POST' action='" + uploadUrl + "' enctype='multipart/form-data' class='no-margin'>";
   out += "<label class='btn-icon' title='" D_WEB_SS_UPLOAD_ARIA "' aria-label='" D_WEB_SS_UPLOAD_ARIA "'>";
-  out += "<input type='file' name='file' accept='.bin' style='display:none' onchange='this.form.submit()'>";
+    out += "<input type='file' name='file' accept='.bin' class='hidden-file-input' onchange='this.form.submit()'>";
   out += FPSTR(kIconUpload);
   out += "</label></form>";
 
@@ -412,7 +412,7 @@ static String screensaverActionsHtml(bool single, int slot, bool populated) {
     out += "' download title='" D_WEB_SS_DOWNLOAD_ARIA "' aria-label='" D_WEB_SS_DOWNLOAD_ARIA "'>";
     out += FPSTR(kIconDownload);
     out += "</a>";
-    out += "<form method='POST' action='/screensavers/delete' style='margin:0'>";
+    out += "<form method='POST' action='/screensavers/delete' class='no-margin'>";
     if (single) {
       out += "<input type='hidden' name='single' value='1'>";
       out += "<button type='submit' class='btn-icon danger' title='" D_WEB_SS_DELETE_ARIA "' "
@@ -471,7 +471,7 @@ static String editorCardHtml(int nextFreeSlot) {
          "<div class='full'><div class='ss-label-row'><label for='ssTolerance'>" D_WEB_SS_TOLERANCE "</label>"
          "<span class='ss-value' id='ssToleranceLabel'>0%</span></div>"
          "<input id='ssTolerance' type='range' min='-100' max='100' value='0'></div>"
-         "<div class='full'><label style='display:flex;gap:10px;align-items:center;font-weight:500'>"
+         "<div class='full'><label class='inline-check-label light'>"
          "<input id='ssInvert' type='checkbox'><span>" D_WEB_SS_INVERT "</span></label></div>"
          "<div class='full'><details class='ss-adv'><summary>" D_WEB_SS_PRECISE_CONTROL "</summary><div class='ss-adv-body ss-grid'>"
          "<div><div class='ss-label-row'><label for='ssZoom'>" D_WEB_SS_ZOOM "</label><span class='ss-value' id='ssZoomLabel'>100%</span></div>"
@@ -536,7 +536,7 @@ static void handleSleepEditorPage() {
   // Mode picker.
   out += "<div class='card'><h2>" D_WEB_SS_ROTATION_HEADING "</h2>"
          "<p class='muted'>" D_WEB_SS_ROTATION_INTRO "</p>"
-         "<form method='POST' action='/screensavers/mode' class='stack' style='margin-top:12px'>"
+         "<form method='POST' action='/screensavers/mode' class='stack mt-12'>"
          "<div class='grid cols-2'>"
          "<div><label for='ssMode'>" D_WEB_SS_MODE_LABEL "</label><select id='ssMode' name='mode'>"
          "<option value='single'";  out += selSingle;  out += ">" D_WEB_SS_MODE_SINGLE  "</option>"
@@ -558,9 +558,9 @@ static void handleSleepEditorPage() {
   // Legacy single image card.
   out += "<div class='card'><h2>" D_WEB_SS_SINGLE_HEADING "</h2>";
   if (hasLegacy) {
-    out += "<div class='row' style='align-items:center;gap:12px'>"
+    out += "<div class='row centered'>"
            "<img src='/screensavers/thumb?single=1' alt='" D_WEB_SS_SINGLE_ALT "' "
-           "style='width:180px;border:1px solid var(--line);background:#fff;image-rendering:pixelated'>";
+           "class='ss-thumb'>";
     out += screensaverActionsHtml(true, -1, true);
     out += "</div>";
   } else {

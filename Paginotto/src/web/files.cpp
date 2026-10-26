@@ -534,7 +534,7 @@ static void handleFiles() {
     out += "<p class='muted'>" D_WEB_ONLINE_LIBRARY_MISSING "</p>";
   }
   out += "<label for='bookUrl'>" D_WEB_EPUB_URL_LABEL "</label>"
-         "<input id='bookUrl' type='url' inputmode='url' size='80' style='width:100%' placeholder='" D_WEB_EPUB_URL_PLACEHOLDER "' autocomplete='url' spellcheck='false'>"
+         "<input id='bookUrl' type='url' inputmode='url' size='80' class='input-full' placeholder='" D_WEB_EPUB_URL_PLACEHOLDER "' autocomplete='url' spellcheck='false'>"
          "<div class='actions'><button id='bookUrlButton' type='button'";
   if (WiFi.status() != WL_CONNECTED) {
     out += " disabled";
@@ -548,7 +548,7 @@ static void handleFiles() {
   out +=
     "<div class='card'><h2>" D_WEB_UPLOAD_BOOK_HEADING "</h2>"
     "<p class='muted'>" D_WEB_UPLOAD_BOOK_DESC "</p>"
-    "<form id='bookUpload' method='POST' action='/upload' enctype='multipart/form-data' accept-charset='UTF-8' style='margin-top:14px'>"
+    "<form id='bookUpload' method='POST' action='/upload' enctype='multipart/form-data' accept-charset='UTF-8' class='mt-14'>"
     "<input id='bookFile' type='file' name='file' accept='.txt,text/plain,.epub,application/epub+zip'>"
     "<div class='actions'><button id='bookUploadButton' type='submit'>" D_WEB_UPLOAD_BOOK_BUTTON "</button></div>"
     "</form></div>";
@@ -571,7 +571,7 @@ static void handleFiles() {
   // Library -> folder -> book, while keeping all actions in the book card.
   out += "<div class='card'><h2>" D_WEB_FOLDERS_HEADING "</h2>"
          "<div class='tree-create'><h3>" D_WEB_CREATE_FOLDER_HEADING "</h3>"
-         "<form method='POST' action='/mkdir' class='stack' accept-charset='UTF-8' style='margin-top:12px'>"
+         "<form method='POST' action='/mkdir' class='stack mt-12' accept-charset='UTF-8'>"
          "<input id='folderName' type='text' name='folder' placeholder='" D_WEB_CREATE_FOLDER_PLACEHOLDER "' maxlength='24' oninput=\"document.getElementById('folderNameCount').textContent=this.value.length\">"
          "<div class='hint'><span id='folderNameCount'>0</span>/24" D_WEB_FOLDER_NAME_COUNTER ".</div>"
          "<div class='actions'><button type='submit'>" D_WEB_CREATE_FOLDER_BUTTON "</button><span class='muted'>" D_WEB_CREATE_FOLDER_HINT "</span></div>"
@@ -594,7 +594,7 @@ static void handleFiles() {
     if (folder.indexOf('/') >= 0) continue;  // legacy nested paths are not recreated
     out += "<div class='tree-folder'><div class='tree-folder-header'><div class='tree-label'><span class='tree-mark tree-folder-mark' aria-hidden='true'></span><span>";
     out += htmlEscape(folderLeafLabel(folder));
-    out += "</span></div><form method='POST' action='/rmdir' style='margin:0'><input type='hidden' name='folder' value='";
+    out += "</span></div><form method='POST' action='/rmdir' class='no-margin'><input type='hidden' name='folder' value='";
     out += htmlEscape(folder);
     out += "'><button type='submit' class='btn danger' onclick=\"return confirm('" D_WEB_CONFIRM_DELETE_FOLDER "')\">" D_WEB_DELETE_BUTTON "</button></form></div><div class='tree-children'>";
     bool folderHasBooks = false;
@@ -616,8 +616,8 @@ static void handleFiles() {
   out += "</div></div>";
 
   out += "<div class='card'><h2>" D_WEB_LIBRARY_BOOKS_HEADING "</h2>";
-  if (g_library.bookCount   >= MAX_BOOKS)   out += "<p style='color:#b91c1c;font-weight:600'>" D_WEB_LIBRARY_FULL_WARN "</p>";
-  if (g_library.folderCount >= MAX_FOLDERS) out += "<p style='color:#b91c1c;font-weight:600'>" D_WEB_FOLDER_LIMIT_WARN "</p>";
+  if (g_library.bookCount   >= MAX_BOOKS)   out += "<p class='danger-text'>" D_WEB_LIBRARY_FULL_WARN "</p>";
+  if (g_library.folderCount >= MAX_FOLDERS) out += "<p class='danger-text'>" D_WEB_FOLDER_LIMIT_WARN "</p>";
 
   if (g_library.bookCount == 0) {
     out += "<p class='muted'>" D_WEB_NO_BOOKS_UPLOADED "</p>";
@@ -672,7 +672,7 @@ static void handleFiles() {
       }
       out += "</select><button type='submit' class='btn secondary'>Move</button></form></div>";
       out += "<div class='book-actions-right'><a class='btn secondary' href='/download-book?id=" + String(i) + "' download>" D_WEB_DOWNLOAD_BUTTON "</a>";
-      out += "<form method='POST' action='/del' style='margin:0'><input type='hidden' name='id' value='" + String(i) + "'>";
+      out += "<form method='POST' action='/del' class='no-margin'><input type='hidden' name='id' value='" + String(i) + "'>";
       out += "<button type='submit' class='btn danger' onclick=\"return confirm('" D_WEB_CONFIRM_DELETE_FILE "')\">" D_WEB_DELETE_BUTTON "</button></form></div></div></li>";
     }
     out += "</ul>";
