@@ -14,7 +14,10 @@ public:
 
   // Block sleep only while the Wi-Fi session is active; once wifiEnd() is
   // called (after flash or on exit) the device may sleep normally.
-  bool allowSleep() const override { return !wifiStarted_; }
+  bool allowSleep() const override {
+    // Keep the device awake long enough to render the post-OTA reboot notice.
+    return !wifiStarted_ && phase_ != Phase::RebootPrompt;
+  }
 
   // Called from the OTA progress callback during the blocking download.
   // Redraws at every 10 % to limit e-ink refresh overhead.
