@@ -14,7 +14,7 @@
 #include "src/ui/widgets.h"
 
 static constexpr const char* kKeyOtaChannel = "cfg_ota_channel";
-static constexpr uint32_t kRebootDelayMs = 2UL * 1000UL;
+static constexpr uint32_t kRebootDelayMs = 3UL * 1000UL;
 
 // Static progress callback — called from OTA::download() during the blocking
 // binary stream. Fires g_updateScreen.setProgress() which redraws at 10%.

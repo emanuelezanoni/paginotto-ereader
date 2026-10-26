@@ -89,7 +89,7 @@ void UploadScreen::draw() {
     }
     drawConnectionQr(net_.fallbackUrl.length() ? net_.fallbackUrl : net_.primaryUrl, 34);
   } else if (phase_ == Phase::Goodbye) {
-    drawCenter("Paginotto is taking a page break.", "Wi-Fi off. See you soon.");
+    drawCenter("Wi-Fi off.", "Returning to library automatically in 3s.");
     return;
   } else if (!sessionActive_) {
     // Selection screen: no network is active yet. Hotspot details are shown
@@ -319,7 +319,7 @@ void UploadScreen::onIdleTick() {
     return;
   }
   if (phase_ == Phase::Goodbye) {
-    if ((uint32_t)(millis() - goodbyeStartedMs_) >= 1200) stopSessionToLibrary();
+    if ((uint32_t)(millis() - goodbyeStartedMs_) >= 3000) stopSessionToLibrary();
     return;
   }
   if (!sessionActive_
