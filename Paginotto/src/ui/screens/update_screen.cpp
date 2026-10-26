@@ -159,6 +159,9 @@ void UpdateScreen::draw() {
     return;
   }
   if (phase_ == Phase::RebootPrompt) {
+    // The prompt follows a fast-mode download progress refresh. Force a
+    // complete panel update so the reboot notice is actually visible.
+    display.fastmodeOff();
     drawStatusLine(y, D_UPDATE_REBOOT_MSG, true);
     y += 15;
     y += 14;
