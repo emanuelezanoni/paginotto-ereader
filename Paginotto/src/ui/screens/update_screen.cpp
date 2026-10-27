@@ -14,7 +14,6 @@
 #include "src/ui/widgets.h"
 
 static constexpr const char* kKeyOtaChannel = "cfg_ota_channel";
-static constexpr uint32_t kRebootDelayMs = 3UL * 1000UL;
 
 // Static progress callback — called from OTA::download() during the blocking
 // binary stream. Fires g_updateScreen.setProgress() which redraws at 10%.
@@ -115,12 +114,6 @@ void UpdateScreen::checkForUpdates() {
 }
 
 void UpdateScreen::onIdleTick() {
-  if (phase_ == Phase::RebootPrompt) {
-    if ((uint32_t)(millis() - rebootPromptMs_) >= kRebootDelayMs) {
-      esp_restart();
-    }
-    return;
-  }
   if ((uint32_t)(millis() - screenActivityMs_) >= WIFI_SCREEN_INACTIVITY_TIMEOUT_MS) {
     exitToLibrary();
   }
@@ -158,18 +151,6 @@ void UpdateScreen::draw() {
     display.update();
     return;
   }
-  if (phase_ == Phase::RebootPrompt) {
-    // The prompt follows a fast-mode download progress refresh. Force a
-    // complete panel update so the reboot notice is actually visible.
-    display.fastmodeOff();
-    drawStatusLine(y, D_UPDATE_REBOOT_MSG, true);
-    y += 15;
-    y += 14;
-    drawStatusLine(y, D_UPDATE_REBOOT_HINT);
-    display.update();
-    return;
-  }
-
   // ---- Full UI (Idle, ServerFail, UpToDate, UpdateAvailable, DownloadFailed)
 
   if (focusItem_ >= 2) focusItem_ = 0;
@@ -223,12 +204,6 @@ void UpdateScreen::onButton(const ButtonEvent& e) {
 
   screenActivityMs_ = millis();
 
-  // The image is already written to the OTA partition. There is no action to
-  // confirm or cancel here; the automatic reboot is the only next step.
-  if (phase_ == Phase::RebootPrompt) {
-    return;
-  }
-
   if (e.kind == ButtonEvent::Triple) {
     exitToLibrary();
     return;
@@ -279,12 +254,10 @@ void UpdateScreen::installSelectedUpdate() {
       WifiProvisioning::notifyUploadSession(false);
       wifiStarted_ = false;
     }
-    // The previous OTA progress used partial refreshes.  Clear that frame and
-    // force a full panel refresh so the reboot notice cannot be hidden by
-    // stale progress pixels or the next sleep decision.
-    forceNextMenuFrameFull();
-    phase_ = Phase::RebootPrompt;
-    rebootPromptMs_ = millis();
+    // The image is already written to the OTA partition. Reboot immediately:
+    // there is no meaningful user choice, and a transient e-ink prompt after
+    // the blocking download cannot be guaranteed to become visible.
+    esp_restart();
   } else {
     phase_ = Phase::DownloadFailed;
   }

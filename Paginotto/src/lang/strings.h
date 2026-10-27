@@ -53,8 +53,6 @@
 #define D_UPDATE_SERVER_FAIL        "Cannot reach update server"
 #define D_UPDATE_INSTALLING         "Installing..."
 #define D_UPDATE_DOWNLOAD_FAILED    "Download failed"
-#define D_UPDATE_REBOOT_MSG         "Update installed"
-#define D_UPDATE_REBOOT_HINT        "Device restarts automatically in 3s"
 
 // ----------------------------------------------------------------------------
 //  Reader (src/ui/reader.cpp)

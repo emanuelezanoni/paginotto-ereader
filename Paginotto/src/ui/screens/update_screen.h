@@ -12,11 +12,10 @@ public:
   void draw() override;
   void onIdleTick() override;
 
-  // Block sleep only while the Wi-Fi session is active; once wifiEnd() is
-  // called (after flash or on exit) the device may sleep normally.
+  // Block sleep while the Wi-Fi session is active. A successful OTA reboots
+  // immediately, so there is no transient post-update screen to preserve.
   bool allowSleep() const override {
-    // Keep the device awake long enough to render the post-OTA reboot notice.
-    return !wifiStarted_ && phase_ != Phase::RebootPrompt;
+    return !wifiStarted_;
   }
 
   // Called from the OTA progress callback during the blocking download.
@@ -36,8 +35,7 @@ private:
     UpToDate,         // versions match
     UpdateAvailable,  // newer version found — shows Install button
     Downloading,      // binary streaming to OTA partition
-    DownloadFailed,   // write/validation error — shows Install button for retry
-    RebootPrompt      // binary flashed — waiting for reboot confirmation
+    DownloadFailed    // write/validation error — shows Install button for retry
   };
   Phase       phase_         = Phase::NoCreds;
   WifiSession net_;
@@ -53,7 +51,6 @@ private:
   bool        stableReachable_ = false;
   bool        devReachable_ = false;
   int         progress_      = 0;
-  uint32_t    rebootPromptMs_ = 0;
   uint32_t    screenActivityMs_ = 0;
 
   void loadChannel();
