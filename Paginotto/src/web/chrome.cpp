@@ -117,6 +117,8 @@ static const char kStyleCss[] PROGMEM =
   ".operation-progress-line progress::-moz-progress-bar{background:var(--bar-fill)}"
   ".operation-error .operation-status{color:var(--danger);font-weight:600}"
   ".file-picker{display:inline-flex;align-items:center;justify-content:center;cursor:pointer}"
+  ".file-picker-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:6px}"
+  ".file-name{min-width:0;color:var(--muted);font:12px 'Courier New',Courier,monospace;overflow-wrap:anywhere;word-break:break-word}"
   "input[type=range]{width:100%;height:22px;margin:2px 0 0;appearance:none;-webkit-appearance:none;background:transparent;cursor:pointer}"
   "input[type=range]::-webkit-slider-runnable-track{height:8px;border:1px solid var(--bar-bd);border-radius:0;background:var(--bar-bg)}"
   "input[type=range]::-webkit-slider-thumb{width:16px;height:20px;margin-top:-7px;border:1px solid var(--bar-bd);border-radius:0;background:var(--bar-fill);appearance:none;-webkit-appearance:none}"
