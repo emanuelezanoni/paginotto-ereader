@@ -1,124 +1,152 @@
 # Paginotto
 
-Paginotto is a compact pocket e-book reader built around the Heltec Wireless
-Paper e-ink board. Books are stored locally, reading position is remembered,
-and the device can be managed from a browser when needed.
+A compact pocket e-book reader for the Heltec Wireless Paper e-ink board.
+Books are stored on-device, reading position is remembered, and the device
+can be managed from any browser over Wi-Fi.
 
-Current release: **v1.3.0**
+**Current release: v2.0.0** · [MIT License](LICENSE)
 
-Supported boards:
-
+**Supported hardware:**
 - Heltec Wireless Paper V1.1
 - Heltec Wireless Paper V1.2
 
+---
+
+## Features
+
+- Read TXT books; convert EPUB to TXT directly in the browser
+- Library with folders; persistent reading position per book
+- UTF-8 word-wrap paginator with configurable font size and line spacing
+- Optional bionic reading mode
+- Custom screensavers (upload your own images)
+- Embedded WebUI — accessible via device hotspot or home Wi-Fi
+- Wi-Fi provisioning over USB with Improv Serial
+- OTA firmware updates over HTTPS (stable and dev channels, signed images)
+- Light sleep and deep sleep for battery saving
+- Device lock
+
+---
+
+## Hardware
+
+Paginotto runs on the **Heltec Wireless Paper**, an ESP32-S3-based board with
+a 2.13" e-ink display and integrated LiPo charging. A single 3.7 V LiPo cell
+plugs directly into the board.
+
+The battery indicator is voltage-based and filtered to reduce noise while the
+ESP32 is active. The board has no fuel gauge or coulomb counter, so the
+percentage is an estimate.
+
+---
+
 ## Reading books
 
-Books are organised in a simple library with optional folders. The device
-remembers the current position of every book, including after a restart or
-standby.
+Books are organised in a library. Folders are supported. The device remembers
+the current page of every book, including after a restart or deep sleep.
+
+EPUB files are not stored directly — convert them to TXT in the WebUI upload
+panel before transferring them to the device.
 
 ### Library navigation
 
-- **Short press** — move to the next item.
-- **Double press** — open the selected book or folder.
-- **Triple press** — leave the current folder and return to the library root.
-- **Hold** — lock the device by default.
-
-Inside a folder, the same controls are used. The selected row is shown on the
-display before opening it.
+| Gesture | Action |
+|---|---|
+| Short press | Move to next item |
+| Double press | Open selected book or folder |
+| Triple press | Return to library root |
+| Hold | Lock device (default) |
 
 ### Reader navigation
 
-- **Short press** — next page.
-- **Double press** — previous page.
-- **Triple press** — return to the library.
-- **Hold** — lock the reader and enter standby.
+| Gesture | Action |
+|---|---|
+| Short press | Next page |
+| Double press | Previous page |
+| Triple press | Return to library |
+| Hold | Lock reader and enter standby |
 
-The hold gestures can be configured from the WebUI. A click-then-hold gesture
-is also available and can be left unassigned.
+The hold gesture can be reassigned in the WebUI. A click-then-hold gesture is
+also available and can be left unassigned.
 
-When a large book is opened for the first time, Paginotto may need to build
-its page index. The display shows the progress and the operation does not
-enter the screensaver. Later openings, bookmarks and backward page turns use
-the saved index instead of scanning the whole book again. The index is stored
-on the device and does not impose a fixed page-count limit through RAM.
+When a large book is opened for the first time, Paginotto builds a page index.
+The display shows progress; the device stays awake until indexing completes.
+Subsequent openings, bookmarks, and backward navigation use the saved index.
 
-## Standby and screensaver
-
-The normal library and reading screens follow the sleep timeout selected in
-**Settings**. Any physical input resets the inactivity timer.
-
-Depending on the settings, the device can:
-
-- enter light sleep while waiting for input;
-- show the selected screensaver after the configured timeout;
-- enter deep sleep to preserve battery;
-- lock itself when it enters sleep.
-
-Book indexing temporarily keeps the device awake. Standalone Wi-Fi selection,
-network scanning and firmware-update screens have a separate five-minute
-timeout. When it expires, the active Wi-Fi session is closed and the device
-returns to the library; the normal library sleep rules then apply.
-
-## Battery
-
-Paginotto is designed for a single 3.7 V LiPo battery. The board provides the
-charging and battery-protection hardware.
-
-The battery percentage shown by the firmware is an estimate based on battery
-voltage. It is filtered to avoid sudden jumps while the ESP32 is working, but
-it is not a measurement of remaining mAh: this board does not provide a
-dedicated fuel gauge or coulomb counter.
+---
 
 ## WebUI
 
-The WebUI is available through the device hotspot or through a configured Wi-Fi
-network. It is designed to work on both desktop and mobile browsers.
+Connect to the device hotspot (`Paginotto-XXXXXX`) or to the same Wi-Fi
+network as your phone or computer, then open the address shown on the device
+display.
 
-Open the WebUI to:
+From the WebUI you can:
 
-- browse the library and folders;
-- upload TXT books or convert EPUB books in the browser;
-- rename, move, download or delete books;
-- search inside a book and jump to a match or page;
-- edit and save book text;
-- configure font size, line spacing, bionic reading and sleep behaviour;
-- configure button gestures;
-- upload, preview, rotate and delete custom screensavers;
-- configure Wi-Fi and inspect diagnostics;
-- install firmware updates.
+- Browse the library and folders
+- Upload TXT books; convert EPUB to TXT in the browser before upload
+- Rename, move, download, or delete books
+- Search inside a book and jump to a match or page number
+- Edit and save book text
+- Configure font size, line spacing, bionic reading, and sleep behaviour
+- Configure button gestures
+- Upload, preview, rotate, and delete custom screensaver images
+- Configure Wi-Fi networks
+- Inspect device diagnostics
+- Install firmware updates
 
-The mobile layout keeps search controls together, prevents the browser from
-jumping away from the active controls, and uses a consistent size for text
-fields and buttons. Text fields use a mobile-safe font size so iOS does not
-zoom the page when the keyboard opens.
+The layout is responsive and works on both desktop and mobile browsers.
+
+---
+
+## Screensaver
+
+Upload your own images from the WebUI screensaver panel. Uploaded images are
+stored on the device and rendered in greyscale on the e-ink display.
+
+You can preview, rotate, and delete screensavers from the same panel. The
+active screensaver is selected in Settings.
+
+---
 
 ## Firmware updates
 
-From the library, open **Firmware Update**, choose a saved Wi-Fi network and
-select the desired channel:
+### OTA (over-the-air)
 
-- **Stable** — recommended releases;
-- **Dev** — latest development firmware.
+From the library, open **Firmware Update**, select a saved Wi-Fi network, and
+choose a channel:
 
-The update is downloaded over HTTPS and installed in the inactive OTA
-partition. The device validates the image before rebooting.
+- **Stable** — recommended releases
+- **Dev** — latest development builds
 
-For first-time setup, Wi-Fi can be configured through the device hotspot or
-provisioned over USB with Improv Serial.
+The update is downloaded over HTTPS, validated, and written to the inactive
+OTA partition. The device reboots into the new firmware on success. The
+previous firmware remains in the other slot and can be restored by the
+bootloader if the new image fails to boot.
+
+### First-time setup
+
+On a fresh device, Wi-Fi can be configured in two ways:
+
+1. **Device hotspot** — connect to the Paginotto hotspot and open the WebUI.
+2. **Improv Serial** — connect via USB and use a compatible Improv Serial
+   client (e.g. the [web installer](https://esphome.github.io/esp-web-tools/))
+   to push Wi-Fi credentials over the serial port.
+
+---
 
 ## Installing from source
 
-The normal installation path is OTA. Developers can build and upload the
-firmware with PlatformIO:
+The recommended installation path is OTA. Developers can build and flash
+directly with PlatformIO:
 
 ```bash
 pio run -e wireless-paper-v1_2
 pio run -e wireless-paper-v1_2 -t upload
 ```
 
-Use `wireless-paper-v1_1` for a V1.1 board. Host-side tests can be run without
-the ESP32 toolchain:
+Use `wireless-paper-v1_1` for a V1.1 board.
+
+Host-side unit tests run without the ESP32 toolchain:
 
 ```bash
 cmake -S test -B test/build
@@ -126,18 +154,16 @@ cmake --build test/build --config Release
 ctest --test-dir test/build -C Release --output-on-failure
 ```
 
+---
+
 ## Project notes
 
-Paginotto is maintained as its own project for the Paginotto device. The
-repository contains the firmware, embedded WebUI, storage system, OTA support
-and host-side tests in one place.
+Paginotto started from the [Pala One](https://github.com/PaulLagier/pala-one-firmware)
+firmware by Paul Lagier. The codebase has since been substantially rewritten —
+the paginator, storage system, WebUI, OTA, screensaver engine, sleep
+management, and input handling are all Paginotto-specific implementations.
+Paginotto is now maintained as an independent project.
 
-The repository history originated from Pala One and has been substantially
-modified. See [UPSTREAM.md](UPSTREAM.md) for historical provenance and
-[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for dependency notices. These
-documents do not grant a blanket license over inherited upstream material; the
-Paginotto licensing boundary is documented separately in the originality
-inventory and remains subject to the final manual review.
-
-The board-specific source tree is under `Paginotto/`; build helpers are under
-`scripts/`; host-side tests are under `test/`.
+The Paginotto-authored source is licensed under the [MIT License](LICENSE).
+Historical upstream material is documented in [UPSTREAM.md](UPSTREAM.md).
+Third-party dependency notices are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
