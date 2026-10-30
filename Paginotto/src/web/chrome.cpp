@@ -152,7 +152,7 @@ static const char kStyleCss[] PROGMEM =
   ".top h1{font-size:27px;text-transform:uppercase}.top a,.link{color:var(--link)}"
   ".top-side{gap:10px}.muted,.meta,.hint{font-family:'Courier New',Courier,monospace;color:var(--muted);font-size:12px}"
   ".nav-bar{margin:0 0 18px;padding:13px 0;border-bottom:1px solid var(--line-soft)}"
-  ".nav-pages{gap:13px 26px}.nav a{color:var(--text);font:600 12px 'Courier New',Courier,monospace;text-transform:uppercase;letter-spacing:.04em}.nav a.active{color:var(--link);text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:6px}"
+  ".nav-pages{gap:4px 22px}.nav a{display:inline-block;padding:10px 2px;min-height:44px;line-height:24px;color:var(--text);font:600 13px/24px 'Courier New',Courier,monospace;text-transform:uppercase;letter-spacing:.04em}.nav a.active{color:var(--link);text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:6px}"
   ".card{background:var(--card);border:1px solid var(--line);border-radius:0;padding:19px 20px;margin-bottom:16px;box-shadow:none}"
   ".book-list{gap:0}.book-list li.book-item{padding:17px 0;border:0;border-top:1px solid var(--line-soft);border-radius:0;background:transparent}.book-list li.book-item:first-child{padding-top:17px;border-top:0}"
   ".book-title{color:var(--text);font-weight:700;font-size:20px}.book-actions{border-top:1px solid var(--line-soft)}"
@@ -179,6 +179,7 @@ static const char kStyleCss[] PROGMEM =
   ".bv-find{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px}.bv-find input[type=search]{flex:1;min-width:160px}.bv-find-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-items:stretch;width:100%}.bv-find-stack{display:grid;gap:8px;min-width:0}.bv-find-actions button{width:100%;white-space:nowrap}.bv-search-panel{margin-top:14px}.bv-top-actions{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.bv-page-jump .bv-page-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-items:center}.bv-page-jump .bv-page-form input{max-width:none}.bv-page-jump .bv-page-form button{width:100%}.bv-page-jump .bv-page-form .bv-page-hint{grid-column:1/-1}.bv-find .small{min-height:42px;padding:10px 14px;font-size:14px}"
   ".bv-status{margin-top:8px;font-size:13px;color:var(--muted)}.bv-text{margin-top:14px;max-height:60vh;overflow:auto;padding:12px;border:1px solid var(--line);border-radius:0;background:var(--pre-bg);white-space:pre-wrap;line-height:1.5;font:14px/1.5 'Courier New',Courier,monospace}.bv-editor{width:100%;min-height:60vh;max-height:none;margin-top:14px;resize:vertical;overflow:auto;overscroll-behavior:contain;font:14px/1.5 'Courier New',Courier,monospace}.bv-edit-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.find-hit{background:#e5d98a;color:var(--text);padding:0 1px;border-radius:0}.find-cur{background:#c66a4f;color:#fff}"
   ".tree-mark,.tree-book-mark{width:18px;height:1em;display:inline-block;position:relative;flex:none;color:var(--link)}.tree-library-mark:before{content:'';position:absolute;left:2px;top:.18em;width:13px;height:.62em;border:1px solid currentColor;background:linear-gradient(to bottom,transparent 30%,currentColor 31%,currentColor 39%,transparent 40%,transparent 64%,currentColor 65%,currentColor 73%,transparent 74%)}.tree-folder-mark:before{content:'';position:absolute;left:1px;top:.28em;width:15px;height:.58em;border:1px solid currentColor}.tree-folder-mark:after{content:'';position:absolute;left:2px;top:.16em;width:6px;height:.18em;border:1px solid currentColor;border-bottom:0}.tree-book-mark:before{content:'';position:absolute;left:3px;top:.16em;width:11px;height:.68em;border:1px solid currentColor;background:linear-gradient(90deg,transparent 44%,currentColor 45%,currentColor 55%,transparent 56%)}"
+  ".danger-zone{border-color:var(--danger);border-left:4px solid var(--danger);margin-top:28px}.danger-zone h2{color:var(--danger)}"
   ".mt-8{margin-top:8px}.mt-12{margin-top:12px}.mt-14{margin-top:14px}.mt-24{margin-top:24px}.inline-form{display:inline;margin:0}.no-margin{margin:0}.input-full{width:100%}.pre-wrap{white-space:pre-wrap;overflow:auto;max-height:60vh}.danger-text{color:var(--danger);font-weight:600}.inline-check-label{display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer}.inline-check-label.light{font-weight:500;gap:10px}.checkbox-input{width:auto}.row.centered{align-items:center;gap:12px}.hidden-file-input{display:none}.ss-thumb{width:180px;border:1px solid var(--line);background:#fff;image-rendering:pixelated}.full{grid-column:1/-1}"
   ".bv-top-actions.compact{margin-top:0;margin-bottom:14px}.bv-page-jump.compact{margin-top:14px;border-top:1px solid var(--line-soft);padding-top:12px}"
   "@media(max-width:640px){.bv-search-panel{position:sticky;top:0;z-index:3;padding:8px 0 10px;background:var(--card);border-bottom:1px solid var(--line-soft)}.bv-search-row{display:grid;grid-template-columns:1fr}.bv-search-row input[type=search]{min-width:0}.bv-find-actions{grid-template-columns:repeat(2,minmax(0,1fr))}.bv-editor{height:calc(100dvh - 210px);min-height:280px;font-size:16px;line-height:1.5}.bv-edit-actions{position:sticky;bottom:0;z-index:2;padding:10px 0;background:var(--card);border-top:1px solid var(--line-soft)}}"
@@ -207,7 +208,7 @@ String webPageStart(const String& title, const String& subtitle,
   out = "<!doctype html><html><head><meta charset='utf-8'>"
         "<meta name='viewport' content='width=device-width,initial-scale=1'>"
         "<meta name='color-scheme' content='light'>"
-        "<link rel='stylesheet' href='/style.css?v=11'>";
+        "<link rel='stylesheet' href='/style.css?v=" FW_VERSION "'>";
   out += "<title>";
   out += title;
   out += "</title></head><body><div class='wrap";
@@ -253,6 +254,14 @@ String webNav(const char* active, bool showExit) {
   out += "</span>";
   if (showExit) out += "<a class='btn secondary small exit-link' href='/exit' onclick=\"return !window.paginottoDirty || confirm('There may be unsaved changes or an active operation. Exit anyway?')\">Exit WebUI</a>";
   return out;
+}
+
+void sendErrorPage(int code, const String& message) {
+  String out = webPageStart("Something went wrong", "The request could not be completed.", webNav("books"));
+  out += "<div class='banner-warn'>" + htmlEscape(message) + "</div>";
+  out += "<div class='actions'>" + webBackLink("/books", D_WEB_BACK_TO_BOOKS) + "</div>";
+  out += webPageEnd();
+  server.send(code, "text/html; charset=utf-8", out);
 }
 
 String webBackLink(const char* href, const char* label) {

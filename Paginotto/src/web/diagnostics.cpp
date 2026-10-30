@@ -26,7 +26,7 @@ void handleDiagnostics() {
          "credentials and download URLs are not stored.</p>"
          "<div class='actions'><a class='btn secondary' href='/diagnostics.txt'>Download log</a>"
          "<form method='POST' action='/diagnostics/clear' class='inline-form'>"
-         "<button type='submit'>Clear log</button></form></div>"
+         "<button type='submit' class='danger' onclick=\"return confirm('Clear all diagnostic records?')\">Clear log</button></form></div>"
          "<pre class='pre-wrap'>";
   out += htmlEscape(diagnosticsText());
   out += "</pre></div>";

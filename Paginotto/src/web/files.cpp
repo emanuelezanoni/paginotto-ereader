@@ -30,19 +30,19 @@
 
 static void handleDownloadBook() {
   if (!server.hasArg("id")) {
-    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_MISSING_ID);
+    sendErrorPage(400, D_WEB_ERR_MISSING_ID);
     return;
   }
   int id = server.arg("id").toInt();
   if (id < 0 || id >= g_library.bookCount) {
-    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_ID);
+    sendErrorPage(400, D_WEB_ERR_BAD_ID);
     return;
   }
 
   String path = String(g_library.books[id].path);
   File f = FS.open(path, "r");
   if (!f) {
-    server.send(404, "text/plain; charset=utf-8", "Not found");
+    sendErrorPage(404, "Not found");
     return;
   }
 
@@ -50,7 +50,7 @@ static void handleDownloadBook() {
   server.setContentLength(f.size());
   server.sendHeader("Content-Disposition",
                     "attachment; filename=\"" + filename + "\"");
-  server.send(200, "text/plain; charset=utf-8", "");
+  sendErrorPage(200, "");
 
   WiFiClient client = server.client();
   uint8_t buf[512];
@@ -525,98 +525,6 @@ static void handleFiles() {
 
   out += "<div class='card'><p class='muted'>" D_WEB_BOOKS_PATHS_DESC "</p></div>";
 
-  out += "<div class='card'><h2>" D_WEB_ONLINE_BOOKS_HEADING "</h2>"
-         "<p class='muted'>" D_WEB_ONLINE_BOOKS_DESC "</p>";
-  String onlineLibraryUrl = ONLINE_BOOK_LIBRARY_URL;
-  if (onlineLibraryUrl.length() > 0) {
-    out += "<div class='actions'><a class='btn secondary' href='" + htmlEscape(onlineLibraryUrl) + "' target='_blank' rel='noopener'>" D_WEB_OPEN_ONLINE_LIBRARY "</a></div>";
-  } else {
-    out += "<p class='muted'>" D_WEB_ONLINE_LIBRARY_MISSING "</p>";
-  }
-  out += "<label for='bookUrl'>" D_WEB_EPUB_URL_LABEL "</label>"
-         "<input id='bookUrl' type='url' inputmode='url' size='80' class='input-full' placeholder='" D_WEB_EPUB_URL_PLACEHOLDER "' autocomplete='url' spellcheck='false'>"
-         "<div class='actions'><button id='bookUrlButton' type='button'";
-  if (WiFi.status() != WL_CONNECTED) {
-    out += " disabled";
-  }
-  out += ">" D_WEB_IMPORT_EPUB_BUTTON "</button></div>";
-  if (WiFi.status() != WL_CONNECTED) {
-    out += "<p class='muted'>" D_WEB_ONLINE_BOOKS_WIFI_REQUIRED "</p>";
-  }
-  out += "</div>";
-
-  out +=
-    "<div class='card'><h2>" D_WEB_UPLOAD_BOOK_HEADING "</h2>"
-    "<p class='muted'>" D_WEB_UPLOAD_BOOK_DESC "</p>"
-    "<form id='bookUpload' method='POST' action='/upload' enctype='multipart/form-data' accept-charset='UTF-8' class='mt-14'>"
-    "<div class='file-picker-row'><label class='file-picker btn secondary' for='bookFile'>Choose file</label>"
-    "<span id='bookFileName' class='file-name'>No file selected</span></div>"
-    "<input id='bookFile' type='file' name='file' accept='.txt,text/plain,.epub,application/epub+zip' class='hidden-file-input'>"
-    "<div class='actions'><button id='bookUploadButton' type='submit'>" D_WEB_UPLOAD_BOOK_BUTTON "</button></div>"
-    "</form></div>";
-
-  out += "<div id='bookOperationOverlay' class='operation-overlay' hidden aria-live='polite'>"
-         "<div class='operation-dialog'><h2 id='bookOperationTitle'>Working…</h2>"
-         "<p id='bookOperationMessage' hidden></p>"
-         "<div class='operation-progress-line'>"
-         "<progress id='bookDownloadProgress' max='1' value='0' hidden></progress>"
-         "<progress id='bookUploadProgress' max='1' value='0' hidden></progress>"
-         "<strong id='bookOperationPercent'></strong>"
-         "</div>"
-         "<p id='bookOperationStatus' class='operation-status' aria-live='polite'></p>"
-         "<button id='bookOperationCancel' type='button' class='btn danger'>Cancel</button></div></div>";
-
-  out += kEpubUploadScript;
-
-  // This is an index, not a second action list: each book entry links to the
-  // corresponding card below. It gives the library a stable mental model:
-  // Library -> folder -> book, while keeping all actions in the book card.
-  out += "<div class='card'><h2>" D_WEB_FOLDERS_HEADING "</h2>"
-         "<div class='tree-create'><h3>" D_WEB_CREATE_FOLDER_HEADING "</h3>"
-         "<form method='POST' action='/mkdir' class='stack mt-12' accept-charset='UTF-8'>"
-         "<input id='folderName' type='text' name='folder' placeholder='" D_WEB_CREATE_FOLDER_PLACEHOLDER "' maxlength='24' oninput=\"document.getElementById('folderNameCount').textContent=this.value.length\">"
-         "<div class='hint'><span id='folderNameCount'>0</span>/24" D_WEB_FOLDER_NAME_COUNTER ".</div>"
-         "<div class='actions'><button type='submit'>" D_WEB_CREATE_FOLDER_BUTTON "</button><span class='muted'>" D_WEB_CREATE_FOLDER_HINT "</span></div>"
-         "</form></div>"
-         "<div class='library-tree'>"
-         "<div class='tree-root'><div class='tree-root-header'><div class='tree-label'><span class='tree-mark tree-library-mark' aria-hidden='true'></span><span>Library</span></div></div><div class='tree-children'>";
-  bool rootHasBooks = false;
-  for (int i = 0; i < g_library.bookCount; i++) {
-    if (g_library.books[i].folder[0] != '\0') continue;
-    rootHasBooks = true;
-    out += "<div class='tree-book'><span class='tree-book-mark' aria-hidden='true'></span><a href='#book-card-" + String(i) + "'>";
-    out += htmlEscape(String(g_library.books[i].name));
-    out += "</a><span class='muted'>" + String((int)g_library.books[i].size) + D_WEB_BOOK_BYTES_LABEL "</span></div>";
-  }
-  if (!rootHasBooks) out += "<div class='tree-empty'>No books in the library root.</div>";
-  out += "</div></div>";
-
-  for (int folderIndex = 0; folderIndex < g_library.folderCount; folderIndex++) {
-    String folder = String(g_library.folders[folderIndex]);
-    if (folder.indexOf('/') >= 0) continue;  // legacy nested paths are not recreated
-    out += "<div class='tree-folder'><div class='tree-folder-header'><div class='tree-label'><span class='tree-mark tree-folder-mark' aria-hidden='true'></span><span>";
-    out += htmlEscape(folderLeafLabel(folder));
-    out += "</span></div><form method='POST' action='/rmdir' class='no-margin'><input type='hidden' name='folder' value='";
-    out += htmlEscape(folder);
-    out += "'><button type='submit' class='btn danger' onclick=\"return confirm('" D_WEB_CONFIRM_DELETE_FOLDER "')\">" D_WEB_DELETE_BUTTON "</button></form></div><div class='tree-children'>";
-    bool folderHasBooks = false;
-    String prefix = folder + "/";
-    for (int i = 0; i < g_library.bookCount; i++) {
-      String bookFolder = String(g_library.books[i].folder);
-      if (!(bookFolder == folder || bookFolder.startsWith(prefix))) continue;
-      folderHasBooks = true;
-      out += "<div class='tree-book'><span class='tree-book-mark' aria-hidden='true'></span><a href='#book-card-" + String(i) + "'>";
-      out += htmlEscape(String(g_library.books[i].name));
-      out += "</a><span class='muted'>" + String((int)g_library.books[i].size) + D_WEB_BOOK_BYTES_LABEL "</span></div>";
-    }
-    if (!folderHasBooks) out += "<div class='tree-empty'>Empty folder</div>";
-    out += "</div></div>";
-  }
-  if (g_library.folderCount == 0 && !rootHasBooks) {
-    out += "<p class='muted'>" D_WEB_NO_FOLDERS "</p>";
-  }
-  out += "</div></div>";
-
   out += "<div class='card'><h2>" D_WEB_LIBRARY_BOOKS_HEADING "</h2>";
   if (g_library.bookCount   >= MAX_BOOKS)   out += "<p class='danger-text'>" D_WEB_LIBRARY_FULL_WARN "</p>";
   if (g_library.folderCount >= MAX_FOLDERS) out += "<p class='danger-text'>" D_WEB_FOLDER_LIMIT_WARN "</p>";
@@ -675,12 +583,104 @@ static void handleFiles() {
       out += "</select><button type='submit' class='btn secondary'>Move</button></form></div>";
       out += "<div class='book-actions-right'><a class='btn secondary' href='/download-book?id=" + String(i) + "' download>" D_WEB_DOWNLOAD_BUTTON "</a>";
       out += "<form method='POST' action='/del' class='no-margin'><input type='hidden' name='id' value='" + String(i) + "'>";
-      out += "<button type='submit' class='btn danger' onclick=\"return confirm('" D_WEB_CONFIRM_DELETE_FILE "')\">" D_WEB_DELETE_BUTTON "</button></form></div></div></li>";
+      out += "<button type='submit' class='btn danger' data-name='" + htmlEscape(bookName) + "' onclick=\"return confirm('Delete \\'' + this.dataset.name + '\\'? This cannot be undone.')\">" D_WEB_DELETE_BUTTON "</button></form></div></div></li>";
     }
     out += "</ul>";
   }
 
   out += "</div>";
+  // This is an index, not a second action list: each book entry links to the
+  // corresponding card below. It gives the library a stable mental model:
+  // Library -> folder -> book, while keeping all actions in the book card.
+  out += "<div class='card'><h2>" D_WEB_FOLDERS_HEADING "</h2>"
+         "<div class='tree-create'><h3>" D_WEB_CREATE_FOLDER_HEADING "</h3>"
+         "<form method='POST' action='/mkdir' class='stack mt-12' accept-charset='UTF-8'>"
+         "<input id='folderName' type='text' name='folder' placeholder='" D_WEB_CREATE_FOLDER_PLACEHOLDER "' maxlength='24' oninput=\"document.getElementById('folderNameCount').textContent=this.value.length\">"
+         "<div class='hint'><span id='folderNameCount'>0</span>/24" D_WEB_FOLDER_NAME_COUNTER ".</div>"
+         "<div class='actions'><button type='submit'>" D_WEB_CREATE_FOLDER_BUTTON "</button><span class='muted'>" D_WEB_CREATE_FOLDER_HINT "</span></div>"
+         "</form></div>"
+         "<div class='library-tree'>"
+         "<div class='tree-root'><div class='tree-root-header'><div class='tree-label'><span class='tree-mark tree-library-mark' aria-hidden='true'></span><span>Library</span></div></div><div class='tree-children'>";
+  bool rootHasBooks = false;
+  for (int i = 0; i < g_library.bookCount; i++) {
+    if (g_library.books[i].folder[0] != '\0') continue;
+    rootHasBooks = true;
+    out += "<div class='tree-book'><span class='tree-book-mark' aria-hidden='true'></span><a href='#book-card-" + String(i) + "'>";
+    out += htmlEscape(String(g_library.books[i].name));
+    out += "</a><span class='muted'>" + String((int)g_library.books[i].size) + D_WEB_BOOK_BYTES_LABEL "</span></div>";
+  }
+  if (!rootHasBooks) out += "<div class='tree-empty'>No books in the library root.</div>";
+  out += "</div></div>";
+
+  for (int folderIndex = 0; folderIndex < g_library.folderCount; folderIndex++) {
+    String folder = String(g_library.folders[folderIndex]);
+    if (folder.indexOf('/') >= 0) continue;  // legacy nested paths are not recreated
+    out += "<div class='tree-folder'><div class='tree-folder-header'><div class='tree-label'><span class='tree-mark tree-folder-mark' aria-hidden='true'></span><span>";
+    out += htmlEscape(folderLeafLabel(folder));
+    out += "</span></div><form method='POST' action='/rmdir' class='no-margin'><input type='hidden' name='folder' value='";
+    out += htmlEscape(folder);
+    out += "'><button type='submit' class='btn danger' onclick=\"return confirm('" D_WEB_CONFIRM_DELETE_FOLDER "')\">" D_WEB_DELETE_BUTTON "</button></form></div><div class='tree-children'>";
+    bool folderHasBooks = false;
+    String prefix = folder + "/";
+    for (int i = 0; i < g_library.bookCount; i++) {
+      String bookFolder = String(g_library.books[i].folder);
+      if (!(bookFolder == folder || bookFolder.startsWith(prefix))) continue;
+      folderHasBooks = true;
+      out += "<div class='tree-book'><span class='tree-book-mark' aria-hidden='true'></span><a href='#book-card-" + String(i) + "'>";
+      out += htmlEscape(String(g_library.books[i].name));
+      out += "</a><span class='muted'>" + String((int)g_library.books[i].size) + D_WEB_BOOK_BYTES_LABEL "</span></div>";
+    }
+    if (!folderHasBooks) out += "<div class='tree-empty'>Empty folder</div>";
+    out += "</div></div>";
+  }
+  if (g_library.folderCount == 0 && !rootHasBooks) {
+    out += "<p class='muted'>" D_WEB_NO_FOLDERS "</p>";
+  }
+  out += "</div></div>";
+
+  out += "<div class='card'><h2>" D_WEB_ONLINE_BOOKS_HEADING "</h2>"
+         "<p class='muted'>" D_WEB_ONLINE_BOOKS_DESC "</p>";
+  String onlineLibraryUrl = ONLINE_BOOK_LIBRARY_URL;
+  if (onlineLibraryUrl.length() > 0) {
+    out += "<div class='actions'><a class='btn secondary' href='" + htmlEscape(onlineLibraryUrl) + "' target='_blank' rel='noopener'>" D_WEB_OPEN_ONLINE_LIBRARY "</a></div>";
+  } else {
+    out += "<p class='muted'>" D_WEB_ONLINE_LIBRARY_MISSING "</p>";
+  }
+  out += "<label for='bookUrl'>" D_WEB_EPUB_URL_LABEL "</label>"
+         "<input id='bookUrl' type='url' inputmode='url' size='80' class='input-full' placeholder='" D_WEB_EPUB_URL_PLACEHOLDER "' autocomplete='url' spellcheck='false'>"
+         "<div class='actions'><button id='bookUrlButton' type='button'";
+  if (WiFi.status() != WL_CONNECTED) {
+    out += " disabled";
+  }
+  out += ">" D_WEB_IMPORT_EPUB_BUTTON "</button></div>";
+  if (WiFi.status() != WL_CONNECTED) {
+    out += "<p class='muted'>" D_WEB_ONLINE_BOOKS_WIFI_REQUIRED "</p>";
+  }
+  out += "</div>";
+
+  out +=
+    "<div class='card'><h2>" D_WEB_UPLOAD_BOOK_HEADING "</h2>"
+    "<p class='muted'>" D_WEB_UPLOAD_BOOK_DESC "</p>"
+    "<form id='bookUpload' method='POST' action='/upload' enctype='multipart/form-data' accept-charset='UTF-8' class='mt-14'>"
+    "<div class='file-picker-row'><label class='file-picker btn secondary' for='bookFile'>Choose file</label>"
+    "<span id='bookFileName' class='file-name'>No file selected</span></div>"
+    "<input id='bookFile' type='file' name='file' accept='.txt,text/plain,.epub,application/epub+zip' class='hidden-file-input'>"
+    "<div class='actions'><button id='bookUploadButton' type='submit'>" D_WEB_UPLOAD_BOOK_BUTTON "</button></div>"
+    "</form></div>";
+
+  out += "<div id='bookOperationOverlay' class='operation-overlay' hidden aria-live='polite'>"
+         "<div class='operation-dialog'><h2 id='bookOperationTitle'>Working…</h2>"
+         "<p id='bookOperationMessage' hidden></p>"
+         "<div class='operation-progress-line'>"
+         "<progress id='bookDownloadProgress' max='1' value='0' hidden></progress>"
+         "<progress id='bookUploadProgress' max='1' value='0' hidden></progress>"
+         "<strong id='bookOperationPercent'></strong>"
+         "</div>"
+         "<p id='bookOperationStatus' class='operation-status' aria-live='polite'></p>"
+         "<button id='bookOperationCancel' type='button' class='btn danger'>Cancel</button></div></div>";
+
+  out += kEpubUploadScript;
+
   out += "<script>function editBookTitle(i){var v=document.getElementById('bookTitleView'+i),f=document.getElementById('bookTitleEdit'+i),n=document.getElementById('bookName'+i);if(v&&f){v.hidden=true;f.hidden=false;if(n){n.focus();n.select();}}}function cancelBookTitle(i){var v=document.getElementById('bookTitleView'+i),f=document.getElementById('bookTitleEdit'+i);if(v&&f){f.hidden=true;v.hidden=false;}}</script>";
 
   out += webPageEnd();
@@ -690,13 +690,13 @@ static void handleFiles() {
 
 static void handleDelete() {
   if (!server.hasArg("id")) {
-    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_MISSING_ID);
+    sendErrorPage(400, D_WEB_ERR_MISSING_ID);
     return;
   }
 
   int id = server.arg("id").toInt();
   if (id < 0 || id >= g_library.bookCount) {
-    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_ID);
+    sendErrorPage(400, D_WEB_ERR_BAD_ID);
     return;
   }
 
@@ -713,31 +713,31 @@ static void handleDelete() {
 static void handleCreateFolder() {
   ensureBooksDir();
   if (!server.hasArg("folder")) {
-    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_MISSING_FOLDER);
+    sendErrorPage(400, D_WEB_ERR_MISSING_FOLDER);
     return;
   }
 
   String folder = sanitizeFolderInput(server.arg("folder"));
   if (folder.length() == 0) {
-    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_FOLDER);
+    sendErrorPage(400, D_WEB_ERR_BAD_FOLDER);
     return;
   }
   if (folder.indexOf('/') >= 0) {
-    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_FOLDER);
+    sendErrorPage(400, D_WEB_ERR_BAD_FOLDER);
     return;
   }
   if (folder.length() > MAX_FOLDER_NAME_BYTES) {
-    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_FOLDER);
+    sendErrorPage(400, D_WEB_ERR_BAD_FOLDER);
     return;
   }
   if (g_library.folderCount >= MAX_FOLDERS) {
-    server.send(409, "text/plain; charset=utf-8", D_WEB_ERR_FOLDER_LIMIT);
+    sendErrorPage(409, D_WEB_ERR_FOLDER_LIMIT);
     return;
   }
 
   String fullPath = "/books/" + folder;
   if (!ensureDirRecursive(fullPath)) {
-    server.send(500, "text/plain; charset=utf-8", D_WEB_ERR_MKDIR_FAILED);
+    sendErrorPage(500, D_WEB_ERR_MKDIR_FAILED);
     return;
   }
   loadBooks();   // refresh catalog so the new folder appears
@@ -748,31 +748,31 @@ static void handleCreateFolder() {
 
 static void handleDeleteFolder() {
   if (!server.hasArg("folder")) {
-    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_MISSING_FOLDER);
+    sendErrorPage(400, D_WEB_ERR_MISSING_FOLDER);
     return;
   }
 
   String folder = sanitizeFolderInput(server.arg("folder"));
   if (folder.length() == 0) {
-    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_FOLDER);
+    sendErrorPage(400, D_WEB_ERR_BAD_FOLDER);
     return;
   }
   if (folder.indexOf('/') >= 0) {
-    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_FOLDER);
+    sendErrorPage(400, D_WEB_ERR_BAD_FOLDER);
     return;
   }
 
   String fullPath = "/books/" + folder;
   if (!FS.exists(fullPath)) {
-    server.send(404, "text/plain; charset=utf-8", D_WEB_ERR_FOLDER_NOT_FOUND);
+    sendErrorPage(404, D_WEB_ERR_FOLDER_NOT_FOUND);
     return;
   }
   if (catalogContainsFolderBook(folder) || !isDirEmpty(fullPath)) {
-    server.send(409, "text/plain; charset=utf-8", D_WEB_ERR_FOLDER_NOT_EMPTY);
+    sendErrorPage(409, D_WEB_ERR_FOLDER_NOT_EMPTY);
     return;
   }
   if (!FS.rmdir(fullPath)) {
-    server.send(500, "text/plain; charset=utf-8", D_WEB_ERR_DELETE_FAILED);
+    sendErrorPage(500, D_WEB_ERR_DELETE_FAILED);
     return;
   }
   loadBooks();   // refresh catalog so the folder disappears
@@ -783,31 +783,31 @@ static void handleDeleteFolder() {
 
 static void handleMoveBook() {
   if (!server.hasArg("id")) {
-    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_MISSING_ID);
+    sendErrorPage(400, D_WEB_ERR_MISSING_ID);
     return;
   }
 
   int id = server.arg("id").toInt();
   if (id < 0 || id >= g_library.bookCount) {
-    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_ID);
+    sendErrorPage(400, D_WEB_ERR_BAD_ID);
     return;
   }
 
   String oldPath = String(g_library.books[id].path);
   String folder = sanitizeFolderInput(server.arg("folder"));
   if (folder.indexOf('/') >= 0) {
-    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_FOLDER);
+    sendErrorPage(400, D_WEB_ERR_BAD_FOLDER);
     return;
   }
   String destDir = (folder.length() == 0) ? String("/books") : String("/books/") + folder;
   String newPath = destDir + "/" + lastPathComponent(oldPath);
   if (newPath.length() >= sizeof(g_library.books[id].path)) {
-    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_NAME);
+    sendErrorPage(400, D_WEB_ERR_BAD_NAME);
     return;
   }
 
   if (!ensureDirRecursive(destDir)) {
-    server.send(500, "text/plain; charset=utf-8", D_WEB_ERR_FOLDER_CREATE_FAILED);
+    sendErrorPage(500, D_WEB_ERR_FOLDER_CREATE_FAILED);
     return;
   }
 
@@ -817,13 +817,13 @@ static void handleMoveBook() {
     return;
   }
   if (FS.exists(newPath)) {
-    server.send(409, "text/plain; charset=utf-8", D_WEB_ERR_DEST_EXISTS);
+    sendErrorPage(409, D_WEB_ERR_DEST_EXISTS);
     return;
   }
 
   // Library entry already cleared g_bookview; no book is "current" here.
   if (!FS.rename(oldPath, newPath)) {
-    server.send(500, "text/plain; charset=utf-8", D_WEB_ERR_MOVE_FAILED);
+    sendErrorPage(500, D_WEB_ERR_MOVE_FAILED);
     return;
   }
 
@@ -831,7 +831,7 @@ static void handleMoveBook() {
   // This also protects the folder-delete guard from a stale catalog entry.
   if (FS.exists(oldPath) || !FS.exists(newPath)) {
     if (FS.exists(newPath) && !FS.exists(oldPath)) FS.rename(newPath, oldPath);
-    server.send(500, "text/plain; charset=utf-8", D_WEB_ERR_MOVE_FAILED);
+    sendErrorPage(500, D_WEB_ERR_MOVE_FAILED);
     return;
   }
 
@@ -844,17 +844,17 @@ static void handleMoveBook() {
 
 static void handleRenameBook() {
   if (!server.hasArg("id")) {
-    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_MISSING_ID);
+    sendErrorPage(400, D_WEB_ERR_MISSING_ID);
     return;
   }
   if (!server.hasArg("name")) {
-    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_MISSING_NAME);
+    sendErrorPage(400, D_WEB_ERR_MISSING_NAME);
     return;
   }
 
   int id = server.arg("id").toInt();
   if (id < 0 || id >= g_library.bookCount) {
-    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_ID);
+    sendErrorPage(400, D_WEB_ERR_BAD_ID);
     return;
   }
 
@@ -869,13 +869,13 @@ static void handleRenameBook() {
                              ? pathTitleBytes : (size_t)MAX_BOOK_TITLE_BYTES;
   String requestedName = server.arg("name");
   if (requestedName.length() == 0 || requestedName.length() > maxTitleBytes) {
-    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_NAME);
+    sendErrorPage(400, D_WEB_ERR_BAD_NAME);
     return;
   }
   String leaf = sanitizeUploadedFilename(requestedName, maxLeafBytes);
   String newPath = (folder.length() == 0 ? String("/books/") : String("/books/") + folder + "/") + leaf;
   if (newPath.length() >= sizeof(g_library.books[id].path)) {
-    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_NAME);
+    sendErrorPage(400, D_WEB_ERR_BAD_NAME);
     return;
   }
 
@@ -885,11 +885,11 @@ static void handleRenameBook() {
     return;
   }
   if (FS.exists(newPath)) {
-    server.send(409, "text/plain; charset=utf-8", D_WEB_ERR_DEST_EXISTS);
+    sendErrorPage(409, D_WEB_ERR_DEST_EXISTS);
     return;
   }
   if (!FS.rename(oldPath, newPath)) {
-    server.send(500, "text/plain; charset=utf-8", D_WEB_ERR_RENAME_FAILED);
+    sendErrorPage(500, D_WEB_ERR_RENAME_FAILED);
     return;
   }
 
@@ -901,13 +901,13 @@ static void handleRenameBook() {
 
 static void handleJumpPageWeb() {
   if (!server.hasArg("id") || !server.hasArg("page")) {
-    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_MISSING_ID_PAGE);
+    sendErrorPage(400, D_WEB_ERR_MISSING_ID_PAGE);
     return;
   }
 
   int id = server.arg("id").toInt();
   if (id < 0 || id >= g_library.bookCount) {
-    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_ID);
+    sendErrorPage(400, D_WEB_ERR_BAD_ID);
     return;
   }
 
@@ -923,15 +923,25 @@ static void handleJumpPageWeb() {
   String path = String(g_library.books[id].path);
   String key = prefKeyForBook(path);
   PreferencesStore kv(prefs);
-  saveSavedPage(kv, key, zeroBasedPage);
-
   File f = FS.open(path, "r");
-  if (f) {
-    uint32_t offset = pageOffsetForPage(f, path, zeroBasedPage);
-    f.close();
-    saveSavedOffset(kv, key, offset);
+  if (!f) {
+    sendErrorPage(404, "Book not found.");
+    return;
   }
+  // Paginate up to the requested page; if the book is shorter, the walk
+  // stops at the last real page and that is what gets saved and reported.
+  int reachedPage = zeroBasedPage;
+  uint32_t offset = pageOffsetForPage(f, path, zeroBasedPage, &reachedPage);
+  f.close();
+  zeroBasedPage = reachedPage;
+  page = reachedPage + 1;
+  saveSavedPage(kv, key, zeroBasedPage);
+  saveSavedOffset(kv, key, offset);
 
+  if (server.hasArg("ajax")) {
+    sendErrorPage(200, String(page));
+    return;
+  }
   server.sendHeader("Location", "/books");
   server.send(302, "text/plain", "");
 }

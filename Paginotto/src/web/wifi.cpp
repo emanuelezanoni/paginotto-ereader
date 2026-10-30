@@ -98,7 +98,7 @@ static void handleWifiScan() {
 static void handleWifi() {
   // Start asynchronously. The page must render immediately; the browser
   // polls /wifi/scan and fills the visible list when results arrive.
-  startNearbyScan();
+  if (!s_scanActive) startNearbyScan();
   String out = webPageStart("Wi-Fi", "Configure hotspot and saved networks.", webNav("wifi"));
   String msg = notice();
   if (msg.length()) out += "<div class='banner-ok'>" + msg + "</div>";

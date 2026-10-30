@@ -62,7 +62,8 @@ uint32_t nextPageOffset(File& f, uint32_t startPos) {
 // ============================================================================
 //  Cross-book offset lookup
 // ============================================================================
-uint32_t pageOffsetForPage(File& f, const String& path, int page) {
+uint32_t pageOffsetForPage(File& f, const String& path, int page,
+                           int* reachedPage) {
   if (page < 0) page = 0;
 
   // On-disk fast path: O(1) seek to the highest cached page <= target.
@@ -74,10 +75,13 @@ uint32_t pageOffsetForPage(File& f, const String& path, int page) {
                                             page, &off);
   if (startPage < 0) startPage = 0;
 
+  int reached = startPage;
   for (int p = startPage; p < page; p++) {
     uint32_t next = nextPageOffset(f, off);
     if (next == off) break;
     off = next;
+    reached = p + 1;
   }
+  if (reachedPage) *reachedPage = reached;
   return off;
 }

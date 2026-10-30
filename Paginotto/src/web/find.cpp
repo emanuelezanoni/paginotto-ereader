@@ -389,6 +389,8 @@ static const char kReadScript[] PROGMEM =
   "elCancel.addEventListener('click',function(){var returnTo=new URLSearchParams(window.location.search).get('return');window.paginottoDirty=false;if(returnTo==='/upload-review')window.location.href='/upload-review';else setEdit(false);});"
   "elEditor.addEventListener('input',function(){window.paginottoDirty=true;});"
   "elSave.addEventListener('click',function(){if(!confirm('WARNING: this replaces the book on the device immediately. There is no device backup. Download the current TXT first if needed. Continue?'))return;var editedBytes=new TextEncoder().encode(elEditor.value).length;var fd=new FormData();fd.append('file',new Blob([elEditor.value],{type:'text/plain;charset=utf-8'}),'edited-book.txt');elSave.disabled=true;elSave.textContent='Saving...';var returnTo=new URLSearchParams(window.location.search).get('return');var target='/edit-book?id='+encodeURIComponent(bookId)+'&size='+editedBytes+(returnTo==='/upload-review'?'&return=%2Fupload-review':'');fetch(target,{method:'POST',body:fd}).then(function(r){if(!r.ok)return r.text().then(function(t){throw Error(t||('HTTP '+r.status));});window.location.href=returnTo==='/upload-review'?'/upload-review?notice=edited':r.url;}).catch(function(e){elJumpStat.textContent='Save failed: '+(e&&e.message?e.message:'error');elSave.disabled=false;elSave.textContent='Save & repaginate';});});"
+  "var elPF=document.getElementById('bvPageForm');if(elPF)elPF.addEventListener('submit',function(e){e.preventDefault();var st=document.getElementById('bvPageStat'),cp=document.getElementById('bvCurPage'),b=elPF.querySelector('button'),fd=new FormData(elPF);fd.append('ajax','1');st.textContent='Saving...';b.disabled=true;"
+  "fetch('/jumppage',{method:'POST',body:new URLSearchParams(fd)}).then(function(r){return r.text().then(function(t){if(!r.ok)throw Error(t||('HTTP '+r.status));return t;});}).then(function(t){var n=parseInt(t,10);if(n>0&&cp)cp.textContent=n;st.textContent='Saved. The book opens on page '+(n>0?n:'')+' next time.';}).catch(function(err){st.textContent='Save failed: '+(err&&err.message?err.message:'error');}).finally(function(){b.disabled=false;});});"
   "elJump.addEventListener('click',function(){if(curHit<0){elJumpStat.textContent='Find something first.';return;}"
   "var hitStart=hits[curHit].start,off=utf8Len(rawText.slice(0,hitStart));var anchorStart=Math.max(0,hitStart-64),anchorEnd=Math.min(rawText.length,hitStart+128),anchor=rawText.slice(anchorStart,anchorEnd),anchorAt=utf8Len(rawText.slice(anchorStart,hitStart));var fd=new FormData();fd.append('id',String(bookId));fd.append('offset',String(off));fd.append('anchor',anchor);fd.append('anchorAt',String(anchorAt));"
   "elJumpStat.textContent='Saving...';elJump.disabled=true;"
@@ -439,17 +441,17 @@ static void handleReadView() {
   out += String((int)g_library.books[id].size);
   out += " " D_WEB_READ_BYTES_LABEL " (";
   out += String((float)g_library.books[id].size / 1000.0f, 1);
-  out += " " D_WEB_READ_KB_LABEL ") | " D_WEB_READ_CURRENT_PAGE_LABEL " ";
+  out += " " D_WEB_READ_KB_LABEL ") | " D_WEB_READ_CURRENT_PAGE_LABEL " <span id='bvCurPage'>";
   out += String(savedPage);
-  out += "</div>";
+  out += "</span></div>";
 
   // Jump-by-page form (uses the existing /jumppage route).
   out += "<div class='bv-page-jump compact'>"
-         "<form method='POST' action='/jumppage' class='bv-find bv-page-form'>"
+         "<form method='POST' action='/jumppage' class='bv-find bv-page-form' id='bvPageForm'>"
          "<input type='hidden' name='id' value='" + String(id) + "'>"
          "<input type='text' name='page' inputmode='numeric' placeholder='" D_WEB_READ_PAGE_PLACEHOLDER "' value='" + String(savedPage) + "'>"
          "<button type='submit' class='btn small'>" D_WEB_READ_JUMP_PAGE "</button>"
-         "<span class='muted small bv-page-hint'>" D_WEB_READ_JUMP_HINT "</span>"
+         "<span class='muted small bv-page-hint' id='bvPageStat'>" D_WEB_READ_JUMP_HINT "</span>"
          "</form></div>";
 
   out += "</div>";
@@ -464,7 +466,7 @@ static void handleReadView() {
          "<div class='bv-find-actions'>"
          "<div class='bv-find-stack'>"
          "<button type='button' class='btn small' id='bvFindBtn'>" D_WEB_READ_FIND_ALL "</button>"
-         "<button type='button' class='btn small' id='bvJumpBtn'>Jump here</button>"
+         "<button type='button' class='btn small' id='bvJumpBtn'>" D_WEB_READ_JUMP_HERE "</button>"
          "</div>"
          "<div class='bv-find-stack'>"
          "<button type='button' class='btn secondary small' id='bvFindPrev'>&#9650; " D_WEB_READ_FIND_PREV "</button>"
@@ -478,7 +480,7 @@ static void handleReadView() {
   out += "<div id='bvText' class='bv-text'></div>";
   out += "<textarea id='bvEditor' class='bv-editor' hidden spellcheck='false'></textarea>";
   out += "<div id='bvEditWarning' class='banner-warn' hidden>" D_WEB_READ_EDIT_WARNING " <a class='link' href='/download-book?id=" + String(id) + "' download>" D_WEB_READ_DOWNLOAD_BACKUP "</a></div>";
-  out += "<div class='bv-edit-actions'><button type='button' class='btn small' id='bvSaveBtn' hidden>Save &amp; repaginate</button><button type='button' class='btn secondary small' id='bvCancelBtn' hidden>Cancel editing</button></div>";
+  out += "<div class='bv-edit-actions'><button type='button' class='btn small' id='bvSaveBtn' hidden>" D_WEB_READ_SAVE_EDIT "</button><button type='button' class='btn secondary small' id='bvCancelBtn' hidden>" D_WEB_READ_EDIT_CANCEL "</button></div>";
   out += "</div>";
   out += "</div>";
 

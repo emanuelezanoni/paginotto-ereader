@@ -13,9 +13,9 @@
 
 static void handleWebUiExit() {
   g_uploadScreen.requestWebUiExit();
-  String page = webPageStart("Paginotto", "Taking a page break.", "");
-  page += "<div class='card'><div class='banner-ok'><h2>Paginotto is taking a page break.</h2>"
-          "<p>Wi-Fi off. See you soon.</p></div>"
+  String page = webPageStart("Page break", "WebUI closed.", "");
+  page += "<div class='card'><div class='banner-ok'><h2>See you soon.</h2>"
+          "<p>The device is taking a page break and Wi-Fi is now off.</p></div>"
           "<p class='muted'>You can close this tab now.</p></div>";
   page += webPageEnd();
   server.send(200, "text/html; charset=utf-8", page);

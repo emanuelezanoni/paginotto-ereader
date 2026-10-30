@@ -176,7 +176,7 @@
 #define D_WEB_RESET_WARNING         "This will delete ALL books and reading progress."
 #define D_WEB_RESET_DETAIL          "The device filesystem will be formatted and settings will return to defaults."
 #define D_WEB_RESET_YES_BUTTON      "Yes, reset"
-#define D_WEB_RESET_CONFIRM_MESSAGE "Factory reset? This deletes all books, progress, settings, and custom assets."
+#define D_WEB_RESET_CONFIRM_MESSAGE "Factory reset? This permanently deletes all books, reading progress, settings and custom screensavers. It cannot be undone."
 #define D_WEB_RESET_COMPLETE_HEADING "Factory reset complete"
 #define D_WEB_RESET_COMPLETE_DESC   "All books, progress and custom assets were removed. The device is now back to a clean state."
 #define D_WEB_RESET_SUCCESS_TITLE   "Reset complete"

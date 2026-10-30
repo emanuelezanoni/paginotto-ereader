@@ -36,6 +36,7 @@ uint32_t nextPageOffset(File& f, uint32_t startPos);
 // Find page N's byte offset in `f` (which must be opened to `path`). Reads
 // the on-disk page cache for an O(1) start, walks forward via
 // `nextPageOffset` if the requested page is past the cached portion.
-uint32_t pageOffsetForPage(File& f, const String& path, int page);
+uint32_t pageOffsetForPage(File& f, const String& path, int page,
+                           int* reachedPage = nullptr);
 
 #endif  // PAGINOTTO_UI_TEXT_H

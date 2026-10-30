@@ -31,6 +31,10 @@ String successPage(const String& title, const String& subtitle,
                    const String& banner, const String& innerHtml,
                    const char* active = "books");
 
+// Send a styled error page (with nav and a way back) instead of a bare
+// text/plain body. `message` is plain text and is escaped here.
+void sendErrorPage(int code, const String& message);
+
 // HTML-escape user-supplied text so we don't break the page or open XSS.
 String htmlEscape(const String& in);
 
