@@ -67,7 +67,9 @@ void invalidateRecentReaderOffsets();  // layout change invalidates volatile pag
 // therefore serviced incrementally by the main loop so the display can show
 // progress and the input frontend can still receive a cancel gesture.
 bool isOpeningBook();
-void serviceBookOpening();
+// paintProgress=false keeps the panel untouched (used while locked, so the
+// screensaver stays on screen while the scan finishes in the background).
+void serviceBookOpening(bool paintProgress = true);
 void cancelBookOpening();
 
 // Cursor navigation. Both move the cursor and bump `pageTurnsSinceFull` on

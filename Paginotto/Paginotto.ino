@@ -27,6 +27,7 @@
 #include "src/hal/ota.h"
 #include "src/hal/wifi_provisioning.h"
 #include "src/pure/hashing.h"
+#include "src/pure/reader_integration.h"  // decideLockedLoop
 #include "src/storage/fs_util.h"
 #include "src/storage/library.h"
 #include "src/storage/page_cache.h"
@@ -187,29 +188,36 @@ void setup() {
 // ============================================================================
 //  Main loop
 // ============================================================================
+// Locked wake: how long the device stays up waiting for the unlock gesture.
+static constexpr uint32_t kLockedIdleSleepMs = 1500;
+
 void loop() {
   g_btns.poll();
   maybeRecoverFromIsrOverflow();
 
   ButtonEvent ev = ButtonEvent::fromButtonState(g_btns);
 
-  // Locked: swallow all input except ClickHold unlock.
-  // Does NOT call markUserActivity for non-unlock events so the idle deadline
-  // keeps ticking. cfg_locked persists in NVS so a re-sleep stays locked.
+  // Locked: swallow all input except the Hold / ClickHold unlock.
+  // cfg_locked persists in NVS so a re-sleep stays locked.
   //
-  // Wake-press handling: the short press that woke the device re-appears
-  // through the classifier in the first loop iteration. We absorb it silently
-  // (s_lockedWakePressConsumed). A *subsequent* non-unlock press while still
-  // locked means the user deliberately tapped again → re-enter deep sleep
-  // immediately. A short 1500ms locked-idle timeout (independent of the user's
-  // sleep setting) also returns to deep sleep so an accidental wake doesn't
-  // leave the device on indefinitely.
+  // A non-unlock press (wake press, or an unlock hold released too early)
+  // never forces sleep: it only re-arms the short locked-idle window so the
+  // user can simply retry the hold. The old "second tap -> sleep" rule turned
+  // a slightly short unlock hold into a sleep cycle, which also persisted the
+  // reader state while a resumed book was still opening.
+  // A 1500ms locked-idle timeout (independent of the user's sleep setting)
+  // returns to deep sleep so an accidental wake doesn't leave the device on.
   {
-    static bool s_lockedWakePressConsumed = false;  // reset each deep-sleep wake
-
     if (Lock::isLocked()) {
-      if (Lock::isUnlockGesture(ev)) {
-        s_lockedWakePressConsumed = false;
+      // Keep resolving a resumed book's saved position in the background,
+      // without painting over the screensaver, so unlock lands on the page.
+      if (isOpeningBook()) serviceBookOpening(/*paintProgress=*/false);
+
+      const LockedLoopDecision locked = decideLockedLoop(
+          Lock::isUnlockGesture(ev), ev.any(),
+          ENABLE_DEEP_SLEEP && g_currentScreen->allowSleep(), userIdleMs(),
+          kLockedIdleSleepMs, g_btns.isPressed(), g_btns.hasPendingClicks());
+      if (locked.unlock) {
         Lock::disengage();
         markUserActivity();
         // Full refresh to clear screensaver ghosting on unlock.
@@ -223,26 +231,17 @@ void loop() {
         g_currentScreen->draw();
         return;
       }
-      if (ev.any()) {
-        if (!s_lockedWakePressConsumed) {
-          s_lockedWakePressConsumed = true;   // absorb wake press
-        } else {
-          Sleep::enter();                     // second tap → back to screensaver
-          return;
-        }
-      }
-      // Short locked-idle: re-sleep after 1500ms with no input.
-      // Don't sleep while button held — ClickHold unlock may still complete.
-      // fires on release, so sleeping mid-hold would swallow the gesture.
-      if (ENABLE_DEEP_SLEEP && g_currentScreen->allowSleep()
-          && !isOpeningBook()
-          && userIdleMs() > 1500 && !g_btns.isPressed()) {
+      if (locked.rearmIdle) markUserActivity();  // failed attempt: allow a retry
+      // Short locked-idle: re-sleep after kLockedIdleSleepMs with no input,
+      // never while the button is held or a click sequence is pending (the
+      // unlock gesture may still complete). Sleeping mid-scan is safe:
+      // persistReaderState() refuses to write while a book is opening.
+      if (locked.sleep) {
         Sleep::enter();
         return;
       }
       return;
     }
-    s_lockedWakePressConsumed = false;  // clear when unlocked so state is fresh on next lock
   }
 
   if (ev.any()) markUserActivity();

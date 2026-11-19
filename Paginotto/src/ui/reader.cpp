@@ -258,7 +258,7 @@ void cancelBookOpening() {
   s_openTargetIsPage = scan.targetIsPage;
 }
 
-void serviceBookOpening() {
+void serviceBookOpening(bool paintProgress) {
   if (!s_openingBook || !g_bookview.book.isOpen()) return;
 
   // Keep each main-loop slice bounded. This is what makes the emergency
@@ -320,7 +320,7 @@ void serviceBookOpening() {
 
   // E-ink refreshes are comparatively expensive; keep progress visible
   // without slowing the sequential scan with needless panel updates.
-  if ((uint32_t)(millis() - s_lastOpeningPaint) >= 5000) {
+  if (paintProgress && (uint32_t)(millis() - s_lastOpeningPaint) >= 5000) {
     drawOpeningProgress();
   }
 }
@@ -571,8 +571,21 @@ void resetBookView() {
 //  the throttle decision and the "is a book open" guard are view-state
 //  concerns.
 // ============================================================================
+// While a book is still opening, the view position is the scan cursor (often
+// page 0 / offset 0), NOT the reader's position: the saved bookmark in NVS is
+// still the only truth. Writing the view state here would overwrite a valid
+// bookmark with the start of the book (seen in the field: a failed unlock
+// attempt slept the device mid-scan and reset the bookmark).
+static bool bookmarkWritable() {
+  if (readerBookmarkWritable(g_bookview.book.isOpen(), s_openingBook)) {
+    return true;
+  }
+  if (s_openingBook) Diagnostics::trace("reader.progress.skip_opening");
+  return false;
+}
+
 void saveProgress() {
-  if (!g_bookview.book.isOpen()) return;
+  if (!bookmarkWritable()) return;
 
   Diagnostics::trace("reader.progress.save");
 
@@ -593,7 +606,7 @@ void saveProgress() {
 }
 
 void saveProgressThrottled() {
-  if (!g_bookview.book.isOpen()) return;
+  if (!bookmarkWritable()) return;
   if (g_bookview.cursor.pageIndex == s_save.lastSavedPage) return;
 
   // Persist the actual reading position on every page turn. These two small
@@ -620,7 +633,10 @@ void saveProgressThrottled() {
 // the opening scan and page-turn path, so there is no RAM table to flush here.
 // Mid-session uses `saveProgressThrottled` for cheaper, more frequent writes.
 void persistReaderState() {
-  if (!g_bookview.book.isOpen()) return;
+  if (!readerBookmarkWritable(g_bookview.book.isOpen(), s_openingBook)) {
+    if (s_openingBook) Diagnostics::checkpoint("reader.persist.skip_opening");
+    return;
+  }
   Diagnostics::checkpoint("reader.persist.begin");
   saveProgress();
   Diagnostics::checkpoint("reader.persist.done");

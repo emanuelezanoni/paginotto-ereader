@@ -54,3 +54,35 @@ TEST_CASE("WebUI jump on an empty file remains at zero") {
   CHECK(decision.emptyFile);
   CHECK(decision.offset == 0u);
 }
+
+TEST_CASE("bookmark is never written while a book is still opening") {
+  CHECK(readerBookmarkWritable(true, false));
+  CHECK(!readerBookmarkWritable(true, true));   // scan cursor != reader position
+  CHECK(!readerBookmarkWritable(false, false));
+  CHECK(!readerBookmarkWritable(false, true));
+}
+
+TEST_CASE("locked: unlock gesture unlocks") {
+  const LockedLoopDecision d = decideLockedLoop(true, true, true, 5000, 1500,
+                                                false, false);
+  CHECK(d.unlock);
+  CHECK(!d.sleep);
+}
+
+TEST_CASE("locked: a failed unlock press re-arms idle instead of sleeping") {
+  // Regression: a short unlock hold used to count as "second tap -> sleep",
+  // which persisted a mid-scan view and reset the bookmark.
+  const LockedLoopDecision d = decideLockedLoop(false, true, true, 5000, 1500,
+                                                false, false);
+  CHECK(!d.unlock);
+  CHECK(d.rearmIdle);
+  CHECK(!d.sleep);
+}
+
+TEST_CASE("locked: idle timeout sleeps only when no gesture can complete") {
+  CHECK(decideLockedLoop(false, false, true, 1501, 1500, false, false).sleep);
+  CHECK(!decideLockedLoop(false, false, true, 1500, 1500, false, false).sleep);
+  CHECK(!decideLockedLoop(false, false, true, 9000, 1500, true, false).sleep);
+  CHECK(!decideLockedLoop(false, false, true, 9000, 1500, false, true).sleep);
+  CHECK(!decideLockedLoop(false, false, false, 9000, 1500, false, false).sleep);
+}

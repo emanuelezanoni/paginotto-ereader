@@ -42,4 +42,23 @@ struct ReaderJumpDecision {
 int64_t parseReaderJumpOffset(const char* text);
 ReaderJumpDecision decideReaderJump(int64_t requestedOffset, size_t fileSize);
 
+// The bookmark may be written only from a settled reader view. While a book
+// is still opening, the view holds the scan cursor (typically offset 0), and
+// the bookmark already stored in NVS is the only valid position.
+bool readerBookmarkWritable(bool bookOpen, bool openingBook);
+
+struct LockedLoopDecision {
+  bool unlock = false;       // disengage the lock and draw the real screen
+  bool rearmIdle = false;    // a non-unlock press: give the user time to retry
+  bool sleep = false;        // go back to deep sleep
+};
+
+// One main-loop iteration while locked. A non-unlock press never forces
+// sleep (a slightly short unlock hold must stay retryable); only the short
+// locked-idle timeout does, and never while a gesture may still complete.
+LockedLoopDecision decideLockedLoop(bool unlockGesture, bool anyEvent,
+                                    bool sleepAllowed, uint32_t idleMs,
+                                    uint32_t idleLimitMs, bool buttonPressed,
+                                    bool clicksPending);
+
 #endif  // PAGINOTTO_PURE_READER_INTEGRATION_H

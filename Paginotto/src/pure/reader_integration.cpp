@@ -61,3 +61,25 @@ ReaderJumpDecision decideReaderJump(int64_t requestedOffset, size_t fileSize) {
   decision.offset = static_cast<uint32_t>(normalized);
   return decision;
 }
+
+bool readerBookmarkWritable(bool bookOpen, bool openingBook) {
+  return bookOpen && !openingBook;
+}
+
+LockedLoopDecision decideLockedLoop(bool unlockGesture, bool anyEvent,
+                                    bool sleepAllowed, uint32_t idleMs,
+                                    uint32_t idleLimitMs, bool buttonPressed,
+                                    bool clicksPending) {
+  LockedLoopDecision d;
+  if (unlockGesture) {
+    d.unlock = true;
+    return d;
+  }
+  if (anyEvent) {
+    d.rearmIdle = true;
+    return d;
+  }
+  d.sleep = sleepAllowed && idleMs > idleLimitMs && !buttonPressed &&
+            !clicksPending;
+  return d;
+}

@@ -40,6 +40,9 @@ void ReaderScreen::draw() {
 }
 
 void ReaderScreen::onButton(const ButtonEvent& e) {
+  // Called on every loop tick; tracing empty ticks floods the trace ring and
+  // evicts the entries that matter.
+  if (!e.any()) return;
   Diagnostics::trace("reader.screen.button");
   if (isOpeningBook()) {
     if (e.kind == ButtonEvent::Triple) {
